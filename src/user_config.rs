@@ -1,0 +1,1193 @@
+//! Port of `UserConfig.js`: the configuration API (`eleventyConfig`).
+//!
+//! JavaScript callbacks become `Arc`'d Rust closures. All the `add*` methods
+//! keep their upstream names (in snake_case).
+
+use std::collections::{BTreeSet, HashMap};
+use std::sync::Arc;
+
+use anyhow::{Result, bail};
+use indexmap::{IndexMap, IndexSet};
+
+use crate::template_collection::TemplateCollection;
+use crate::util::date_parse::TimeZoneParser;
+use crate::util::event_emitter::{EventEmitter, EventListener};
+use crate::util::template_path;
+use crate::value::Value;
+
+/// The `this` context available to filters and shortcodes (`this.page`, `this.ctx`, …)
+pub struct CallContext<'a> {
+    lookup: &'a dyn Fn(&str) -> Value,
+    /// Name of the engine making the call (`liquid`, `njk`, …)
+    pub engine: &'a str,
+}
+
+impl<'a> CallContext<'a> {
+    pub fn new(engine: &'a str, lookup: &'a dyn Fn(&str) -> Value) -> Self {
+        Self { lookup, engine }
+    }
+
+    /// Read any variable available in the template scope
+    pub fn get(&self, key: &str) -> Value {
+        (self.lookup)(key)
+    }
+
+    pub fn page(&self) -> Value {
+        self.get("page")
+    }
+
+    pub fn eleventy(&self) -> Value {
+        self.get("eleventy")
+    }
+
+    pub fn collections(&self) -> Value {
+        self.get("collections")
+    }
+}
+
+/// `this` for transforms and linters
+#[derive(Clone, Debug, Default)]
+pub struct TransformContext {
+    pub input_path: String,
+    pub output_path: Value,
+    pub url: Value,
+    pub page: Value,
+    pub base_href: Option<String>,
+}
+
+#[derive(Clone, Debug, Default)]
+pub struct PreprocessorContext {
+    pub input_path: String,
+}
+
+pub enum PreprocessorResult {
+    /// Keep the content as-is
+    Unchanged,
+    /// Replace the content
+    Content(String),
+    /// Skip this template (an explicit `false` return)
+    Skip,
+}
+
+pub type FilterFn = Arc<dyn Fn(&CallContext, Value, &[Value]) -> Result<Value> + Send + Sync>;
+pub type ShortcodeFn = Arc<dyn Fn(&CallContext, &[Value]) -> Result<String> + Send + Sync>;
+pub type PairedShortcodeFn =
+    Arc<dyn Fn(&CallContext, &str, &[Value]) -> Result<String> + Send + Sync>;
+pub type TransformFn = Arc<dyn Fn(&TransformContext, String) -> Result<String> + Send + Sync>;
+pub type LinterFn = Arc<dyn Fn(&TransformContext, &str) -> Result<()> + Send + Sync>;
+pub type PreprocessorFn =
+    Arc<dyn Fn(&PreprocessorContext, &Value, &str) -> Result<PreprocessorResult> + Send + Sync>;
+pub type CollectionFn = Arc<dyn Fn(&TemplateCollection) -> Result<Value> + Send + Sync>;
+pub type DataParserFn = Arc<dyn Fn(&str, &str) -> Result<Value> + Send + Sync>;
+/// `(url, urlStem) -> Option<new url>`
+pub type UrlTransformFn = Arc<dyn Fn(&str, &str) -> Option<String> + Send + Sync>;
+/// `(dateValue, page) -> Option<new date value>`
+pub type DateParsingFn = Arc<dyn Fn(&Value, &Value) -> Option<Value> + Send + Sync>;
+pub type PluginFn = Arc<dyn Fn(&mut UserConfig, &Value) -> Result<()> + Send + Sync>;
+pub type MarkdownAmendFn = Arc<dyn Fn(&mut markdown_it::MarkdownIt) + Send + Sync>;
+pub type NunjucksAmendFn = Arc<dyn Fn(&mut minijinja::Environment<'static>) + Send + Sync>;
+/// Compiled render function for a custom engine: `(data) -> output`
+pub type CompiledFn = Arc<dyn Fn(&Value) -> Result<String> + Send + Sync>;
+/// `compile(inputContent, inputPath) -> render function`
+pub type CustomCompileFn = Arc<dyn Fn(&str, &str) -> Result<CompiledFn> + Send + Sync>;
+/// `getData(inputPath) -> data`
+pub type CustomGetDataFn = Arc<dyn Fn(&str) -> Result<Value> + Send + Sync>;
+/// `compile(inputContent, inputPath)` with access to `this.defaultRenderer`: the compiled
+/// output of the engine being overridden or aliased (`None` when there is none)
+pub type CustomCompileWithDefaultFn =
+    Arc<dyn Fn(&str, &str, Option<CompiledFn>) -> Result<CompiledFn> + Send + Sync>;
+/// `init()`: runs once, before the first compile or `getData` call
+pub type ExtensionInitFn = Arc<dyn Fn() -> Result<()> + Send + Sync>;
+pub type MarkdownHighlighterFn = Arc<dyn Fn(&str, &str) -> String + Send + Sync>;
+
+/// Options for `addExtension` (custom template engines)
+#[derive(Clone, Default)]
+pub struct ExtensionOptions {
+    pub key: String,
+    pub extension: String,
+    pub alias_key: Option<String>,
+    /// Display name of the engine
+    pub name: Option<String>,
+    pub output_file_extension: Option<String>,
+    pub compile: Option<CustomCompileFn>,
+    /// Alternative to `compile` that receives the default renderer
+    pub compile_with_default_renderer: Option<CustomCompileWithDefaultFn>,
+    pub init: Option<ExtensionInitFn>,
+    pub get_data: Option<CustomGetDataFn>,
+    /// Whether the file contents should be read (default true)
+    pub read: Option<bool>,
+    /// Whether front matter is parsed for this extension (default true)
+    pub use_layouts: Option<bool>,
+    /// Custom permalink compilation (`compileOptions.permalink`): `false` disables
+    pub permalink_needs_compilation: Option<bool>,
+    /// Whether to use the compile cache
+    pub cache: Option<bool>,
+    /// True when the entry only sets key/extension (a simple alias)
+    pub is_simple_alias: bool,
+}
+
+#[derive(Clone)]
+pub struct DataExtension {
+    pub extension: String,
+    pub parser: DataParserFn,
+    /// Whether to read the file and pass its contents (default true)
+    pub read: bool,
+}
+
+#[derive(Clone, Debug)]
+pub struct PassthroughCopyEntry {
+    /// `true` for the same relative output path, or a string for an explicit output path
+    pub output_path: Value,
+    pub copy_options: Value,
+}
+
+#[derive(Clone, Debug)]
+pub struct HtmlRelativePassthrough {
+    pub matches: Vec<String>,
+    pub options: Value,
+}
+
+#[derive(Clone)]
+pub struct Preprocessor {
+    pub filter: Vec<String>,
+    pub callback: PreprocessorFn,
+}
+
+#[derive(Clone)]
+pub struct VirtualTemplate {
+    pub input_path: String,
+    pub content: String,
+    pub data: Value,
+}
+
+#[derive(Clone, Default, Debug)]
+pub struct CollectionOptions {
+    pub defer: bool,
+}
+
+#[derive(Clone)]
+pub struct PluginEntry {
+    pub name: String,
+    pub plugin: PluginFn,
+    pub options: Value,
+    pub namespace: String,
+}
+
+/// `config.keys`
+#[derive(Clone, Debug)]
+pub struct Keys {
+    pub package: Option<String>,
+    pub layout: String,
+    pub tags: Option<String>,
+    pub permalink: String,
+    pub permalink_root: String,
+    pub engine_override: String,
+    pub computed: String,
+    pub data_schema: String,
+    pub import: String,
+}
+
+impl Default for Keys {
+    fn default() -> Self {
+        Keys {
+            package: Some("pkg".into()),
+            layout: "layout".into(),
+            tags: Some("tags".into()),
+            permalink: "permalink".into(),
+            permalink_root: "permalinkBypassOutputDir".into(),
+            engine_override: "templateEngineOverride".into(),
+            computed: "buildawesomeComputed".into(),
+            data_schema: "buildawesomeDataSchema".into(),
+            import: "buildawesomeImport".into(),
+        }
+    }
+}
+
+#[derive(Clone, Debug, Default)]
+pub struct DataFileNames {
+    pub template: Option<Vec<String>>,
+    pub directory: Option<Vec<String>>,
+}
+
+/// Directory assignments set via the configuration API
+#[derive(Clone, Debug, Default)]
+pub struct DirectoryAssignments {
+    pub input: Option<String>,
+    pub output: Option<String>,
+    pub data: Option<String>,
+    pub includes: Option<String>,
+    pub layouts: Option<String>,
+}
+
+impl DirectoryAssignments {
+    pub fn is_empty(&self) -> bool {
+        self.input.is_none()
+            && self.output.is_none()
+            && self.data.is_none()
+            && self.includes.is_none()
+            && self.layouts.is_none()
+    }
+}
+
+#[derive(Clone, Default)]
+pub struct EngineCallbacks {
+    pub filters: IndexMap<String, FilterFn>,
+    pub shortcodes: IndexMap<String, ShortcodeFn>,
+    pub paired_shortcodes: IndexMap<String, PairedShortcodeFn>,
+}
+
+#[derive(Clone)]
+pub struct UserConfig {
+    pub events: EventEmitter,
+    pub html_transformer: crate::plugins::html_transformer::HtmlTransformer,
+    pub directory_assignments: DirectoryAssignments,
+    pub directories_relative_to: Option<String>,
+    /// The resolved directories, available to plugins (`eleventyConfig.directories`)
+    pub directories: Value,
+    pub collections: IndexMap<String, CollectionFn>,
+    pub collection_options: HashMap<String, CollectionOptions>,
+    pub precompiled_collections: IndexMap<String, Value>,
+    pub features_collections: bool,
+    pub template_formats: Option<Vec<String>>,
+    pub template_formats_added: Vec<Vec<String>>,
+
+    pub universal: EngineCallbacks,
+    pub liquid: EngineCallbacks,
+    pub nunjucks: EngineCallbacks,
+    pub javascript: EngineCallbacks,
+    pub nunjucks_globals: IndexMap<String, Value>,
+    /// Paired shortcodes that receive their body unrendered (e.g. `renderTemplate`)
+    pub raw_paired_shortcodes: IndexSet<String>,
+    pub liquid_options: Value,
+    pub nunjucks_environment_options: Value,
+
+    pub markdown_highlighter: Option<MarkdownHighlighterFn>,
+    pub markdown_amendments: Vec<MarkdownAmendFn>,
+    pub nunjucks_amendments: Vec<NunjucksAmendFn>,
+    pub markdown_options: Value,
+
+    pub passthrough_copies: IndexMap<String, PassthroughCopyEntry>,
+    pub passthrough_copies_html_relative: Vec<HtmlRelativePassthrough>,
+    pub passthrough_copy_options: Value,
+
+    pub layout_aliases: IndexMap<String, String>,
+    pub layout_resolution: bool,
+
+    pub linters: IndexMap<String, LinterFn>,
+    pub transforms: IndexMap<String, TransformFn>,
+    pub preprocessors: IndexMap<String, Preprocessor>,
+
+    pub active_namespace: String,
+    pub dynamic_permalinks: bool,
+    pub permalink_collapse_matching_folder: bool,
+    pub use_git_ignore: bool,
+    pub ignores: IndexSet<String>,
+    pub watch_ignores: IndexSet<String>,
+    pub extension_map: Vec<ExtensionOptions>,
+    extension_conflict_map: BTreeSet<String>,
+    pub additional_watch_targets: Vec<String>,
+    pub server_options: Value,
+    pub global_data: IndexMap<String, Value>,
+    pub watch_throttle_wait_time: u64,
+    pub data_extensions: IndexMap<String, DataExtension>,
+    pub quiet_mode: bool,
+    quiet_mode_override: Option<bool>,
+    pub plugins: Vec<PluginEntry>,
+    executed_plugin_names: BTreeSet<String>,
+    plugin_execution: bool,
+    pub use_template_cache: bool,
+    pub data_filter_selectors: IndexSet<String>,
+    pub server_passthrough_copy_behavior: String,
+    pub skip_unchanged_writes: bool,
+    pub url_transforms: Vec<UrlTransformFn>,
+    pub data_file_suffixes_override: Option<Vec<String>>,
+    pub data_file_dir_base_name_override: Option<String>,
+    pub data_file_names: Option<DataFileNames>,
+    pub front_matter_parsing_options: Value,
+    pub virtual_templates: IndexMap<String, VirtualTemplate>,
+    pub freeze_reserved_data: bool,
+    pub freeze_global_data: bool,
+    pub custom_date_parsing: Vec<DateParsingFn>,
+    pub date_time_zone: Option<TimeZoneParser>,
+    pub error_reporting: HashMap<String, String>,
+    pub experimental_flags: Vec<String>,
+    concurrency: usize,
+
+    // Values typically returned from the config callback (or defaults)
+    pub path_prefix: Option<String>,
+    pub markdown_template_engine: Option<String>,
+    pub html_template_engine: Option<String>,
+    pub keys: Keys,
+}
+
+impl Default for UserConfig {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+/// Normalize leading `./` style paths for passthrough copy inputs
+fn normalize_passthrough_input(input: &str) -> String {
+    input.to_string()
+}
+
+impl UserConfig {
+    pub fn new() -> Self {
+        let mut ignores = IndexSet::new();
+        ignores.insert("**/node_modules/**".to_string());
+        ignores.insert(".git/**".to_string());
+        UserConfig {
+            events: EventEmitter::new(),
+            html_transformer: crate::plugins::html_transformer::HtmlTransformer::new(),
+            directory_assignments: DirectoryAssignments::default(),
+            directories_relative_to: None,
+            directories: Value::object(),
+            collections: IndexMap::new(),
+            collection_options: HashMap::new(),
+            precompiled_collections: IndexMap::new(),
+            features_collections: true,
+            template_formats: None,
+            template_formats_added: vec![],
+            universal: EngineCallbacks::default(),
+            liquid: EngineCallbacks::default(),
+            nunjucks: EngineCallbacks::default(),
+            javascript: EngineCallbacks::default(),
+            nunjucks_globals: IndexMap::new(),
+            raw_paired_shortcodes: IndexSet::new(),
+            liquid_options: Value::object(),
+            nunjucks_environment_options: Value::object(),
+            markdown_highlighter: None,
+            markdown_amendments: vec![],
+            nunjucks_amendments: vec![],
+            markdown_options: Value::object(),
+            passthrough_copies: IndexMap::new(),
+            passthrough_copies_html_relative: vec![],
+            passthrough_copy_options: Value::object(),
+            layout_aliases: IndexMap::new(),
+            layout_resolution: true,
+            linters: IndexMap::new(),
+            transforms: IndexMap::new(),
+            preprocessors: IndexMap::new(),
+            active_namespace: String::new(),
+            dynamic_permalinks: true,
+            permalink_collapse_matching_folder: false,
+            use_git_ignore: true,
+            watch_ignores: ignores.clone(),
+            ignores,
+            extension_map: vec![],
+            extension_conflict_map: BTreeSet::new(),
+            additional_watch_targets: vec![],
+            server_options: Value::object(),
+            global_data: IndexMap::new(),
+            watch_throttle_wait_time: 100,
+            data_extensions: IndexMap::new(),
+            quiet_mode: false,
+            quiet_mode_override: None,
+            plugins: vec![],
+            executed_plugin_names: BTreeSet::new(),
+            plugin_execution: false,
+            use_template_cache: true,
+            data_filter_selectors: IndexSet::new(),
+            server_passthrough_copy_behavior: "copy".into(),
+            skip_unchanged_writes: true,
+            url_transforms: vec![],
+            data_file_suffixes_override: None,
+            data_file_dir_base_name_override: None,
+            data_file_names: None,
+            front_matter_parsing_options: Value::object(),
+            virtual_templates: IndexMap::new(),
+            freeze_reserved_data: true,
+            freeze_global_data: true,
+            custom_date_parsing: vec![],
+            date_time_zone: None,
+            error_reporting: HashMap::new(),
+            experimental_flags: vec![],
+            concurrency: 4,
+            path_prefix: None,
+            markdown_template_engine: None,
+            html_template_engine: None,
+            keys: Keys::default(),
+        }
+    }
+
+    /* Events */
+
+    pub fn on<F>(&mut self, event_name: &str, callback: F)
+    where
+        F: Fn(&Value) -> Result<()> + Send + Sync + 'static,
+    {
+        self.events.on(event_name, Arc::new(callback) as EventListener);
+    }
+
+    pub fn once<F>(&mut self, event_name: &str, callback: F)
+    where
+        F: Fn(&Value) -> Result<()> + Send + Sync + 'static,
+    {
+        self.events.once(event_name, Arc::new(callback) as EventListener);
+    }
+
+    pub fn emit(&self, event_name: &str, arg: &Value) -> Result<()> {
+        self.events.emit(event_name, arg)
+    }
+
+    pub fn get_namespaced_name(&self, name: &str) -> String {
+        format!("{}{}", self.active_namespace, name)
+    }
+
+    /* Filters */
+
+    pub fn get_filter(&self, name: &str) -> Option<FilterFn> {
+        self.universal.filters.get(name).cloned()
+    }
+
+    pub fn get_filters(&self) -> &IndexMap<String, FilterFn> {
+        &self.universal.filters
+    }
+
+    pub fn get_shortcode(&self, name: &str) -> Option<ShortcodeFn> {
+        self.universal.shortcodes.get(name).cloned()
+    }
+
+    pub fn get_paired_shortcode(&self, name: &str) -> Option<PairedShortcodeFn> {
+        self.universal.paired_shortcodes.get(name).cloned()
+    }
+
+    pub fn add_liquid_filter<F>(&mut self, name: &str, callback: F)
+    where
+        F: Fn(&CallContext, Value, &[Value]) -> Result<Value> + Send + Sync + 'static,
+    {
+        let name = self.get_namespaced_name(name);
+        self.liquid.filters.insert(name, Arc::new(callback));
+    }
+
+    pub fn add_nunjucks_filter<F>(&mut self, name: &str, callback: F)
+    where
+        F: Fn(&CallContext, Value, &[Value]) -> Result<Value> + Send + Sync + 'static,
+    {
+        let name = self.get_namespaced_name(name);
+        self.nunjucks.filters.insert(name, Arc::new(callback));
+    }
+
+    pub fn add_javascript_filter<F>(&mut self, name: &str, callback: F)
+    where
+        F: Fn(&CallContext, Value, &[Value]) -> Result<Value> + Send + Sync + 'static,
+    {
+        let name = self.get_namespaced_name(name);
+        self.javascript.filters.insert(name, Arc::new(callback));
+    }
+
+    /// Universal filter (Liquid, Nunjucks and JavaScript)
+    pub fn add_filter<F>(&mut self, name: &str, callback: F)
+    where
+        F: Fn(&CallContext, Value, &[Value]) -> Result<Value> + Send + Sync + 'static,
+    {
+        self.add_filter_fn(name, Arc::new(callback));
+    }
+
+    pub fn add_filter_fn(&mut self, name: &str, callback: FilterFn) {
+        let name = self.get_namespaced_name(name);
+        self.universal.filters.insert(name.clone(), callback.clone());
+        self.liquid.filters.insert(name.clone(), callback.clone());
+        self.nunjucks.filters.insert(name.clone(), callback.clone());
+        self.javascript.filters.insert(name, callback);
+    }
+
+    /// Async filters are regular filters in Rust
+    pub fn add_async_filter<F>(&mut self, name: &str, callback: F)
+    where
+        F: Fn(&CallContext, Value, &[Value]) -> Result<Value> + Send + Sync + 'static,
+    {
+        self.add_filter(name, callback);
+    }
+
+    /* Shortcodes */
+
+    pub fn add_shortcode<F>(&mut self, name: &str, callback: F)
+    where
+        F: Fn(&CallContext, &[Value]) -> Result<String> + Send + Sync + 'static,
+    {
+        let name = self.get_namespaced_name(name);
+        let callback: ShortcodeFn = Arc::new(callback);
+        self.universal.shortcodes.insert(name.clone(), callback.clone());
+        self.liquid.shortcodes.insert(name.clone(), callback.clone());
+        self.nunjucks.shortcodes.insert(name.clone(), callback.clone());
+        self.javascript.shortcodes.insert(name, callback);
+    }
+
+    pub fn add_async_shortcode<F>(&mut self, name: &str, callback: F)
+    where
+        F: Fn(&CallContext, &[Value]) -> Result<String> + Send + Sync + 'static,
+    {
+        self.add_shortcode(name, callback);
+    }
+
+    pub fn add_liquid_shortcode<F>(&mut self, name: &str, callback: F)
+    where
+        F: Fn(&CallContext, &[Value]) -> Result<String> + Send + Sync + 'static,
+    {
+        let name = self.get_namespaced_name(name);
+        self.liquid.shortcodes.insert(name, Arc::new(callback));
+    }
+
+    pub fn add_nunjucks_shortcode<F>(&mut self, name: &str, callback: F)
+    where
+        F: Fn(&CallContext, &[Value]) -> Result<String> + Send + Sync + 'static,
+    {
+        let name = self.get_namespaced_name(name);
+        self.nunjucks.shortcodes.insert(name, Arc::new(callback));
+    }
+
+    pub fn add_javascript_shortcode<F>(&mut self, name: &str, callback: F)
+    where
+        F: Fn(&CallContext, &[Value]) -> Result<String> + Send + Sync + 'static,
+    {
+        let name = self.get_namespaced_name(name);
+        self.javascript.shortcodes.insert(name, Arc::new(callback));
+    }
+
+    pub fn add_paired_shortcode<F>(&mut self, name: &str, callback: F)
+    where
+        F: Fn(&CallContext, &str, &[Value]) -> Result<String> + Send + Sync + 'static,
+    {
+        let name = self.get_namespaced_name(name);
+        let callback: PairedShortcodeFn = Arc::new(callback);
+        self.universal.paired_shortcodes.insert(name.clone(), callback.clone());
+        self.liquid.paired_shortcodes.insert(name.clone(), callback.clone());
+        self.nunjucks.paired_shortcodes.insert(name.clone(), callback.clone());
+        self.javascript.paired_shortcodes.insert(name, callback);
+    }
+
+    pub fn add_paired_async_shortcode<F>(&mut self, name: &str, callback: F)
+    where
+        F: Fn(&CallContext, &str, &[Value]) -> Result<String> + Send + Sync + 'static,
+    {
+        self.add_paired_shortcode(name, callback);
+    }
+
+    pub fn add_paired_liquid_shortcode<F>(&mut self, name: &str, callback: F)
+    where
+        F: Fn(&CallContext, &str, &[Value]) -> Result<String> + Send + Sync + 'static,
+    {
+        let name = self.get_namespaced_name(name);
+        self.liquid.paired_shortcodes.insert(name, Arc::new(callback));
+    }
+
+    pub fn add_paired_nunjucks_shortcode<F>(&mut self, name: &str, callback: F)
+    where
+        F: Fn(&CallContext, &str, &[Value]) -> Result<String> + Send + Sync + 'static,
+    {
+        let name = self.get_namespaced_name(name);
+        self.nunjucks.paired_shortcodes.insert(name, Arc::new(callback));
+    }
+
+    pub fn add_nunjucks_global(&mut self, name: &str, value: Value) {
+        let name = self.get_namespaced_name(name);
+        self.nunjucks_globals.insert(name, value);
+    }
+
+    /* Markdown */
+
+    pub fn add_markdown_highlighter<F>(&mut self, highlight: F)
+    where
+        F: Fn(&str, &str) -> String + Send + Sync + 'static,
+    {
+        self.markdown_highlighter = Some(Arc::new(highlight));
+    }
+
+    pub fn set_markdown_template_engine(&mut self, engine_name: impl Into<String>) {
+        self.markdown_template_engine = Some(engine_name.into());
+    }
+
+    pub fn set_html_template_engine(&mut self, engine_name: impl Into<String>) {
+        self.html_template_engine = Some(engine_name.into());
+    }
+
+    /// `amendLibrary("md", fn)`
+    pub fn amend_markdown_library<F>(&mut self, callback: F)
+    where
+        F: Fn(&mut markdown_it::MarkdownIt) + Send + Sync + 'static,
+    {
+        self.markdown_amendments.push(Arc::new(callback));
+    }
+
+    /// `amendLibrary("njk", fn)`
+    pub fn amend_nunjucks_library<F>(&mut self, callback: F)
+    where
+        F: Fn(&mut minijinja::Environment<'static>) + Send + Sync + 'static,
+    {
+        self.nunjucks_amendments.push(Arc::new(callback));
+    }
+
+    pub fn set_markdown_options(&mut self, options: Value) {
+        self.markdown_options = options;
+    }
+
+    pub fn set_liquid_options(&mut self, options: Value) {
+        self.liquid_options = options;
+    }
+
+    pub fn set_nunjucks_environment_options(&mut self, options: Value) {
+        self.nunjucks_environment_options = options;
+    }
+
+    /* Plugins */
+
+    pub fn is_plugin_execution(&self) -> bool {
+        self.plugin_execution
+    }
+
+    pub(crate) fn enable_plugin_execution(&mut self) {
+        self.plugin_execution = true;
+    }
+
+    pub(crate) fn disable_plugin_execution(&mut self) {
+        self.plugin_execution = false;
+    }
+
+    /// Add a plugin. Plugins run after the configuration callback finishes
+    /// (or immediately when already executing plugins).
+    pub fn add_plugin<F>(&mut self, name: &str, plugin: F, options: Value) -> Result<()>
+    where
+        F: Fn(&mut UserConfig, &Value) -> Result<()> + Send + Sync + 'static,
+    {
+        self.add_plugin_fn(name, Arc::new(plugin), options)
+    }
+
+    pub fn add_plugin_fn(&mut self, name: &str, plugin: PluginFn, options: Value) -> Result<()> {
+        // First addPlugin of a unique plugin wins
+        let unique = crate::plugins::unique_plugin_name(name);
+        if unique.is_some_and(|n| self.has_plugin(n)) {
+            return Ok(());
+        }
+        let name = unique.unwrap_or(name);
+        let immediate = options.get("immediate").is_truthy();
+        if self.is_plugin_execution() || immediate {
+            self.execute_plugin(name, &plugin, &options)
+        } else {
+            self.plugins.push(PluginEntry {
+                name: name.to_string(),
+                plugin,
+                options,
+                namespace: self.active_namespace.clone(),
+            });
+            Ok(())
+        }
+    }
+
+    pub fn has_plugin(&self, name: &str) -> bool {
+        self.executed_plugin_names.contains(name) || self.plugins.iter().any(|p| p.name == name)
+    }
+
+    pub(crate) fn execute_plugin(
+        &mut self,
+        name: &str,
+        plugin: &PluginFn,
+        options: &Value,
+    ) -> Result<()> {
+        if !name.is_empty() {
+            self.executed_plugin_names.insert(name.to_string());
+        }
+        let namespace = options.get("pluginNamespace");
+        let stored = self.active_namespace.clone();
+        if let Some(ns) = namespace.as_str() {
+            self.active_namespace = format!("{}{}", self.active_namespace, ns);
+        }
+        let result = plugin(self, options);
+        self.active_namespace = stored;
+        result
+    }
+
+    /// Run `callback` with a namespace prefix applied to names added inside of it
+    pub fn namespace<F>(&mut self, plugin_namespace: &str, callback: F) -> Result<()>
+    where
+        F: FnOnce(&mut UserConfig) -> Result<()>,
+    {
+        let stored = self.active_namespace.clone();
+        self.active_namespace = format!("{stored}{plugin_namespace}");
+        let result = callback(self);
+        self.active_namespace = stored;
+        result
+    }
+
+    /* Passthrough copy */
+
+    /// Copy a file, directory or glob as-is to the output directory
+    pub fn add_passthrough_copy(&mut self, file_or_dir: &str) -> &mut Self {
+        self.add_passthrough_copy_with_options(file_or_dir, Value::object())
+    }
+
+    pub fn add_passthrough_copy_with_options(
+        &mut self,
+        file_or_dir: &str,
+        copy_options: Value,
+    ) -> &mut Self {
+        if copy_options.get("mode").as_str() == Some("html-relative") {
+            self.passthrough_copies_html_relative.push(HtmlRelativePassthrough {
+                matches: vec![file_or_dir.to_string()],
+                options: copy_options,
+            });
+            return self;
+        }
+        self.passthrough_copies.insert(
+            normalize_passthrough_input(file_or_dir),
+            PassthroughCopyEntry {
+                output_path: Value::Bool(true),
+                copy_options,
+            },
+        );
+        self
+    }
+
+    /// Input glob -> output directory mapping
+    pub fn add_passthrough_copy_mapping(&mut self, input: &str, output: &str) -> &mut Self {
+        self.passthrough_copies.insert(
+            normalize_passthrough_input(input),
+            PassthroughCopyEntry {
+                output_path: Value::str(output),
+                copy_options: Value::object(),
+            },
+        );
+        self
+    }
+
+    /// Input glob -> output directory mapping, with `recursive-copy` options
+    pub fn add_passthrough_copy_mapping_with_options(
+        &mut self,
+        input: &str,
+        output: &str,
+        copy_options: Value,
+    ) -> Result<&mut Self> {
+        match copy_options.get("mode") {
+            Value::Undefined => {}
+            Value::String(mode) if &*mode == "html-relative" => bail!(
+                "mode: 'html-relative' does not yet support passthrough copy objects (input -> output mapping). Use a string glob or an Array of string globs."
+            ),
+            mode => bail!(
+                "Invalid `mode` option for `addPassthroughCopy`. Received: '{}'",
+                mode.to_output_string()
+            ),
+        }
+        self.passthrough_copies.insert(
+            normalize_passthrough_input(input),
+            PassthroughCopyEntry {
+                output_path: Value::str(output),
+                copy_options,
+            },
+        );
+        Ok(self)
+    }
+
+    pub fn set_passthrough_copy_options(&mut self, copy_options: Value) -> Result<&mut Self> {
+        if copy_options.get("mode").is_truthy() {
+            bail!("`mode` is not supported in `setPassthroughCopyOptions`, use `addPassthroughCopy` instead.");
+        }
+        self.passthrough_copy_options = copy_options;
+        Ok(self)
+    }
+
+    /* Template formats */
+
+    pub fn set_template_formats(&mut self, formats: &[&str]) {
+        self.template_formats = Some(formats.iter().map(|s| s.to_string()).collect());
+    }
+
+    pub fn set_template_formats_str(&mut self, formats: &str) {
+        self.template_formats = Some(formats.split(',').map(|s| s.trim().to_string()).collect());
+    }
+
+    pub fn add_template_formats(&mut self, formats: &[&str]) {
+        self.template_formats_added
+            .push(formats.iter().map(|s| s.to_string()).collect());
+    }
+
+    pub fn set_dynamic_permalinks(&mut self, enabled: bool) {
+        self.dynamic_permalinks = enabled;
+    }
+
+    pub fn set_permalink_collapse_matching_folder(&mut self, enabled: bool) {
+        self.permalink_collapse_matching_folder = enabled;
+    }
+
+    pub fn set_use_git_ignore(&mut self, enabled: bool) {
+        self.use_git_ignore = enabled;
+    }
+
+    pub fn add_watch_target(&mut self, target: &str) {
+        self.additional_watch_targets.push(target.to_string());
+    }
+
+    pub fn set_server_options(&mut self, options: Value) {
+        self.server_options = crate::util::merge::merge(self.server_options.clone(), &[&options]);
+    }
+
+    pub fn set_watch_throttle_wait_time(&mut self, time: u64) {
+        self.watch_throttle_wait_time = time;
+    }
+
+    pub fn set_front_matter_parsing_options(&mut self, options: Value) {
+        self.front_matter_parsing_options = options;
+    }
+
+    pub fn set_quiet_mode_override(&mut self, quiet_mode: bool) {
+        self.quiet_mode = quiet_mode;
+        self.quiet_mode_override = Some(quiet_mode);
+    }
+
+    pub fn set_quiet_mode(&mut self, quiet_mode: bool) {
+        if self.quiet_mode_override.is_some() {
+            return;
+        }
+        self.quiet_mode = quiet_mode;
+    }
+
+    /// Register a custom template syntax (comma separated extensions allowed)
+    pub fn add_extension(&mut self, file_extension: &str, options: ExtensionOptions) -> Result<()> {
+        for raw in file_extension.split(',') {
+            let extension = raw.trim().to_lowercase();
+            if extension.is_empty() {
+                continue;
+            }
+            if self.extension_conflict_map.contains(&extension) {
+                bail!(
+                    "An attempt was made to override the \"{extension}\" template syntax twice (via the `addExtension` configuration API). A maximum of one override is currently supported."
+                );
+            }
+            self.extension_conflict_map.insert(extension.clone());
+            let mut entry = options.clone();
+            entry.key = if entry.key.is_empty() {
+                extension.clone()
+            } else {
+                entry.key.to_lowercase()
+            };
+            entry.extension = if entry.extension.is_empty() {
+                extension.clone()
+            } else {
+                entry.extension.to_lowercase()
+            };
+            if entry.key != entry.extension {
+                entry.alias_key = Some(entry.extension.clone());
+            }
+            entry.is_simple_alias = entry.compile.is_none()
+                && entry.compile_with_default_renderer.is_none()
+                && entry.init.is_none()
+                && entry.get_data.is_none()
+                && entry.output_file_extension.is_none()
+                && entry.read.is_none()
+                && entry.use_layouts.is_none()
+                && entry.permalink_needs_compilation.is_none()
+                && entry.name.is_none();
+            self.extension_map.push(entry);
+        }
+        Ok(())
+    }
+
+    /// Add a custom data file format (e.g. `yaml`, `toml`)
+    pub fn add_data_extension<F>(&mut self, extension_list: &str, parser: F)
+    where
+        F: Fn(&str, &str) -> Result<Value> + Send + Sync + 'static,
+    {
+        self.add_data_extension_with_options(extension_list, Arc::new(parser), true);
+    }
+
+    pub fn add_data_extension_with_options(
+        &mut self,
+        extension_list: &str,
+        parser: DataParserFn,
+        read: bool,
+    ) {
+        for extension in extension_list.split(',').map(|s| s.trim().to_lowercase()) {
+            self.data_extensions.insert(
+                extension.clone(),
+                DataExtension {
+                    extension,
+                    parser: parser.clone(),
+                    read,
+                },
+            );
+        }
+    }
+
+    pub fn set_use_template_cache(&mut self, enabled: bool) {
+        self.use_template_cache = enabled;
+    }
+
+    pub fn set_precompiled_collections(&mut self, collections: IndexMap<String, Value>) {
+        self.precompiled_collections = collections;
+    }
+
+    pub fn configure_features(&mut self, collections: bool) {
+        self.features_collections = collections;
+    }
+
+    pub fn set_server_passthrough_copy_behavior(&mut self, behavior: &str) {
+        self.server_passthrough_copy_behavior = behavior.to_string();
+    }
+
+    pub fn set_skip_unchanged_writes(&mut self, skip: bool) {
+        self.skip_unchanged_writes = skip;
+    }
+
+    pub fn add_url_transform<F>(&mut self, callback: F)
+    where
+        F: Fn(&str, &str) -> Option<String> + Send + Sync + 'static,
+    {
+        self.url_transforms.push(Arc::new(callback));
+    }
+
+    pub fn set_data_file_suffixes(&mut self, suffixes: &[&str]) {
+        self.data_file_suffixes_override = Some(suffixes.iter().map(|s| s.to_string()).collect());
+    }
+
+    pub fn set_data_file_base_name(&mut self, base_name: &str) {
+        self.data_file_dir_base_name_override = Some(base_name.to_string());
+    }
+
+    pub fn set_data_file_names(&mut self, names: DataFileNames) {
+        let mut current = self.data_file_names.clone().unwrap_or_default();
+        if names.template.is_some() {
+            current.template = names.template;
+        }
+        if names.directory.is_some() {
+            current.directory = names.directory;
+        }
+        self.data_file_names = Some(current);
+    }
+
+    /// Add a virtual template (a template that does not exist on the file system)
+    pub fn add_template(&mut self, virtual_input_path: &str, content: &str, data: Value) -> Result<()> {
+        let virtual_input_path = template_path::strip_leading_dot_slash(
+            &template_path::standardize_file_path(virtual_input_path),
+        );
+        if self.virtual_templates.contains_key(&virtual_input_path) {
+            bail!(
+                "Virtual template conflict: you can’t add multiple virtual templates that have the same inputPath: {virtual_input_path}"
+            );
+        }
+        self.virtual_templates.insert(
+            virtual_input_path.clone(),
+            VirtualTemplate {
+                input_path: virtual_input_path,
+                content: content.to_string(),
+                data,
+            },
+        );
+        Ok(())
+    }
+
+    pub fn is_virtual_template(&self, virtual_input_path: &str) -> bool {
+        self.virtual_templates.contains_key(virtual_input_path)
+    }
+
+    fn set_directory(&mut self, key: &str, dir: &str) -> Result<()> {
+        if self.is_plugin_execution() {
+            bail!(
+                "The `set{}Directory` method is not available in plugins.",
+                key[..1].to_uppercase() + &key[1..]
+            );
+        }
+        let dir = Some(dir.to_string());
+        match key {
+            "input" => self.directory_assignments.input = dir,
+            "output" => self.directory_assignments.output = dir,
+            "data" => self.directory_assignments.data = dir,
+            "includes" => self.directory_assignments.includes = dir,
+            "layouts" => self.directory_assignments.layouts = dir,
+            _ => {}
+        }
+        Ok(())
+    }
+
+    pub fn set_input_directory(&mut self, dir: &str) -> Result<()> {
+        self.set_directory("input", dir)
+    }
+
+    pub fn set_output_directory(&mut self, dir: &str) -> Result<()> {
+        self.set_directory("output", dir)
+    }
+
+    pub fn set_data_directory(&mut self, dir: &str) -> Result<()> {
+        self.set_directory("data", dir)
+    }
+
+    pub fn set_includes_directory(&mut self, dir: &str) -> Result<()> {
+        self.set_directory("includes", dir)
+    }
+
+    pub fn set_layouts_directory(&mut self, dir: &str) -> Result<()> {
+        self.set_directory("layouts", dir)
+    }
+
+    pub fn set_directories_relative_to(&mut self, dir: &str) -> Result<()> {
+        if dir != "." {
+            bail!("Invalid `setDirectoriesRelativeTo` value: {dir:?}. Only \".\" (the project root) is supported.");
+        }
+        self.directories_relative_to = Some(dir.to_string());
+        Ok(())
+    }
+
+    pub fn set_freeze_reserved_data(&mut self, value: bool) {
+        self.freeze_reserved_data = value;
+    }
+
+    pub fn set_freeze_global_data(&mut self, value: bool) {
+        self.freeze_global_data = value;
+    }
+
+    pub fn add_date_parsing<F>(&mut self, callback: F)
+    where
+        F: Fn(&Value, &Value) -> Option<Value> + Send + Sync + 'static,
+    {
+        self.custom_date_parsing.push(Arc::new(callback));
+    }
+
+    pub fn set_date_time_zone(&mut self, zone: &str) -> Result<()> {
+        self.date_time_zone = Some(TimeZoneParser::new(zone)?);
+        Ok(())
+    }
+
+    /// Add global data (a `Value::Function` is called once to resolve the data)
+    pub fn add_global_data(&mut self, name: &str, data: Value) -> &mut Self {
+        let name = self.get_namespaced_name(name);
+        if let Some(existing) = self.global_data.get(&name) {
+            if existing.is_plain_object() && data.is_plain_object() {
+                let merged = crate::util::merge::deep_copy(existing.clone(), &[&data]);
+                self.global_data.insert(name, merged);
+                return self;
+            }
+        }
+        self.global_data.insert(name, data);
+        self
+    }
+
+    pub fn add_transform<F>(&mut self, name: &str, callback: F)
+    where
+        F: Fn(&TransformContext, String) -> Result<String> + Send + Sync + 'static,
+    {
+        let name = self.get_namespaced_name(name);
+        self.transforms.insert(name, Arc::new(callback));
+    }
+
+    pub fn add_preprocessor<F>(&mut self, name: &str, file_extensions: &str, callback: F)
+    where
+        F: Fn(&PreprocessorContext, &Value, &str) -> Result<PreprocessorResult>
+            + Send
+            + Sync
+            + 'static,
+    {
+        let name = self.get_namespaced_name(name);
+        self.preprocessors.insert(
+            name,
+            Preprocessor {
+                filter: file_extensions.split(',').map(|s| s.trim().to_string()).collect(),
+                callback: Arc::new(callback),
+            },
+        );
+    }
+
+    pub fn add_linter<F>(&mut self, name: &str, callback: F)
+    where
+        F: Fn(&TransformContext, &str) -> Result<()> + Send + Sync + 'static,
+    {
+        let name = self.get_namespaced_name(name);
+        self.linters.insert(name, Arc::new(callback));
+    }
+
+    pub fn add_layout_alias(&mut self, from: &str, to: &str) {
+        self.layout_aliases.insert(from.to_string(), to.to_string());
+    }
+
+    pub fn set_layout_resolution(&mut self, resolution: bool) {
+        self.layout_resolution = resolution;
+    }
+
+    /// `configureErrorReporting({ name: "allow" | "warn" | "error" })`
+    pub fn configure_error_reporting(&mut self, name: &str, value: &str) {
+        // `allowMissingExtensions: true|false` is the older spelling of `missingExtensions`
+        if name == "allowMissingExtensions" {
+            if !self.error_reporting.contains_key("missingExtensions") {
+                let mapped = if value == "true" || value == "allow" { "allow" } else { "error" };
+                self.error_reporting
+                    .insert("missingExtensions".to_string(), mapped.to_string());
+            }
+            return;
+        }
+        self.error_reporting.insert(name.to_string(), value.to_string());
+    }
+
+    pub fn check_error_reporting(&self, name: &str, value: &str) -> bool {
+        self.error_reporting.get(name).map(|v| v == value).unwrap_or(false)
+    }
+
+    pub fn get_collections(&self) -> &IndexMap<String, CollectionFn> {
+        &self.collections
+    }
+
+    pub fn get_collection_options(&self, name: &str) -> CollectionOptions {
+        self.collection_options.get(name).cloned().unwrap_or_default()
+    }
+
+    pub fn add_collection<F>(&mut self, name: &str, callback: F) -> Result<()>
+    where
+        F: Fn(&TemplateCollection) -> Result<Value> + Send + Sync + 'static,
+    {
+        self.add_collection_with_options(name, callback, CollectionOptions::default())
+    }
+
+    pub fn add_collection_with_options<F>(
+        &mut self,
+        name: &str,
+        callback: F,
+        options: CollectionOptions,
+    ) -> Result<()>
+    where
+        F: Fn(&TemplateCollection) -> Result<Value> + Send + Sync + 'static,
+    {
+        let name = self.get_namespaced_name(name);
+        if self.collections.contains_key(&name) {
+            bail!(
+                "config.addCollection({name}) already exists. Try a different name for your collection."
+            );
+        }
+        self.collections.insert(name.clone(), Arc::new(callback));
+        self.collection_options.insert(name, options);
+        Ok(())
+    }
+
+    pub fn set_concurrency(&mut self, number: usize) -> Result<()> {
+        if number == 0 {
+            bail!("Argument passed to `setConcurrency` must be greater than 0.");
+        }
+        self.concurrency = number;
+        Ok(())
+    }
+
+    pub fn get_concurrency(&self) -> usize {
+        self.concurrency
+    }
+
+    pub fn add_experimental_behavior(&mut self, flag: &str) {
+        self.experimental_flags.push(flag.to_string());
+    }
+
+    pub fn set_path_prefix(&mut self, prefix: &str) {
+        self.path_prefix = Some(prefix.to_string());
+    }
+
+    pub fn set_data_filter_selectors(&mut self, selectors: &[&str]) {
+        for s in selectors {
+            self.data_filter_selectors.insert(s.to_string());
+        }
+    }
+
+    pub fn add_ignore(&mut self, glob: &str) {
+        self.ignores.insert(glob.to_string());
+    }
+
+    pub fn delete_ignore(&mut self, glob: &str) {
+        self.ignores.shift_remove(glob);
+    }
+
+    pub fn add_watch_ignore(&mut self, glob: &str) {
+        self.watch_ignores.insert(glob.to_string());
+    }
+}

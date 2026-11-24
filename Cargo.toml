@@ -1,0 +1,36 @@
+[package]
+name = "twelvety"
+version = "0.1.0"
+edition = "2024"
+description = "A Rust port of Build Awesome (Eleventy), a simpler static site generator."
+license = "MIT"
+
+[lib]
+name = "twelvety"
+path = "src/lib.rs"
+
+[[bin]]
+name = "twelvety"
+path = "src/main.rs"
+
+[dependencies]
+anyhow = "1"
+chrono = { version = "0.4", default-features = false, features = ["clock", "std"] }
+chrono-tz = "0.10"
+deunicode = "1.6"
+globset = "0.4"
+indexmap = { version = "2", features = ["serde"] }
+markdown-it = "0.6"
+minijinja = { version = "2", features = ["loader", "builtins", "json", "urlencode", "preserve_order", "custom_syntax", "multi_template", "macros"] }
+regex = "1"
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1", features = ["preserve_order"] }
+serde_yaml = "0.9"
+toml = "0.8"
+walkdir = "2"
+notify = "6"
+tiny_http = "0.12"
+html-escape = "0.2"
+percent-encoding = "2"
+lol_html = "2"
+url = "2"
