@@ -1,5 +1,5 @@
 module.exports = {
-  eleventyComputed: {
+  twelvetyComputed: {
     webmentions: (data) => {
       return data.test;
     },

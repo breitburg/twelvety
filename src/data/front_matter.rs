@@ -118,8 +118,8 @@ fn apply_excerpt(fm: &mut FrontMatter, options: &FrontMatterOptions) {
     }
 }
 
-/// Eleventy-specific excerpt handling from `TemplateContent#read`
-pub fn apply_eleventy_excerpt(fm: &mut FrontMatter, options: &FrontMatterOptions) {
+/// Twelvety-specific excerpt handling from `TemplateContent#read`
+pub fn apply_twelvety_excerpt(fm: &mut FrontMatter, options: &FrontMatterOptions) {
     if !options.excerpt {
         return;
     }
@@ -182,7 +182,7 @@ mod tests {
             ..Default::default()
         };
         let mut fm = parse("---\na: 1\n---\nThis is an excerpt.\n---\nRest of the post", &opts, "x").unwrap();
-        apply_eleventy_excerpt(&mut fm, &opts);
+        apply_twelvety_excerpt(&mut fm, &opts);
         assert_eq!(fm.data.get("page").get("excerpt"), Value::str("This is an excerpt.\n"));
         assert_eq!(fm.content, "This is an excerpt.\nRest of the post");
     }

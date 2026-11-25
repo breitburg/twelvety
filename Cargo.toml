@@ -2,7 +2,7 @@
 name = "twelvety"
 version = "0.1.0"
 edition = "2024"
-description = "A Rust port of Build Awesome (Eleventy), a simpler static site generator."
+description = "A Rust port of Build Awesome (Twelvety), a simpler static site generator."
 license = "MIT"
 
 [lib]

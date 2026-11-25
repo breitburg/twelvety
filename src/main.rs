@@ -7,7 +7,7 @@ use std::process::ExitCode;
 use std::sync::{Arc, Mutex};
 use std::time::{Instant, SystemTime, UNIX_EPOCH};
 
-use twelvety::core::{Eleventy, Options};
+use twelvety::core::{Twelvety, Options};
 use twelvety::errors::format_error_chain;
 use twelvety::user_config::UserConfig;
 use twelvety::util::template_path;
@@ -52,7 +52,7 @@ Arguments:
        Change all url template filters to use this subdirectory.
 
      --dryrun
-       Don’t write any files. Useful in DEBUG mode, for example: `DEBUG=Eleventy* npx @11ty/eleventy --dryrun`
+       Don’t write any files. Useful in DEBUG mode, for example: `DEBUG=Twelvety* twelvety --dryrun`
 
      --to=json
        Change the output to JSON (default: `fs`)
@@ -180,7 +180,7 @@ impl NdjsonReporter {
         let line = format!("{}\n", Value::from_map(event).to_json_string());
         // Event file failures must not fail the build
         if let Err(e) = self.file.lock().unwrap().write_all(line.as_bytes()) {
-            eprintln!("[11ty] Could not write to --events-file: {e}");
+            eprintln!("[12ty] Could not write to --events-file: {e}");
         }
     }
 
@@ -303,13 +303,13 @@ fn main() -> ExitCode {
     let args = match parse_args(&argv) {
         Ok(a) => a,
         Err(e) => {
-            eprintln!("[11ty] {e}");
+            eprintln!("[12ty] {e}");
             return ExitCode::from(1);
         }
     };
     let flag = |name: &str| args.booleans.get(name).copied().unwrap_or(false);
     if flag("version") {
-        println!("eleventy {}", Eleventy::get_version());
+        println!("twelvety {}", Twelvety::get_version());
         return ExitCode::SUCCESS;
     }
     if flag("help") {
@@ -320,11 +320,11 @@ fn main() -> ExitCode {
     let is_serve = flag("serve");
     let is_watch = flag("watch");
     if to == "json" && (is_serve || is_watch) {
-        eprintln!("[11ty] --to=json is not compatible with --serve or --watch.");
+        eprintln!("[12ty] --to=json is not compatible with --serve or --watch.");
         return ExitCode::from(1);
     }
     if to != "fs" && to != "json" {
-        eprintln!("[11ty] Invalid --to value: {to}. Supported values: `fs` (default), `json`.");
+        eprintln!("[12ty] Invalid --to value: {to}. Supported values: `fs` (default), `json`.");
         return ExitCode::from(1);
     }
     let run_mode = if is_serve {
@@ -337,13 +337,13 @@ fn main() -> ExitCode {
     if args.repeated.iter().any(|a| a == "events-file")
         || args.strings.get("events-file").is_some_and(|f| f.is_empty())
     {
-        eprintln!("[11ty] --events-file requires a single file path, e.g. --events-file=.events.ndjson.");
+        eprintln!("[12ty] --events-file requires a single file path, e.g. --events-file=.events.ndjson.");
         return ExitCode::from(1);
     }
     let reporter = match args.strings.get("events-file").map(|f| NdjsonReporter::new(f)) {
         Some(Ok(r)) => Some(r),
         Some(Err(e)) => {
-            eprintln!("[11ty] Could not open --events-file: {e}");
+            eprintln!("[12ty] Could not open --events-file: {e}");
             return ExitCode::from(1);
         }
         None => None,
@@ -364,31 +364,31 @@ fn main() -> ExitCode {
             Ok(())
         });
     }
-    let mut eleventy = Eleventy::new(
+    let mut twelvety = Twelvety::new(
         args.strings.get("input").map(|s| s.as_str()),
         args.strings.get("output").map(|s| s.as_str()),
         options,
     );
     if to == "json" {
-        eleventy.disable_logger();
+        twelvety.disable_logger();
     }
     let ignore_initial = flag("ignore-initial");
     if ignore_initial {
-        eleventy.set_ignore_initial(true);
+        twelvety.set_ignore_initial(true);
     }
 
     let result = if to == "json" {
-        eleventy
+        twelvety
             .to_json_value()
             .map(|v| println!("{}", v.to_json_string_pretty(2)))
     } else {
-        eleventy.write().map(|_| ())
+        twelvety.write().map(|_| ())
     };
     if let Err(e) = &result {
         if let Some(reporter) = &reporter {
             reporter.error(&twelvety::core::error_to_value(e));
         }
-        eprintln!("[11ty] Problem writing Eleventy templates:\n[11ty] {}", format_error_chain(e));
+        eprintln!("[12ty] Problem writing Twelvety templates:\n[12ty] {}", format_error_chain(e));
         if !is_serve && !is_watch {
             return ExitCode::from(1);
         }
@@ -401,7 +401,7 @@ fn main() -> ExitCode {
                 .get("port")
                 .and_then(|p| p.parse().ok())
                 .or_else(|| {
-                    eleventy
+                    twelvety
                         .server_options
                         .get("port")
                         .as_f64()
@@ -409,20 +409,20 @@ fn main() -> ExitCode {
                 })
                 .unwrap_or(8080);
             let prefix = args.strings.get("pathprefix").cloned().unwrap_or_else(|| "/".into());
-            let server = twelvety::serve::DevServer::new(port, &eleventy.output_dir, &prefix);
+            let server = twelvety::serve::DevServer::new(port, &twelvety.output_dir, &prefix);
             if let Err(e) = server.start() {
-                eprintln!("[11ty] {e}");
+                eprintln!("[12ty] {e}");
                 return ExitCode::from(1);
             }
-            eleventy
+            twelvety
                 .logger()
                 .force_log(&format!("Server at http://localhost:{port}{prefix}"));
             Some(server)
         } else {
             None
         };
-        if let Err(e) = twelvety::watch::watch(&mut eleventy, server.as_ref()) {
-            eprintln!("[11ty] {}", format_error_chain(&e));
+        if let Err(e) = twelvety::watch::watch(&mut twelvety, server.as_ref()) {
+            eprintln!("[12ty] {}", format_error_chain(&e));
             return ExitCode::from(1);
         }
     }

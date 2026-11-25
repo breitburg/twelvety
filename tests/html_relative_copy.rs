@@ -11,7 +11,7 @@ use twelvety::template::PageResult;
 use twelvety::template_passthrough::CopyResult;
 use twelvety::testing::json;
 use twelvety::user_config::UserConfig;
-use twelvety::{Eleventy, Options, Value};
+use twelvety::{Twelvety, Options, Value};
 
 /// Removes an output directory when the test ends
 struct Cleanup(&'static str);
@@ -43,7 +43,7 @@ fn build(
         config(cfg)
     });
     options.path_prefix = path_prefix.map(String::from);
-    let mut elev = Eleventy::new(Some("./test/stubs-autocopy/"), Some(output), options);
+    let mut elev = Twelvety::new(Some("./test/stubs-autocopy/"), Some(output), options);
     elev.disable_logger();
     (elev.write(), captured)
 }

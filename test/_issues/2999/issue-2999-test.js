@@ -3,7 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import * as sass from "sass";
 
-import Eleventy from "../../../src/Core.js";
+import Twelvety from "../../../src/Core.js";
 
 const DIR = "./test/_issues/2999/";
 const PARTIAL = `${DIR}_shared.scss`;
@@ -13,7 +13,7 @@ test("Custom engine recompiles when an addDependencies partial in the input dir 
 	fs.writeFileSync(PARTIAL, ORIGINAL, "utf8");
 	t.after(() => fs.writeFileSync(PARTIAL, ORIGINAL, "utf8"));
 
-	let elev = new Eleventy(DIR, `${DIR}_site`, {
+	let elev = new Twelvety(DIR, `${DIR}_site`, {
 		config($config) {
 			$config.addTemplateFormats("scss");
 			$config.addExtension("scss", {

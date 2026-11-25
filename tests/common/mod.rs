@@ -5,7 +5,7 @@ use std::path::{Path, PathBuf};
 
 use twelvety::template::PageResult;
 use twelvety::user_config::UserConfig;
-use twelvety::{Eleventy, Options};
+use twelvety::{Twelvety, Options};
 
 /// Programmatic options without a configuration file (`configPath: false`, quiet)
 pub fn options<F>(config: F) -> Options
@@ -20,16 +20,16 @@ where
     .with_config(config)
 }
 
-pub fn eleventy(input: &str, output: Option<&str>, options: Options) -> Eleventy {
-    let mut elev = Eleventy::new(Some(input), output, options);
+pub fn twelvety(input: &str, output: Option<&str>, options: Options) -> Twelvety {
+    let mut elev = Twelvety::new(Some(input), output, options);
     elev.set_is_verbose(false);
     elev.disable_logger();
     elev
 }
 
-/// `new Eleventy(input, output, options).toJSON()`
+/// `new Twelvety(input, output, options).toJSON()`
 pub fn to_json(input: &str, output: Option<&str>, options: Options) -> anyhow::Result<Vec<PageResult>> {
-    eleventy(input, output, options).to_json()
+    twelvety(input, output, options).to_json()
 }
 
 /// `getContentFor(results, filename)`: trimmed content of the page whose output path ends with `filename`

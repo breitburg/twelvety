@@ -8,12 +8,12 @@ use std::sync::{Arc, Mutex};
 use twelvety::template::PageResult;
 use twelvety::testing::json;
 use twelvety::user_config::UserConfig;
-use twelvety::{Eleventy, Options, Value};
+use twelvety::{Twelvety, Options, Value};
 
 use common::options;
 
-fn new(input: Option<&str>, output: Option<&str>, options: Options) -> Eleventy {
-    let elev = Eleventy::new(input, output, options);
+fn new(input: Option<&str>, output: Option<&str>, options: Options) -> Twelvety {
+    let elev = Twelvety::new(input, output, options);
     elev.disable_logger();
     elev
 }
@@ -55,7 +55,7 @@ impl Drop for Cleanup {
     }
 }
 
-/// "Eleventy, defaults inherit from config"
+/// "Twelvety, defaults inherit from config"
 #[test]
 fn defaults_inherit_from_config() {
     let mut elev = new(None, None, no_config());
@@ -65,7 +65,7 @@ fn defaults_inherit_from_config() {
     assert_eq!(dirs.output(), "./_site/");
 }
 
-/// "Eleventy, null output directory should default to _site"
+/// "Twelvety, null output directory should default to _site"
 #[test]
 fn null_output_directory_should_default_to_site() {
     let mut elev = new(Some("."), None, no_config());
@@ -75,33 +75,33 @@ fn null_output_directory_should_default_to_site() {
     assert_eq!(dirs.output(), "./_site/");
 }
 
-/// "Eleventy, get version"
+/// "Twelvety, get version"
 #[test]
 fn get_version() {
-    assert!(!Eleventy::get_version().is_empty());
+    assert!(!Twelvety::get_version().is_empty());
 }
 
-// "Eleventy, get help": the help text lives in the CLI binary (see tests/cmd.rs).
+// "Twelvety, get help": the help text lives in the CLI binary (see tests/cmd.rs).
 
-/// "Eleventy, set is verbose (before config init)"
+/// "Twelvety, set is verbose (before config init)"
 #[test]
 fn set_is_verbose_before_config_init() {
-    let mut elev = Eleventy::new(None, None, Options { config_path: Some(String::new()), ..Default::default() });
+    let mut elev = Twelvety::new(None, None, Options { config_path: Some(String::new()), ..Default::default() });
     elev.set_is_verbose(true);
     elev.initialize_config().unwrap();
     assert!(elev.is_verbose());
 }
 
-/// "Eleventy, set is verbose (after config init)"
+/// "Twelvety, set is verbose (after config init)"
 #[test]
 fn set_is_verbose_after_config_init() {
-    let mut elev = Eleventy::new(None, None, Options { config_path: Some(String::new()), ..Default::default() });
+    let mut elev = Twelvety::new(None, None, Options { config_path: Some(String::new()), ..Default::default() });
     elev.initialize_config().unwrap();
     elev.set_is_verbose(true);
     assert!(elev.is_verbose());
 }
 
-/// "Eleventy set input/output"
+/// "Twelvety set input/output"
 #[test]
 fn set_input_output() {
     let mut elev = new(Some("./test/stubs"), Some("./test/stubs/_site"), no_config());
@@ -111,23 +111,23 @@ fn set_input_output() {
     elev.initialize_config().unwrap();
 }
 
-/// "process.env.ELEVENTY_*" and "process.env.BUILDAWESOME_*"
+/// "process.env.TWELVETY_*" and "process.env.BUILDAWESOME_*"
 #[test]
-fn process_env_eleventy_and_buildawesome() {
+fn process_env_twelvety_and_buildawesome() {
     let mut elev = new(Some("./test/stubs-virtual-nowrite"), Some("./test/stubs-virtual-nowrite/_site"), opts(|cfg| {
-        cfg.add_template("index.njk", "{{ eleventy.env.root }}|{{ buildawesome.env.root }}", Value::object())
+        cfg.add_template("index.njk", "{{ twelvety.env.root }}|{{ buildawesome.env.root }}", Value::object())
     }));
     let results = elev.to_json().unwrap();
-    assert!(std::env::var("ELEVENTY_ROOT").is_ok_and(|v| !v.is_empty()));
+    assert!(std::env::var("TWELVETY_ROOT").is_ok_and(|v| !v.is_empty()));
     assert!(std::env::var("BUILDAWESOME_ROOT").is_ok_and(|v| !v.is_empty()));
     let root = twelvety::util::template_path::get_working_dir();
     assert_eq!(results[0].content, format!("{root}|{root}"));
 }
 
-// "Eleventy file watching" (+ variants): watch targets include JavaScript dependency spidering
+// "Twelvety file watching" (+ variants): watch targets include JavaScript dependency spidering
 // and `package.json` (skipped).
 
-/// "Eleventy set input/output, one file input"
+/// "Twelvety set input/output, one file input"
 #[test]
 fn set_input_output_one_file_input() {
     let elev = new(Some("./test/stubs/index.html"), Some("./test/stubs/_site"), no_config());
@@ -137,7 +137,7 @@ fn set_input_output_one_file_input() {
     assert_eq!(dirs.output(), "./test/stubs/_site/");
 }
 
-/// "Eleventy set input/output, one file input, deeper subdirectory"
+/// "Twelvety set input/output, one file input, deeper subdirectory"
 #[test]
 fn set_input_output_one_file_input_deeper_subdirectory() {
     let elev = new(
@@ -151,7 +151,7 @@ fn set_input_output_one_file_input_deeper_subdirectory() {
     assert_eq!(dirs.output(), "./test/stubs/_site/");
 }
 
-/// "Eleventy set input/output, one file input root dir" (with `Cargo.toml`, upstream uses `README.md`)
+/// "Twelvety set input/output, one file input root dir" (with `Cargo.toml`, upstream uses `README.md`)
 #[test]
 fn set_input_output_one_file_input_root_dir() {
     for input in ["./Cargo.toml", "Cargo.toml"] {
@@ -163,7 +163,7 @@ fn set_input_output_one_file_input_root_dir() {
     }
 }
 
-/// "Eleventy set input/output, one file input exitCode (script)" and "… (cli)"
+/// "Twelvety set input/output, one file input exitCode (script)" and "… (cli)"
 #[test]
 fn set_input_output_one_file_input_exit_code() {
     for source in ["script", "cli"] {
@@ -218,24 +218,24 @@ fn check_to_json(result: &[PageResult]) {
     );
 }
 
-/// "Eleventy to json"
+/// "Twelvety to json"
 #[test]
-fn eleventy_to_json() {
+fn twelvety_to_json() {
     check_to_json(&to_json_results());
 }
 
 // "Two Eleventies, two configs!!!" and "Config propagates to other instances correctly": compare
 // JavaScript object identities of internals (skipped).
 
-/// "Eleventy programmatic API without init"
+/// "Twelvety programmatic API without init"
 #[test]
 fn programmatic_api_without_init() {
     check_to_json(&to_json_results());
 }
 
-/// "Can Eleventy run two executeBuilds in parallel?" (sequentially: builds take `&mut self`)
+/// "Can Twelvety run two executeBuilds in parallel?" (sequentially: builds take `&mut self`)
 #[test]
-fn can_eleventy_run_two_execute_builds() {
+fn can_twelvety_run_two_execute_builds() {
     let mut elev = new(Some("./test/stubs-virtual-nowrite/"), None, opts(add_to_json_templates));
     elev.set_is_verbose(false);
     let result1 = elev.to_json().unwrap();
@@ -244,7 +244,7 @@ fn can_eleventy_run_two_execute_builds() {
     check_to_json(&result2);
 }
 
-fn nowrite(config: impl Fn(&mut UserConfig) -> anyhow::Result<()> + Send + Sync + 'static) -> Eleventy {
+fn nowrite(config: impl Fn(&mut UserConfig) -> anyhow::Result<()> + Send + Sync + 'static) -> Twelvety {
     new(Some("./test/stubs-virtual-nowrite/"), Some("./test/stubs-virtual-nowrite/_site"), opts(config))
 }
 
@@ -304,14 +304,14 @@ fn pagination_with_permalink_false_2167() {
     assert_eq!(elev.to_json().unwrap().len(), 5);
 }
 
-fn pagination_over_collection_using_eleventy_computed(ext: &'static str) {
+fn pagination_over_collection_using_twelvety_computed(ext: &'static str) {
     let calls = Arc::new(Mutex::new(vec![]));
     let c = calls.clone();
     let results = nowrite_json(move |cfg| {
         cfg.add_template(&format!("post.{ext}"), "---\ntags: posts\n---\nNo", Value::object())?;
         cfg.add_template(
             &format!("test.{ext}"),
-            "---\npagination:\n  data: \"collections.posts\"\n  size: 1\nquotes:\n  - The person that shared this is awesome\neleventyComputed:\n  quote: \"{{ quotes | selectRandomFromArray }}\"\n---\n{{ quote }}",
+            "---\npagination:\n  data: \"collections.posts\"\n  size: 1\nquotes:\n  - The person that shared this is awesome\ntwelvetyComputed:\n  quote: \"{{ quotes | selectRandomFromArray }}\"\n---\n{{ quote }}",
             Value::object(),
         )?;
         let c = c.clone();
@@ -329,16 +329,16 @@ fn pagination_over_collection_using_eleventy_computed(ext: &'static str) {
     assert_eq!(sorted_contents(&results), ["No", "The person that shared this is awesome"]);
 }
 
-/// "Pagination over collection using eleventyComputed (liquid)"
+/// "Pagination over collection using twelvetyComputed (liquid)"
 #[test]
-fn pagination_over_collection_using_eleventy_computed_liquid() {
-    pagination_over_collection_using_eleventy_computed("liquid");
+fn pagination_over_collection_using_twelvety_computed_liquid() {
+    pagination_over_collection_using_twelvety_computed("liquid");
 }
 
-/// "Pagination over collection using eleventyComputed (njk)"
+/// "Pagination over collection using twelvetyComputed (njk)"
 #[test]
-fn pagination_over_collection_using_eleventy_computed_njk() {
-    pagination_over_collection_using_eleventy_computed("njk");
+fn pagination_over_collection_using_twelvety_computed_njk() {
+    pagination_over_collection_using_twelvety_computed("njk");
 }
 
 // "Paginated template uses proxy and global data": JavaScript data file and template (skipped).
@@ -386,7 +386,7 @@ fn get_tag_target_object_key_with_spaces_2851() {
     assert_eq!(TemplateMap::get_tag_target("collections[\"tag with spaces\"]").as_deref(), Some("tag with spaces"));
 }
 
-/// "Eleventy tag collection with spaces in the tag name, issue #2851"
+/// "Twelvety tag collection with spaces in the tag name, issue #2851"
 #[test]
 fn tag_collection_with_spaces_in_the_tag_name_2851() {
     let mut elev = nowrite(|cfg| {
@@ -487,7 +487,7 @@ fn event_args(dry_run: bool) -> Vec<Value> {
     let args = Arc::new(Mutex::new(vec![]));
     let a = args.clone();
     let mut options = opts(move |cfg| {
-        for name in ["eleventy.before", "buildawesome.before", "eleventy.after", "buildawesome.after"] {
+        for name in ["twelvety.before", "buildawesome.before", "twelvety.after", "buildawesome.after"] {
             let a = a.clone();
             cfg.on(name, move |arg| {
                 a.lock().unwrap().push(arg.clone());
@@ -503,7 +503,7 @@ fn event_args(dry_run: bool) -> Vec<Value> {
     args
 }
 
-/// "{eleventy,buildawesome}.before and {eleventy,buildawesome}.after Event Arguments, directories"
+/// "{twelvety,buildawesome}.before and {twelvety,buildawesome}.after Event Arguments, directories"
 #[test]
 fn before_and_after_event_arguments_directories() {
     for arg in event_args(false) {
@@ -513,7 +513,7 @@ fn before_and_after_event_arguments_directories() {
     }
 }
 
-/// "{eleventy,buildawesome}.before and {eleventy,buildawesome}.after Event Arguments, dryRun default"
+/// "{twelvety,buildawesome}.before and {twelvety,buildawesome}.after Event Arguments, dryRun default"
 #[test]
 fn before_and_after_event_arguments_dry_run_default() {
     for arg in event_args(false) {
@@ -521,7 +521,7 @@ fn before_and_after_event_arguments_dry_run_default() {
     }
 }
 
-/// "{eleventy,buildawesome}.before and {eleventy,buildawesome}.after Event Arguments, dryRun enabled"
+/// "{twelvety,buildawesome}.before and {twelvety,buildawesome}.after Event Arguments, dryRun enabled"
 #[test]
 fn before_and_after_event_arguments_dry_run_enabled() {
     for arg in event_args(true) {
@@ -671,7 +671,7 @@ fn accepts_absolute_paths_for_input_and_output_and_a_virtual_template_3805() {
     assert_eq!(elev.to_json().unwrap().len(), 1);
 }
 
-/// "Eleventy pagination works okay with reserved data throws (eleventy) Issue #3262"
+/// "Twelvety pagination works okay with reserved data throws (twelvety) Issue #3262"
 #[test]
 fn pagination_works_okay_with_reserved_data_throws_3262() {
     let results = common::to_json(
@@ -680,7 +680,7 @@ fn pagination_works_okay_with_reserved_data_throws_3262() {
         opts(|cfg| {
             cfg.add_template(
                 "index.html",
-                "---\npagination:\n  data: \"test\"\n  size: 1\ntest:\n  - a\n  - b\n  - c\n---\n{{ eleventy.generator }}",
+                "---\npagination:\n  data: \"test\"\n  size: 1\ntest:\n  - a\n  - b\n  - c\n---\n{{ twelvety.generator }}",
                 Value::object(),
             )
         }),
@@ -693,7 +693,7 @@ fn virtual_json(config: impl Fn(&mut UserConfig) -> anyhow::Result<()> + Send + 
     common::to_json("./test/stubs-virtual/", None, opts(config))
 }
 
-/// "Eleventy setting pkg data is okay when pkg is remapped to parkour"
+/// "Twelvety setting pkg data is okay when pkg is remapped to parkour"
 #[test]
 fn setting_pkg_data_is_okay_when_pkg_is_remapped_to_parkour() {
     let results = virtual_json(|cfg| {
@@ -704,7 +704,7 @@ fn setting_pkg_data_is_okay_when_pkg_is_remapped_to_parkour() {
     assert_eq!(results[0].to_value(), page("/", "./test/stubs-virtual/index.html", "./_site/index.html", "", ""));
 }
 
-/// "Eleventy setting pkg data is okay when keys.package is false"
+/// "Twelvety setting pkg data is okay when keys.package is false"
 #[test]
 fn setting_pkg_data_is_okay_when_keys_package_is_false() {
     let results = virtual_json(|cfg| {
@@ -786,11 +786,11 @@ fn draft_schema() -> Value {
 }
 
 fn with_schema(mut data: Value, schema: Value) -> Value {
-    data.set("eleventyDataSchema", schema);
+    data.set("twelvetyDataSchema", schema);
     data
 }
 
-/// "Eleventy data schema (success) #879"
+/// "Twelvety data schema (success) #879"
 #[test]
 fn data_schema_success_879() {
     let results = virtual_json(|cfg| {
@@ -803,21 +803,21 @@ fn data_schema_success_879() {
     assert_eq!(results.len(), 2);
 }
 
-/// "Eleventy data schema (fails) #879"
+/// "Twelvety data schema (fails) #879"
 #[test]
 fn data_schema_fails_879() {
     let err = virtual_json(|cfg| cfg.add_template("index1.html", "", with_schema(json(r#"{"draft": 1}"#), draft_schema())))
         .unwrap_err();
     assert_eq!(
         err.to_string(),
-        "Error in the data schema for: ./test/stubs-virtual/index1.html (via `buildawesomeDataSchema` or `eleventyDataSchema`)"
+        "Error in the data schema for: ./test/stubs-virtual/index1.html (via `buildawesomeDataSchema` or `twelvetyDataSchema`)"
     );
     assert_eq!(err.source().unwrap().to_string(), "Invalid data type for draft.");
 }
 
-// "Eleventy data schema (fails, using zod) #879": zod is a JavaScript library (skipped).
+// "Twelvety data schema (fails, using zod) #879": zod is a JavaScript library (skipped).
 
-/// "Eleventy data schema has access to custom collections created via API #879"
+/// "Twelvety data schema has access to custom collections created via API #879"
 #[test]
 fn data_schema_has_access_to_custom_collections_879() {
     let lengths = Arc::new(Mutex::new(vec![]));
@@ -836,7 +836,7 @@ fn data_schema_has_access_to_custom_collections_879() {
     assert_eq!(results.len(), 1);
 }
 
-/// "Eleventy transforms filter (using collections and page override data)"
+/// "Twelvety transforms filter (using collections and page override data)"
 #[test]
 fn transforms_filter_using_collections_and_page_override_data() {
     let mut options = opts(|cfg| {
@@ -961,7 +961,7 @@ fn input_output_conflicts_output_overwrites_another_input_3327() {
     assert!(is_duplicate_permalink_error(&err), "{err:#}");
 }
 
-// "Eleventy data schema has access to custom collections created via API #613 #3345": modifies
+// "Twelvety data schema has access to custom collections created via API #613 #3345": modifies
 // `item.template.frontMatter` from JavaScript (skipped).
 
 // "Custom Nunjucks syntax has shortcode with access to `this`, Issue #3310": uses a JavaScript
@@ -989,7 +989,7 @@ fn error_messaging_when_trying_to_use_a_missing_layout_727() {
     .unwrap_err();
     assert_eq!(
         err.to_string(),
-        r#"Problem creating an Eleventy Layout for the "./test/stubs-virtual/index.html" template file."#
+        r#"Problem creating an Twelvety Layout for the "./test/stubs-virtual/index.html" template file."#
     );
 }
 
@@ -1013,14 +1013,14 @@ fn throw_an_error_when_explicit_config_path_is_not_found_3373() {
     assert_eq!(err.to_string(), "A configuration file was specified but not found: this-file-is-not-found.js");
 }
 
-// "Eleventy loader can force ESM mode" / "… CommonJS mode": JavaScript module loading (skipped).
+// "Twelvety loader can force ESM mode" / "… CommonJS mode": JavaScript module loading (skipped).
 // "Truthy outputPath without a file extension now throws an error, issue #3399": JavaScript template (skipped).
 
 /// "Truthy outputPath without a file extension can be ignored, issue #3399"
 #[test]
 fn truthy_output_path_without_a_file_extension_can_be_ignored_3399() {
     let results = virtual_json(|cfg| {
-        cfg.add_template("index.html", "", json(r#"{"permalink": "foo", "eleventyAllowMissingExtension": true}"#))
+        cfg.add_template("index.html", "", json(r#"{"permalink": "foo", "twelvetyAllowMissingExtension": true}"#))
     })
     .unwrap();
     assert_eq!(results.len(), 1);
@@ -1064,7 +1064,7 @@ fn permalink_false_output_path_wont_throw_an_error_3399() {
     assert_eq!(results.len(), 1);
 }
 
-// "permalink on custom template lang, issue #3619" and "sass docs on 11ty.dev, issue #408":
+// "permalink on custom template lang, issue #3619" and "sass docs on 12ty.dev, issue #408":
 // JavaScript `compileOptions.permalink` functions and sass (skipped).
 
 /// "Template data throws error when tags is not an Array or String #1791"

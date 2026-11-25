@@ -39,13 +39,13 @@ fn using_the_id_attribute_plugin_3356() {
     );
 }
 
-/// "Using the IdAttribute plugin, eleventy:ignore attribute #3356"
+/// "Using the IdAttribute plugin, twelvety:ignore attribute #3356"
 #[test]
-fn using_the_id_attribute_plugin_eleventy_ignore_attribute_3356() {
+fn using_the_id_attribute_plugin_twelvety_ignore_attribute_3356() {
     assert_eq!(
         first_content(&[(
             "test.njk",
-            r#"<h1>This is a heading</h1><h2 id="already">This is another heading</h2><h2>This is another heading</h2><h3>This is another <span eleventy:id-ignore>heading</span></h3>"#
+            r#"<h1>This is a heading</h1><h2 id="already">This is another heading</h2><h2>This is another heading</h2><h3>This is another <span twelvety:id-ignore>heading</span></h3>"#
         )]),
         r#"<h1 id="this-is-a-heading">This is a heading</h1><h2 id="already">This is another heading</h2><h2 id="this-is-another-heading">This is another heading</h2><h3 id="this-is-another">This is another <span>heading</span></h3>"#
     );

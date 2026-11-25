@@ -16,7 +16,7 @@ use crate::user_config::{CallContext, UserConfig};
 use crate::value::Value;
 
 const IGNORE_ATTR: &str = "buildawesome:id-ignore";
-const IGNORE_ATTR_ALIAS: &str = "eleventy:id-ignore";
+const IGNORE_ATTR_ALIAS: &str = "twelvety:id-ignore";
 
 #[derive(Default, Debug, Clone)]
 struct Match {

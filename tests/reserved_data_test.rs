@@ -4,15 +4,15 @@
 //!   run without a configuration file, so the error has no `(source: …)` suffix.
 //! - The global data file tests use JavaScript data files; they run against scratch copies of the
 //!   fixtures with equivalent JSON data files.
-//! - Skipped: "Eleventy freeze data written in a global data function throws error #4341"
-//!   (JavaScript data function mutating the frozen `eleventy` global).
+//! - Skipped: "Twelvety freeze data written in a global data function throws error #4341"
+//!   (JavaScript data function mutating the frozen `twelvety` global).
 
 mod template_support;
 
 use template_support::fixture_copy;
 use twelvety::testing::json;
 use twelvety::util::reserved_data::{FULL_PROPERTIES, get_reserved_keys};
-use twelvety::{Eleventy, Options, UserConfig, Value};
+use twelvety::{Twelvety, Options, UserConfig, Value};
 
 fn reserved(data: &str) -> Vec<String> {
     let mut keys = get_reserved_keys(&json(data), FULL_PROPERTIES);
@@ -57,7 +57,7 @@ fn page_subkeys() {
     );
 }
 
-const MESSAGE_SUFFIX: &str = ". You can opt-out of this behavior with `$config.setFreezeReservedData(false)` or rename/remove the property in your data cascade that conflicts with reserved property names (e.g. `buildawesome`, `eleventy`, `pkg`, and others). Learn more: https://v3.11ty.dev/docs/data-eleventy-supplied/";
+const MESSAGE_SUFFIX: &str = ". You can opt-out of this behavior with `$config.setFreezeReservedData(false)` or rename/remove the property in your data cascade that conflicts with reserved property names (e.g. `buildawesome`, `twelvety`, `pkg`, and others). Learn more: https://v3.11ty.dev/docs/data-eleventy-supplied/";
 
 fn to_json_error<F>(input: &str, config: F) -> String
 where
@@ -68,7 +68,7 @@ where
         ..Default::default()
     }
     .with_config(config);
-    let mut elev = Eleventy::new(Some(input), None, options);
+    let mut elev = Twelvety::new(Some(input), None, options);
     elev.disable_logger();
     let err = elev.to_json().err().expect("expected a reserved data error");
     format!("{err:#}")
@@ -90,12 +90,12 @@ fn freeze_data_set_via_config_api_throws_error_page() {
 }
 
 #[test]
-fn freeze_data_set_via_config_api_throws_error_eleventy() {
+fn freeze_data_set_via_config_api_throws_error_twelvety() {
     let err = to_json_error("./test/stubs-virtual/", |cfg| {
-        cfg.add_global_data("eleventy", Value::str("lol no"));
+        cfg.add_global_data("twelvety", Value::str("lol no"));
         cfg.add_template("index.html", "", Value::object())
     });
-    assert_reserved_error(&err, "eleventy", None);
+    assert_reserved_error(&err, "twelvety", None);
 }
 
 #[test]
@@ -110,14 +110,14 @@ fn freeze_data_set_global_data_file_throws_error_page() {
 }
 
 #[test]
-fn freeze_data_set_global_data_file_throws_error_eleventy() {
+fn freeze_data_set_global_data_file_throws_error_twelvety() {
     let dir = fixture_copy(
-        "./test/stubs-freeze/eleventy",
-        "reserved-data-eleventy",
-        &[("_data/eleventy.json", r#"{"key": "value"}"#)],
+        "./test/stubs-freeze/twelvety",
+        "reserved-data-twelvety",
+        &[("_data/twelvety.json", r#"{"key": "value"}"#)],
     );
     let err = to_json_error(&format!("{dir}/"), |cfg| cfg.add_template("index.html", "", Value::object()));
-    assert_reserved_error(&err, "eleventy", Some(&format!("{dir}/_data/eleventy.json")));
+    assert_reserved_error(&err, "twelvety", Some(&format!("{dir}/_data/twelvety.json")));
 }
 
 #[test]

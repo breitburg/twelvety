@@ -3,7 +3,7 @@
 //! Upstream executes a JavaScript configuration file. In Rust the configuration
 //! API is exposed as closures (`Options::config`) and a declarative
 //! configuration file (`buildawesome.config.json`/`.toml`/`.yaml`, also
-//! `eleventy.config.*`) covering the serializable subset of the API.
+//! `twelvety.config.*`) covering the serializable subset of the API.
 
 use std::ops::Deref;
 use std::sync::{Arc, Mutex, RwLock};
@@ -75,11 +75,11 @@ pub const DEFAULT_CONFIG_PATHS: &[&str] = &[
     "buildawesome.config.toml",
     "buildawesome.config.yaml",
     "buildawesome.config.yml",
-    "eleventy.config.json",
-    "eleventy.config.toml",
-    "eleventy.config.yaml",
-    "eleventy.config.yml",
-    ".eleventy.json",
+    "twelvety.config.json",
+    "twelvety.config.toml",
+    "twelvety.config.yaml",
+    "twelvety.config.yml",
+    ".twelvety.json",
 ];
 
 /// JavaScript configuration files we can detect (but not execute)
@@ -87,10 +87,10 @@ const JS_CONFIG_PATHS: &[&str] = &[
     "buildawesome.config.js",
     "buildawesome.config.mjs",
     "buildawesome.config.cjs",
-    ".eleventy.js",
-    "eleventy.config.js",
-    "eleventy.config.mjs",
-    "eleventy.config.cjs",
+    ".twelvety.js",
+    "twelvety.config.js",
+    "twelvety.config.mjs",
+    "twelvety.config.cjs",
 ];
 
 pub struct TemplateConfig {
@@ -229,20 +229,20 @@ impl TemplateConfig {
             return Ok(None);
         };
         let content = std::fs::read_to_string(&path)
-            .with_context(|| format!("Error in your Eleventy config file '{path}'."))?;
+            .with_context(|| format!("Error in your Twelvety config file '{path}'."))?;
         let ext = template_path::get_extension(&path);
         let value = match ext.as_str() {
             "json" => Value::from_json(
                 serde_json::from_str(&content)
-                    .with_context(|| format!("Error in your Eleventy config file '{path}'."))?,
+                    .with_context(|| format!("Error in your Twelvety config file '{path}'."))?,
             ),
             "toml" => Value::from_toml(
                 toml::from_str(&content)
-                    .with_context(|| format!("Error in your Eleventy config file '{path}'."))?,
+                    .with_context(|| format!("Error in your Twelvety config file '{path}'."))?,
             ),
             "yaml" | "yml" => Value::from_yaml(
                 serde_yaml::from_str(&content)
-                    .with_context(|| format!("Error in your Eleventy config file '{path}'."))?,
+                    .with_context(|| format!("Error in your Twelvety config file '{path}'."))?,
             ),
             _ => bail!("Unsupported configuration file format: {path}"),
         };
@@ -347,7 +347,7 @@ impl TemplateConfig {
             .user_config
             .data_file_suffixes_override
             .clone()
-            .unwrap_or_else(|| vec![".data".into(), ".11tydata".into(), "".into()]);
+            .unwrap_or_else(|| vec![".data".into(), ".12tydata".into(), "".into()]);
 
         let user = self.user_config.clone();
         Ok(Config {

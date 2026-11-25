@@ -1,4 +1,4 @@
-//! Port of `UserConfig.js`: the configuration API (`eleventyConfig`).
+//! Port of `UserConfig.js`: the configuration API (`twelvetyConfig`).
 //!
 //! JavaScript callbacks become `Arc`'d Rust closures. All the `add*` methods
 //! keep their upstream names (in snake_case).
@@ -36,8 +36,8 @@ impl<'a> CallContext<'a> {
         self.get("page")
     }
 
-    pub fn eleventy(&self) -> Value {
-        self.get("eleventy")
+    pub fn twelvety(&self) -> Value {
+        self.get("twelvety")
     }
 
     pub fn collections(&self) -> Value {
@@ -242,7 +242,7 @@ pub struct UserConfig {
     pub html_transformer: crate::plugins::html_transformer::HtmlTransformer,
     pub directory_assignments: DirectoryAssignments,
     pub directories_relative_to: Option<String>,
-    /// The resolved directories, available to plugins (`eleventyConfig.directories`)
+    /// The resolved directories, available to plugins (`twelvetyConfig.directories`)
     pub directories: Value,
     pub collections: IndexMap<String, CollectionFn>,
     pub collection_options: HashMap<String, CollectionOptions>,

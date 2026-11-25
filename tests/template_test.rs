@@ -2,8 +2,8 @@
 //!
 //! Skipped (JS-only features):
 //! - "Test raw front matter from template (js)": JavaScript front matter.
-//! - "Fileslug in an 11ty.js template Issue #588", "Override base templating engine from
-//!   markdown to 11ty.js, then markdown", "Throws a Premature Template Content Error (11ty.js)": 11ty.js templates.
+//! - "Fileslug in an 12ty.js template Issue #588", "Override base templating engine from
+//!   markdown to 12ty.js, then markdown", "Throws a Premature Template Content Error (12ty.js)": 12ty.js templates.
 //! - The "Data Cascade …" and "Local data inherits tags string" tests use JS data file fixtures;
 //!   they run against scratch copies of the fixtures with equivalent JSON data files.
 //! - "Front matter date with quotes (liquid|njk), issue #258": custom js-yaml loader via
@@ -428,7 +428,7 @@ fn json_data_paths(dirs: &[(&str, &str)]) -> Vec<String> {
     let mut out = vec![];
     for (dir, name) in dirs {
         out.push(format!("{dir}/{name}.json"));
-        out.push(format!("{dir}/{name}.11tydata.json"));
+        out.push(format!("{dir}/{name}.12tydata.json"));
         out.push(format!("{dir}/{name}.data.json"));
     }
     out
@@ -1393,7 +1393,7 @@ fn computed_permalink_object(file: &str, data: Value) {
 }
 
 #[test]
-fn eleventy_computed_returns_permalink_object_issue_1898() {
+fn twelvety_computed_returns_permalink_object_issue_1898() {
     let mut permalink = Value::object();
     permalink.set(
         "build",
@@ -1402,12 +1402,12 @@ fn eleventy_computed_returns_permalink_object_issue_1898() {
     let mut computed = Value::object();
     computed.set("permalink", permalink);
     let mut data = json(r#"{"lang":"en"}"#);
-    data.set("eleventyComputed", computed);
-    computed_permalink_object("eleventycomputed-object", data);
+    data.set("twelvetyComputed", computed);
+    computed_permalink_object("twelvetycomputed-object", data);
 }
 
 #[test]
-fn eleventy_computed_returns_nested_permalink_object_issue_1898() {
+fn twelvety_computed_returns_nested_permalink_object_issue_1898() {
     let mut computed = Value::object();
     computed.set(
         "permalink",
@@ -1418,12 +1418,12 @@ fn eleventy_computed_returns_nested_permalink_object_issue_1898() {
         }),
     );
     let mut data = json(r#"{"lang":"en"}"#);
-    data.set("eleventyComputed", computed);
-    computed_permalink_object("eleventycomputed-nested-object", data);
+    data.set("twelvetyComputed", computed);
+    computed_permalink_object("twelvetycomputed-nested-object", data);
 }
 
 #[test]
-fn eleventy_computed_returns_permalink_object_using_permalink_string_issue_1898() {
+fn twelvety_computed_returns_permalink_object_using_permalink_string_issue_1898() {
     let mut computed = Value::object();
     computed.set(
         "permalink",
@@ -1437,8 +1437,8 @@ fn eleventy_computed_returns_permalink_object_using_permalink_string_issue_1898(
         }),
     );
     let mut data = json(r#"{"lang":"en","permalink":"/i18n/{{lang}}/"}"#);
-    data.set("eleventyComputed", computed);
-    computed_permalink_object("eleventycomputed-object-replace", data);
+    data.set("twelvetyComputed", computed);
+    computed_permalink_object("twelvetycomputed-object-replace", data);
 }
 
 #[test]
@@ -1485,7 +1485,7 @@ fn data_cascade_deep_merge() {
         .unwrap();
     assert_eq!(
         sorted_keys(&data),
-        ["buildawesome", "datafile", "eleventy", "frontmatter", "page", "parent", "pkg", "tags"]
+        ["buildawesome", "datafile", "frontmatter", "page", "parent", "pkg", "tags", "twelvety"]
     );
     assert_eq!(sorted_keys(&data.get("parent")), ["child", "datafile", "frontmatter"]);
     assert_eq!(data.get("parent").get("child").as_f64(), Some(-2.0));

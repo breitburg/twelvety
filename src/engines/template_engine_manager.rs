@@ -29,7 +29,7 @@ fn builtin_class(key: &str) -> Option<&'static str> {
         "html" => Some("Html"),
         "njk" => Some("Nunjucks"),
         "liquid" => Some("Liquid"),
-        "11ty.js" => Some("JavaScript"),
+        "12ty.js" => Some("JavaScript"),
         _ => None,
     }
 }
@@ -74,7 +74,7 @@ impl TemplateEngineManager {
     pub fn get_engine(&self, name: &str, extension_map: &ExtensionMap) -> Result<Arc<dyn TemplateEngine>> {
         if ["ejs", "hbs", "mustache", "haml", "pug"].contains(&name) && !self.has_engine(name) {
             bail!(
-                "Per the 11ty Community Survey (2023), the \"{name}\" template language was moved from core to an officially supported plugin in v3.0. These plugins live here: https://github.com/11ty/eleventy-plugin-template-languages and are documented on their respective template language docs at https://v3.11ty.dev/docs/languages/ You are also empowered to implement *any* template language yourself using https://v3.11ty.dev/docs/languages/custom/"
+                "Per the 2023 community survey, the \"{name}\" template language was moved from core to an officially supported plugin in v3.0. These plugins live here: https://github.com/11ty/eleventy-plugin-template-languages and are documented on their respective template language docs at https://v3.11ty.dev/docs/languages/ You are also empowered to implement *any* template language yourself using https://v3.11ty.dev/docs/languages/custom/"
             );
         }
         if let Some(e) = self.cache.lock().unwrap().get(name) {
@@ -95,7 +95,7 @@ impl TemplateEngineManager {
             "Nunjucks" => Arc::new(NunjucksEngine::new(name, &self.config, &self.dirs, self.uses.clone())),
             "Liquid" => Arc::new(LiquidEngine::new(name, &self.config, &self.dirs, self.uses.clone())),
             "JavaScript" => bail!(
-                "JavaScript templates (`*.11ty.js`) are not supported in the Rust port. Use `addExtension` with a Rust `compile` function instead."
+                "JavaScript templates (`*.12ty.js`) are not supported in the Rust port. Use `addExtension` with a Rust `compile` function instead."
             ),
             other => bail!("Template Engine {other} does not exist in getEngine()"),
         })
@@ -120,7 +120,7 @@ impl TemplateEngineManager {
         };
         let mut default_engine = None;
         if entry.alias_key.is_some() && entry.key != name {
-            // alias of an existing engine (e.g. `addExtension("11ty.jsx", { key: "11ty.js" })`)
+            // alias of an existing engine (e.g. `addExtension("12ty.jsx", { key: "12ty.js" })`)
             default_engine = Some(self.get_engine(&entry.key, extension_map)?);
         } else if let Some(class) = builtin_class(name) {
             // override of a built-in syntax, e.g. addExtension("md", { compile })

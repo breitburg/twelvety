@@ -52,7 +52,7 @@ impl NodeValue for HighlightedFence {
     }
 }
 
-/// markdown-it’s default preset (with `html: true`, the 11ty default)
+/// markdown-it’s default preset (with `html: true`, the 12ty default)
 pub fn create_markdown_it(config: &Config) -> MarkdownIt {
     let mut md = MarkdownIt::new();
     markdown_it::plugins::cmark::add(&mut md);
@@ -72,7 +72,7 @@ pub fn create_markdown_it(config: &Config) -> MarkdownIt {
         md.block.remove_rule::<markdown_it::plugins::html::html_block::HtmlBlockScanner>();
         md.inline.remove_rule::<markdown_it::plugins::html::html_inline::HtmlInlineScanner>();
     }
-    // Indented code blocks are disabled in Eleventy (`mdLib.disable("code")`)
+    // Indented code blocks are disabled in Twelvety (`mdLib.disable("code")`)
     md.block
         .remove_rule::<markdown_it::plugins::cmark::block::code::CodeScanner>();
     for amendment in &config.markdown_amendments {

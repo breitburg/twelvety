@@ -35,7 +35,7 @@ fn get_template_config(dirs: ConfigDirs, callback: impl Fn(&mut UserConfig)) -> 
     tc
 }
 
-/// `getEleventyFilesInstance`
+/// `getTwelvetyFilesInstance`
 fn get_files(formats: &[&str], tc: &TemplateConfig) -> Files {
     let config = tc.get_config();
     let mut map = ExtensionMap::new(&config.extension_map);
@@ -101,15 +101,15 @@ fn get_files_test() {
     assert_eq!(evf.get_files().unwrap(), strings(&["./test/stubs/writeTest/test.md"]));
 }
 
-/// "getFiles (without 11ty.js)"
+/// "getFiles (without 12ty.js)"
 #[test]
-fn get_files_without_11ty_js() {
+fn get_files_without_12ty_js() {
     let evf = files_for("./test/stubs/writeTestJS", &["liquid", "md"]);
     assert_eq!(evf.get_files().unwrap(), Vec::<String>::new());
 }
 
-// "getFiles (with 11ty.js)", "getFiles (with js, treated as passthrough copy)" and
-// "getFiles (with case insensitivity)": need the `11ty.js` template language (skipped, JS-only).
+// "getFiles (with 12ty.js)", "getFiles (with js, treated as passthrough copy)" and
+// "getFiles (with case insensitivity)": need the `12ty.js` template language (skipped, JS-only).
 
 /// "Mutually exclusive Input and Output dirs"
 #[test]
@@ -140,21 +140,21 @@ fn glob_input() {
     assert_eq!(files, strings(&["./test/stubs/glob-pages/about.md", "./test/stubs/glob-pages/home.md"]));
 }
 
-/// ".eleventyignore parsing"
+/// ".twelvetyignore parsing"
 #[test]
-fn eleventyignore_parsing() {
+fn twelvetyignore_parsing() {
     let evf = files_for("./test/stubs/", &["md"]);
-    let ignores = evf.get_file_ignores("./test/stubs/.eleventyignore");
+    let ignores = evf.get_file_ignores("./test/stubs/.twelvetyignore");
     assert_eq!(ignores, strings(&["./test/stubs/ignoredFolder/**", "./test/stubs/ignoredFolder/ignored.md"]));
 }
 
-/// "Parse multiple .eleventyignores"
+/// "Parse multiple .twelvetyignores"
 #[test]
-fn parse_multiple_eleventyignores() {
+fn parse_multiple_twelvetyignores() {
     let evf = files_for("./test/stubs/multiple-ignores/", &["md"]);
     let ignores: Vec<String> = [
-        "./test/stubs/multiple-ignores/.eleventyignore",
-        "./test/stubs/multiple-ignores/subfolder/.eleventyignore",
+        "./test/stubs/multiple-ignores/.twelvetyignore",
+        "./test/stubs/multiple-ignores/subfolder/.twelvetyignore",
     ]
     .iter()
     .flat_map(|p| evf.get_file_ignores(p))
@@ -177,9 +177,9 @@ fn passed_file_name_does_not_exist() {
     assert_eq!(evf.get_file_ignores(".thisfiledoesnotexist"), Vec::<String>::new());
 }
 
-/// ".eleventyignore files"
+/// ".twelvetyignore files"
 #[test]
-fn eleventyignore_files() {
+fn twelvetyignore_files() {
     let evf = files_for("test/stubs", &["liquid", "md"]);
     let ignored = glob(&strings(&["test/stubs/ignoredFolder/*.md"]), &[]);
     assert_eq!(ignored.len(), 1);
@@ -216,7 +216,7 @@ fn include_and_data_dirs() {
 #[test]
 fn input_to_src_and_empty_includes_dir_issue_403() {
     let mut evf = files_for("src", &["md", "liquid", "html"]);
-    evf.eleventy_ignore_content = s("!./src/_includes/**");
+    evf.twelvety_ignore_content = s("!./src/_includes/**");
     evf.init(); // duplicate init
     assert_eq!(evf.get_file_globs(), strings(&["./src/**/*.{md,liquid,html}"]));
 }

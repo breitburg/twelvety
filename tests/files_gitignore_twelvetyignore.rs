@@ -1,4 +1,4 @@
-//! Port of upstream `test/FilesGitIgnoreEleventyIgnoreTest.js`.
+//! Port of upstream `test/FilesGitIgnoreTwelvetyIgnoreTest.js`.
 
 use std::sync::Arc;
 
@@ -69,9 +69,9 @@ fn check(dirs: ConfigDirs, use_git_ignore: bool, root: &str, ignores: &[&str]) -
     evf
 }
 
-/// "Get ignores (no .eleventyignore no .gitignore)"
+/// "Get ignores (no .twelvetyignore no .gitignore)"
 #[test]
-fn get_ignores_no_eleventyignore_no_gitignore() {
+fn get_ignores_no_twelvetyignore_no_gitignore() {
     check(
         dirs("test/stubs/ignore1", "test/stubs/ignore1/_site"),
         true,
@@ -80,9 +80,9 @@ fn get_ignores_no_eleventyignore_no_gitignore() {
     );
 }
 
-/// "Get ignores (no .eleventyignore)"
+/// "Get ignores (no .twelvetyignore)"
 #[test]
-fn get_ignores_no_eleventyignore() {
+fn get_ignores_no_twelvetyignore() {
     let evf = check(
         dirs("test/stubs/ignore2", "test/stubs/ignore2/_site"),
         true,
@@ -96,9 +96,9 @@ fn get_ignores_no_eleventyignore() {
     assert_eq!(evf.git_ignores, strings(&["./test/stubs/ignorelocalrootgitignore/thisshouldnotexist12345"]));
 }
 
-/// "Get ignores (no .eleventyignore, using setUseGitIgnore(false))"
+/// "Get ignores (no .twelvetyignore, using setUseGitIgnore(false))"
 #[test]
-fn get_ignores_no_eleventyignore_using_set_use_git_ignore_false() {
+fn get_ignores_no_twelvetyignore_using_set_use_git_ignore_false() {
     check(
         dirs("test/stubs/ignore2", "test/stubs/ignore2/_site"),
         false,
@@ -123,9 +123,9 @@ fn get_ignores_no_gitignore() {
     );
 }
 
-/// "Get ignores (project .eleventyignore and root .gitignore)"
+/// "Get ignores (project .twelvetyignore and root .gitignore)"
 #[test]
-fn get_ignores_project_eleventyignore_and_root_gitignore() {
+fn get_ignores_project_twelvetyignore_and_root_gitignore() {
     check(
         dirs("test/stubs/ignore4", "test/stubs/ignore4/_site"),
         true,
@@ -140,9 +140,9 @@ fn get_ignores_project_eleventyignore_and_root_gitignore() {
     );
 }
 
-/// "Get ignores (project .eleventyignore and root .gitignore, using setUseGitIgnore(false))"
+/// "Get ignores (project .twelvetyignore and root .gitignore, using setUseGitIgnore(false))"
 #[test]
-fn get_ignores_project_eleventyignore_and_root_gitignore_using_set_use_git_ignore_false() {
+fn get_ignores_project_twelvetyignore_and_root_gitignore_using_set_use_git_ignore_false() {
     check(
         dirs("test/stubs/ignore4", "test/stubs/ignore4/_site"),
         false,
@@ -156,9 +156,9 @@ fn get_ignores_project_eleventyignore_and_root_gitignore_using_set_use_git_ignor
     );
 }
 
-/// "Get ignores (no .eleventyignore  .gitignore exists but empty)"
+/// "Get ignores (no .twelvetyignore  .gitignore exists but empty)"
 #[test]
-fn get_ignores_no_eleventyignore_gitignore_exists_but_empty() {
+fn get_ignores_no_twelvetyignore_gitignore_exists_but_empty() {
     check(
         dirs("test/stubs/ignore5", "test/stubs/ignore5/_site"),
         true,
@@ -167,9 +167,9 @@ fn get_ignores_no_eleventyignore_gitignore_exists_but_empty() {
     );
 }
 
-/// "Get ignores (both .eleventyignore and .gitignore exists, but .gitignore is empty)"
+/// "Get ignores (both .twelvetyignore and .gitignore exists, but .gitignore is empty)"
 #[test]
-fn get_ignores_both_eleventyignore_and_gitignore_exists_but_gitignore_is_empty() {
+fn get_ignores_both_twelvetyignore_and_gitignore_exists_but_gitignore_is_empty() {
     check(
         dirs("test/stubs/ignore6", "test/stubs/ignore6/_site"),
         true,
@@ -198,28 +198,28 @@ fn stubs_403_files() -> Files {
 }
 
 /// "Bad expected output, this indicates a bug upstream in a dependency (update, was fixed in
-/// fast-glob@3.3.3). Input to 'src' and empty includes dir (issue #403, full paths in eleventyignore)"
+/// fast-glob@3.3.3). Input to 'src' and empty includes dir (issue #403, full paths in twelvetyignore)"
 #[test]
-fn input_to_src_and_empty_includes_dir_issue_403_full_paths_in_eleventyignore() {
+fn input_to_src_and_empty_includes_dir_issue_403_full_paths_in_twelvetyignore() {
     let mut evf = stubs_403_files();
-    evf.eleventy_ignore_content = Some(format!("{}/**", template_path::absolute_path(&["test/stubs-403/_includes"])));
+    evf.twelvety_ignore_content = Some(format!("{}/**", template_path::absolute_path(&["test/stubs-403/_includes"])));
     evf.init();
     assert_eq!(evf.get_files().unwrap(), strings(&["./test/stubs-403/template.liquid"]));
 }
 
 /// "Workaround for Bad expected output, this indicates a bug upstream in a dependency. Input to
-/// 'src' and empty includes dir (issue #403, full paths in eleventyignore)"
+/// 'src' and empty includes dir (issue #403, full paths in twelvetyignore)"
 #[test]
 fn workaround_input_to_src_and_empty_includes_dir_issue_403() {
     let mut evf = stubs_403_files();
-    evf.eleventy_ignore_content = s("./test/stubs-403/_includes/**");
+    evf.twelvety_ignore_content = s("./test/stubs-403/_includes/**");
     evf.init();
     assert_eq!(evf.get_files().unwrap(), strings(&["./test/stubs-403/template.liquid"]));
 }
 
-/// "Issue #403: all .eleventyignores should be relative paths not absolute paths"
+/// "Issue #403: all .twelvetyignores should be relative paths not absolute paths"
 #[test]
-fn issue_403_all_eleventyignores_should_be_relative_paths() {
+fn issue_403_all_twelvetyignores_should_be_relative_paths() {
     let evf = stubs_403_files();
     let abs = template_path::absolute_path(&[]);
     assert!(!evf.get_file_globs().iter().any(|g| g.contains(&abs)));
@@ -259,9 +259,9 @@ fn deduplicated_ignores() {
     );
 }
 
-/// "Negated .eleventyignore patterns are skipped without the experimental flag"
+/// "Negated .twelvetyignore patterns are skipped without the experimental flag"
 #[test]
-fn negated_eleventyignore_patterns_are_skipped_without_the_experimental_flag() {
+fn negated_twelvetyignore_patterns_are_skipped_without_the_experimental_flag() {
     let tc = get_template_config(dirs("test/stubs-4439", "test/stubs-4439/_site"), |_| {});
     let mut evf = get_files(&["md"], &tc);
     evf.init();
@@ -270,9 +270,9 @@ fn negated_eleventyignore_patterns_are_skipped_without_the_experimental_flag() {
     assert_eq!(files, strings(&["./test/stubs-4439/index.md"]));
 }
 
-/// "Negated .eleventyignore patterns re-include files"
+/// "Negated .twelvetyignore patterns re-include files"
 #[test]
-fn negated_eleventyignore_patterns_reinclude_files() {
+fn negated_twelvetyignore_patterns_reinclude_files() {
     let tc = get_template_config(dirs("test/stubs-4439", "test/stubs-4439/_site"), |cfg| {
         cfg.add_experimental_behavior(NEGATED_IGNORES_FLAG);
     });

@@ -169,8 +169,8 @@ fn content_template_input_paths() {
 #[test]
 fn project_file_paths() {
     let d = ProjectDirectories::new();
-    assert_eq!(d.get_project_path("eleventy.config.js"), "./eleventy.config.js");
-    assert_eq!(d.get_project_path("./eleventy.config.js"), "./eleventy.config.js");
+    assert_eq!(d.get_project_path("twelvety.config.js"), "./twelvety.config.js");
+    assert_eq!(d.get_project_path("./twelvety.config.js"), "./twelvety.config.js");
 }
 
 /// "Input could be a glob!"
@@ -237,9 +237,9 @@ fn setting_values_via_config_object_input_relative_dirs_parent_dirs() {
     assert_eq!(d.layouts(), None);
 }
 
-/// "Setting values via config object (eleventy-base-blog example)"
+/// "Setting values via config object (twelvety-base-blog example)"
 #[test]
-fn setting_values_via_config_object_eleventy_base_blog_example() {
+fn setting_values_via_config_object_twelvety_base_blog_example() {
     let mut d = ProjectDirectories::new();
     via_config(
         &mut d,

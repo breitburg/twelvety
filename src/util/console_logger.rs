@@ -85,7 +85,7 @@ impl ConsoleLogger {
             buf.push(message.to_string());
             return;
         }
-        let prefix = "[11ty] ";
+        let prefix = "[12ty] ";
         let line = message
             .lines()
             .map(|l| format!("{prefix}{l}"))

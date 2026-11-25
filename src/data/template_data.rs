@@ -342,14 +342,14 @@ impl TemplateData {
         global.insert("version".into(), Value::str(UPSTREAM_VERSION));
         global.insert(
             "generator".into(),
-            Value::str(format!("Eleventy (Build Awesome) v{UPSTREAM_VERSION}")),
+            Value::str(format!("Twelvety (Build Awesome) v{UPSTREAM_VERSION}")),
         );
         global.insert("env".into(), self.environment_variables.clone());
         global.insert("directories".into(), self.dirs.get_userspace_instance());
         Value::from_map(global)
     }
 
-    /// `ConfigurationGlobalData` (addGlobalData) plus the `eleventy` core global
+    /// `ConfigurationGlobalData` (addGlobalData) plus the `twelvety` core global
     pub fn get_initial_global_data(&self) -> Result<Value> {
         if let Some(v) = self.initial_global_data.get() {
             return Ok(v.clone());
@@ -368,7 +368,7 @@ impl TemplateData {
             reserved_data::check(&global, self.config.config_path.as_deref())?;
         }
         let core = self.get_core_global();
-        global.set("eleventy", core.clone());
+        global.set("twelvety", core.clone());
         global.set("buildawesome", core);
         let _ = self.initial_global_data.set(global.clone());
         Ok(global)

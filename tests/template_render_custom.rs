@@ -136,7 +136,7 @@ fn custom_markdown_render_with_compile_override_and_call_to_default_compiler() {
 //   `getInstanceFromInputPath`, `getData: [keys]` and `this.config.javascriptFunctions`.
 // - "Return undefined in compile to ignore #2267": a Rust `compile` callback always returns a
 //   render function; there is no `undefined` return value.
-// - The three `test.skip` "Breaking Change (3.0)" tests (skipped upstream too; `11ty.js`).
+// - The three `test.skip` "Breaking Change (3.0)" tests (skipped upstream too; `12ty.js`).
 
 #[test]
 fn simple_alias_to_markdown_render() {
@@ -162,7 +162,7 @@ fn double_override_one_simple_alias_to_custom_works_fine() {
     let tr = get_new_template_render("customhtml", move |cfg| {
         let (ic, cc) = (ic.clone(), cc.clone());
         cfg.add_extension(
-            "11ty.possum",
+            "12ty.possum",
             ExtensionOptions {
                 init: Some(Arc::new(move || {
                     ic.fetch_add(1, Ordering::SeqCst);
@@ -179,7 +179,7 @@ fn double_override_one_simple_alias_to_custom_works_fine() {
         cfg.add_extension(
             "customhtml",
             ExtensionOptions {
-                key: "11ty.possum".into(),
+                key: "12ty.possum".into(),
                 ..Default::default()
             },
         )?;
@@ -196,7 +196,7 @@ fn double_override_one_simple_alias_to_custom_works_fine() {
 fn double_override_two_simple_aliases() {
     let tr = get_new_template_render("customhtml", |cfg| {
         cfg.add_extension(
-            "11ty.possum",
+            "12ty.possum",
             ExtensionOptions {
                 key: "html".into(),
                 ..Default::default()
@@ -205,7 +205,7 @@ fn double_override_two_simple_aliases() {
         cfg.add_extension(
             "customhtml",
             ExtensionOptions {
-                key: "11ty.possum".into(),
+                key: "12ty.possum".into(),
                 ..Default::default()
             },
         )?;
@@ -220,7 +220,7 @@ fn double_override_two_simple_aliases() {
 fn double_override_two_complex_aliases_is_supported_as_of_3_0() {
     let inits = counter();
     let ic = inits.clone();
-    let tr = get_new_template_render("11ty.custom", move |cfg| {
+    let tr = get_new_template_render("12ty.custom", move |cfg| {
         let (ic1, ic2) = (ic.clone(), ic.clone());
         cfg.add_extension(
             "possum",
@@ -235,24 +235,24 @@ fn double_override_two_complex_aliases_is_supported_as_of_3_0() {
             },
         )?;
         cfg.add_extension(
-            "11ty.custom",
+            "12ty.custom",
             ExtensionOptions {
                 key: "possum".into(),
                 init: Some(Arc::new(move || {
                     ic2.fetch_add(1, Ordering::SeqCst);
                     Ok(())
                 })),
-                compile_with_default_renderer: compile_wrapping_default(|result| format!("11ty.custom|{result}")),
+                compile_with_default_renderer: compile_wrapping_default(|result| format!("12ty.custom|{result}")),
                 ..Default::default()
             },
         )?;
-        cfg.set_template_formats(&["possum", "11ty.custom"]);
+        cfg.set_template_formats(&["possum", "12ty.custom"]);
         Ok(())
     });
 
     assert_eq!(
         render(&tr, "Template content", &Value::object()),
-        "11ty.custom|possum|Template content"
+        "12ty.custom|possum|Template content"
     );
     assert_eq!(count(&inits), 2);
 }

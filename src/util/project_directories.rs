@@ -217,7 +217,7 @@ impl ProjectDirectories {
             }
             if let Some(input_dir) = input_dir {
                 if !Path::new(input_dir).exists() {
-                    bail!("Directory must exist (via inputDir option to Eleventy constructor).");
+                    bail!("Directory must exist (via inputDir option to Twelvety constructor).");
                 }
                 self.dirs.input = Some(Self::normalize_directory(input_dir));
             } else {
@@ -434,7 +434,7 @@ impl ProjectDirectories {
         dir_contains::dir_contains(&self.output(), file_path)
     }
 
-    /// The object exposed as `eleventy.directories` and `eleventyConfig.directories`
+    /// The object exposed as `twelvety.directories` and `twelvetyConfig.directories`
     pub fn get_userspace_instance(&self) -> Value {
         let mut map = Map::new();
         map.insert("input".into(), Value::str(self.input()));

@@ -403,7 +403,7 @@ fn count_plugins_added(adds: &'static [&'static str]) -> usize {
         *c.lock().unwrap() = (before, cfg.plugins.len());
         Ok(())
     });
-    common::eleventy("./test/stubs-virtual-nowrite/", Some("./test/stubs-virtual-nowrite/_site"), opts)
+    common::twelvety("./test/stubs-virtual-nowrite/", Some("./test/stubs-virtual-nowrite/_site"), opts)
         .to_json()
         .unwrap();
     let (before, after) = *counts.lock().unwrap();
@@ -420,8 +420,8 @@ fn html_base_plugin_only_adds_once_unique() {
 #[test]
 fn html_base_plugin_only_adds_once_when_added_from_multiple_nested_plugins() {
     fn nested(cfg: &mut UserConfig, _: &Value) -> anyhow::Result<()> {
-        let plugin = resolve_builtin("@11ty/eleventy/html-base-plugin").unwrap();
-        cfg.add_plugin_fn("@11ty/eleventy/html-base-plugin", plugin, Value::object())
+        let plugin = resolve_builtin("@12ty/twelvety/html-base-plugin").unwrap();
+        cfg.add_plugin_fn("@12ty/twelvety/html-base-plugin", plugin, Value::object())
     }
     let mut opts = options(|cfg: &mut UserConfig| {
         cfg.add_template("index.html", r#"<a href="/foo/">Foo</a>"#, Value::object())?;
@@ -439,8 +439,8 @@ fn html_base_plugin_only_adds_once_when_added_from_multiple_nested_plugins() {
 fn html_base_plugin_can_resolve_by_name() {
     assert_eq!(
         count_plugins_added(&[
-            "@11ty/eleventy/html-base-plugin",
-            "@11ty/eleventy/html-base-plugin",
+            "@12ty/twelvety/html-base-plugin",
+            "@12ty/twelvety/html-base-plugin",
             "HtmlBasePlugin",
             "HtmlBasePlugin",
         ]),

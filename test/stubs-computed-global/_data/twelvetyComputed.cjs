@@ -1,5 +1,5 @@
 module.exports = {
-  eleventyNavigation: {
+  twelvetyNavigation: {
     key: data => {
       return "nested-first-global";
     }

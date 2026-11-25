@@ -27,15 +27,15 @@ const COLLECTION_TEMPLATES: &[(&str, &str)] = &[
     ("test/stubs/collection/test7.njk", "# Test 7"),
     (
         "test/stubs/collection/test8.md",
-        "---\ntitle: Test Title\ndate: 2020-01-01\ntags:\n  - post\n  - office\neleventyExcludeFromCollections: true\n---\n\n# Test 1\n",
+        "---\ntitle: Test Title\ndate: 2020-01-01\ntags:\n  - post\n  - office\ntwelvetyExcludeFromCollections: true\n---\n\n# Test 1\n",
     ),
     (
         "test/stubs/collection/test9.md",
-        "---\ntitle: Test Title\ndate: 2020-01-01\ntags:\n  - post\n  - office\neleventyExcludeFromCollections: post\n---\n\n# Test 1\n",
+        "---\ntitle: Test Title\ndate: 2020-01-01\ntags:\n  - post\n  - office\ntwelvetyExcludeFromCollections: post\n---\n\n# Test 1\n",
     ),
     (
         "test/stubs/collection/test10.md",
-        "---\ntitle: Test Title\ndate: 2020-01-01\ntags:\n  - post\n  - office\neleventyExcludeFromCollections:\n  - post\n---\n\n# Test 1\n",
+        "---\ntitle: Test Title\ndate: 2020-01-01\ntags:\n  - post\n  - office\ntwelvetyExcludeFromCollections:\n  - post\n---\n\n# Test 1\n",
     ),
     ("test/stubs/issue-95/cat.md", "---\ntags: \n  - cat\n---\n\n# Test 8\n"),
     ("test/stubs/issue-95/notacat.md", "---\ntags: notacat\n---\n\n# Test 8\n"),

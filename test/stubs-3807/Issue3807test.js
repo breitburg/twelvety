@@ -1,8 +1,8 @@
 import test from "node:test";
 import fs from "node:fs";
-import Eleventy from "../../src/Core.js";
+import Twelvety from "../../src/Core.js";
 
-// This tests Eleventy Watch and the file system!
+// This tests Twelvety Watch and the file system!
 
 test("#3807 Nunjucks cacheable should be reused when Nunjucks is the preprocessor language", async (t) => {
   let runs = [
@@ -30,8 +30,8 @@ test("#3807 Nunjucks cacheable should be reused when Nunjucks is the preprocesso
   fs.writeFileSync("test/stubs-3807/_layouts/base.html", ORIGINAL_CONTENT, "utf8");
 
   let index = 0;
-  let elev = new Eleventy("test/stubs-3807/", "test/stubs-3807/_site", {
-    configPath: "test/stubs-3807/eleventy.config.js",
+  let elev = new Twelvety("test/stubs-3807/", "test/stubs-3807/_site", {
+    configPath: "test/stubs-3807/twelvety.config.js",
     config($config) {
       $config.on("buildawesome.afterwatch", () => {
         let {resolve} = runs[index];

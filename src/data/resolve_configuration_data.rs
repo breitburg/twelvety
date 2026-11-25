@@ -1,4 +1,4 @@
-//! Port of `Data/ResolveConfigurationData.js`: `buildawesome*` keys with `eleventy*` aliases.
+//! Port of `Data/ResolveConfigurationData.js`: `buildawesome*` keys with `twelvety*` aliases.
 
 use crate::util::merge::deep_copy;
 use crate::value::Value;
@@ -13,11 +13,11 @@ const ELIGIBLE_PROPS: &[&str] = &[
 ];
 
 const BUILDAWESOME_PREFIX: &str = "buildawesome";
-const ELEVENTY_PREFIX: &str = "eleventy";
+const TWELVETY_PREFIX: &str = "twelvety";
 
 pub fn get_alternate_property_name(prop: &str) -> Option<String> {
     if ELIGIBLE_PROPS.contains(&prop) {
-        return Some(format!("{ELEVENTY_PREFIX}{}", &prop[BUILDAWESOME_PREFIX.len()..]));
+        return Some(format!("{TWELVETY_PREFIX}{}", &prop[BUILDAWESOME_PREFIX.len()..]));
     }
     None
 }
@@ -32,7 +32,7 @@ pub fn get_eligible_locations(original: &str) -> Vec<String> {
     out
 }
 
-/// Rename `eleventy*` keys to their `buildawesome*` equivalents
+/// Rename `twelvety*` keys to their `buildawesome*` equivalents
 pub fn normalize(data: Value) -> Value {
     if !data.is_plain_object() {
         return data;

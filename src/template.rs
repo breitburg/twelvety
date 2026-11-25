@@ -172,7 +172,7 @@ impl Template {
     pub fn get_layout(&self, layout_key: &str) -> Result<Arc<TemplateLayout>> {
         TemplateLayout::get_template(layout_key, self.ctx()).with_context(|| {
             format!(
-                "Problem creating an Eleventy Layout for the \"{}\" template file.",
+                "Problem creating an Twelvety Layout for the \"{}\" template file.",
                 self.input_path
             )
         })
@@ -293,7 +293,7 @@ impl Template {
         }
         let config = &self.ctx().config;
         if config.freeze_reserved_data {
-            let mut reserved = vec!["eleventy", "buildawesome"];
+            let mut reserved = vec!["twelvety", "buildawesome"];
             if let Some(p) = &config.keys.package {
                 reserved.push(p.as_str());
             }

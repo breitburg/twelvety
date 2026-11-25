@@ -4,7 +4,7 @@ use anyhow::{Result, bail};
 
 use crate::value::Value;
 
-pub const FULL_PROPERTIES: &[&str] = &["pkg", "buildawesome", "eleventy", "content", "collections"];
+pub const FULL_PROPERTIES: &[&str] = &["pkg", "buildawesome", "twelvety", "content", "collections"];
 pub const PROPERTIES: &[&str] = &["content", "collections"];
 pub const PAGE_PROPERTIES: &[&str] = &[
     "date",
@@ -44,7 +44,7 @@ pub fn get_reserved_keys(data: &Value, global_properties: &[&str]) -> Vec<String
 
 pub fn error_message(reserved: &[String], source: Option<&str>) -> String {
     format!(
-        "You attempted to set one of Build Awesome’s reserved data property names{}{}. You can opt-out of this behavior with `$config.setFreezeReservedData(false)` or rename/remove the property in your data cascade that conflicts with reserved property names (e.g. `buildawesome`, `eleventy`, `pkg`, and others). Learn more: https://v3.11ty.dev/docs/data-eleventy-supplied/",
+        "You attempted to set one of Build Awesome’s reserved data property names{}{}. You can opt-out of this behavior with `$config.setFreezeReservedData(false)` or rename/remove the property in your data cascade that conflicts with reserved property names (e.g. `buildawesome`, `twelvety`, `pkg`, and others). Learn more: https://v3.11ty.dev/docs/data-eleventy-supplied/",
         if reserved.is_empty() {
             String::new()
         } else {

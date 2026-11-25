@@ -4,7 +4,7 @@
 //! `addCollection`, linter and transform callbacks are collected and checked after the build.
 //!
 //! Skipped (JS-only): "Premature templateContent retries run in template order with concurrency"
-//! (async `11ty.js` templates with timers and `setConcurrency`).
+//! (async `12ty.js` templates with timers and `setConcurrency`).
 
 use std::sync::{Arc, Mutex};
 
@@ -122,12 +122,12 @@ const FIXTURES: &[(&str, &str)] = &[
         "---\npagination:\n  data: collections\n  size: 1\n  alias: tag\n  filter:\n    - all\n  addAllPagesToCollections: true\n---\n\n{{ tag }}",
     ),
     (
-        "test/stubs/eleventyExcludeFromCollections.njk",
-        "---\ntitle: Paged Test\neleventyExcludeFromCollections: true\ntags:\n  - post\n  - dog\n---\n{{ title }}",
+        "test/stubs/twelvetyExcludeFromCollections.njk",
+        "---\ntitle: Paged Test\ntwelvetyExcludeFromCollections: true\ntags:\n  - post\n  - dog\n---\n{{ title }}",
     ),
     (
-        "test/stubs/eleventyExcludeFromCollectionsPermalinkFalse.njk",
-        "---\ntitle: Paged Test\neleventyExcludeFromCollections: true\npermalink: false\ntags:\n  - post\n  - dog\n---\n{{ title }}",
+        "test/stubs/twelvetyExcludeFromCollectionsPermalinkFalse.njk",
+        "---\ntitle: Paged Test\ntwelvetyExcludeFromCollections: true\npermalink: false\ntags:\n  - post\n  - dog\n---\n{{ title }}",
     ),
     (
         "test/stubs/permalink-conflicts/test1.md",
@@ -151,7 +151,7 @@ const FIXTURES: &[(&str, &str)] = &[
     ),
     (
         "test/stubs/issue-522/excluded.md",
-        "---\neleventyExcludeFromCollections: true\n---\n\n# Test\n\n{{ collections.all[0].templateContent }}\n",
+        "---\ntwelvetyExcludeFromCollections: true\n---\n\n# Test\n\n{{ collections.all[0].templateContent }}\n",
     ),
     ("test/stubs/issue-522/template.md", "# Test\n"),
     ("test/stubs-virtual-nowrite/_includes/layout.njk", "<html><body>{{ content | safe }}</body></html>"),
@@ -368,7 +368,7 @@ fn template_map_circular_references_map_template_content() {
 }
 
 #[test]
-#[ignore = "JS-only: async `11ty.js` templates with timers and `setConcurrency`"]
+#[ignore = "JS-only: async `12ty.js` templates with timers and `setConcurrency`"]
 fn premature_template_content_retries_run_in_template_order_with_concurrency() {}
 
 fn check_issue_115(tm: &mut TemplateMap, index_path: &str) {
@@ -770,13 +770,13 @@ fn excluded_map(path: &str) {
 }
 
 #[test]
-fn eleventy_exclude_from_collections() {
-    excluded_map("./test/stubs/eleventyExcludeFromCollections.njk");
+fn twelvety_exclude_from_collections() {
+    excluded_map("./test/stubs/twelvetyExcludeFromCollections.njk");
 }
 
 #[test]
-fn eleventy_exclude_from_collections_and_permalink_false() {
-    excluded_map("./test/stubs/eleventyExcludeFromCollectionsPermalinkFalse.njk");
+fn twelvety_exclude_from_collections_and_permalink_false() {
+    excluded_map("./test/stubs/twelvetyExcludeFromCollectionsPermalinkFalse.njk");
 }
 
 #[test]
@@ -907,7 +907,7 @@ fn duplicate_permalinks_in_template_map_no_leading_slash() {
 }
 
 #[test]
-fn circular_references_using_eleventy_exclude_from_collections_and_collections_all() {
+fn circular_references_using_twelvety_exclude_from_collections_and_collections_all() {
     let ctx = default_config();
     let mut tm = template_map(
         &ctx,
@@ -930,7 +930,7 @@ fn circular_references_using_eleventy_exclude_from_collections_and_collections_a
 }
 
 #[test]
-fn eleventy_layouts_event() {
+fn twelvety_layouts_event() {
     let received: Arc<Mutex<Vec<Value>>> = Arc::default();
     let r = received.clone();
     let ctx = config_with("./test/stubs-virtual-nowrite/", "./test/stubs-virtual-nowrite/_site", move |cfg| {

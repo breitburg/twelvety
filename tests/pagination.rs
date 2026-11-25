@@ -9,7 +9,7 @@
 
 use std::sync::Arc;
 
-use twelvety::core::{Eleventy, Options};
+use twelvety::core::{Twelvety, Options};
 use twelvety::page_entry::PageEntry;
 use twelvety::plugins::pagination::Pagination;
 use twelvety::template::Template;
@@ -60,8 +60,8 @@ fn stub(relative_path: &str) -> String {
         "paged/pagedresolve.njk" => {
             "pagination:\n  data: testdata.sub\n  size: 4\ntestdata:\n  sub:\n   - item1\n   - item2\n   - item3\n   - item4\n   - item5\n   - item6\n   - item7\n   - item8\n"
         }
-        "pagination-eleventycomputed-permalink.liquid" => {
-            return "---\nvenues:\n  - first\n  - second\n  - third\npagination:\n  data: venues\n  size: 1\n  alias: venue\n  addAllPagesToCollections: true\neleventyComputed:\n  permalink: \"venues/{{ venue }}/\"\n---\n".into();
+        "pagination-twelvetycomputed-permalink.liquid" => {
+            return "---\nvenues:\n  - first\n  - second\n  - third\npagination:\n  data: venues\n  size: 1\n  alias: venue\n  addAllPagesToCollections: true\ntwelvetyComputed:\n  permalink: \"venues/{{ venue }}/\"\n---\n".into();
         }
         other => panic!("unknown stub {other}"),
     };
@@ -484,12 +484,12 @@ fn circular_dependency_pagination_iterates_over_tag1_but_also_supplies_pages_to_
 }
 
 #[test]
-fn circular_dependency_but_uses_eleventy_exclude_from_collections() {
+fn circular_dependency_but_uses_twelvety_exclude_from_collections() {
     let tmpl = get_new_virtual_template("paged/notpaged.njk");
     paging(
         &tmpl,
         &json(
-            r#"{"eleventyExcludeFromCollections": true, "collections": {"tag1": [], "tag2": []}, "pagination": {"data": "collections.tag1", "size": 1}, "tags": ["tag1"]}"#,
+            r#"{"twelvetyExcludeFromCollections": true, "collections": {"tag1": [], "tag2": []}, "pagination": {"data": "collections.tag1", "size": 1}, "tags": ["tag1"]}"#,
         ),
     )
     .unwrap();
@@ -630,8 +630,8 @@ fn pagination_template_dir_data_files_run_once_issue_919() {}
 fn pagination_mutable_global_data() {}
 
 #[test]
-fn pagination_and_eleventy_computed_permalink_issue_1555_and_1865() {
-    let pages = get_templates(&get_new_virtual_template("pagination-eleventycomputed-permalink.liquid"));
+fn pagination_and_twelvety_computed_permalink_issue_1555_and_1865() {
+    let pages = get_templates(&get_new_virtual_template("pagination-twelvetycomputed-permalink.liquid"));
     assert_eq!(pages[0].data().get_path("page.url"), Value::str("/venues/first/"));
     assert_eq!(pages[1].data().get_path("page.url"), Value::str("/venues/second/"));
     assert_eq!(pages[2].data().get_path("page.url"), Value::str("/venues/third/"));
@@ -646,11 +646,11 @@ fn no_config_file() -> Options {
 }
 
 #[test]
-fn pagination_and_eleventy_computed_data_issues_2512_2837_3013() {
+fn pagination_and_twelvety_computed_data_issues_2512_2837_3013() {
     for lang in ["liquid", "html", "md", "njk"] {
         let apostrophe = if lang == "njk" { "&amp;#39;" } else { "'" };
         let le = if lang == "md" { "\n" } else { "" };
-        let mut elev = Eleventy::new(
+        let mut elev = Twelvety::new(
             Some(&format!("./test/stubs-3013/{lang}/")),
             Some(&format!("./test/stubs-3013/{lang}/_site")),
             Options {
@@ -677,7 +677,7 @@ fn pagination_and_eleventy_computed_data_issues_2512_2837_3013() {
 
 #[test]
 fn pagination_data_keys_and_values_are_stable() {
-    // upstream renders the data from an `11ty.js` template, this reads the same page data
+    // upstream renders the data from an `12ty.js` template, this reads the same page data
     let tmpl = virtual_template_with_data(
         "paged.njk",
         String::new(),
@@ -708,7 +708,7 @@ fn pagination_data_keys_and_values_are_stable() {
 
 #[test]
 fn paginated_nunjucks_templates_share_a_compiled_template_but_render_each_page() {
-    let mut elev = Eleventy::new(
+    let mut elev = Twelvety::new(
         Some("./test/stubs-virtual/"),
         None,
         no_config_file().with_config(|cfg| {

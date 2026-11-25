@@ -5,7 +5,7 @@ pagination:
   size: 1
   alias: book
 permalink: /{{ book.shortname }}/
-eleventyComputed:
+twelvetyComputed:
   title: "{{ book.name }}"
 ---
 

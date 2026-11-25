@@ -1,6 +1,6 @@
 # Twelvety
 
-A Rust port of [Build Awesome (Eleventy)](https://github.com/11ty/buildawesome), a simpler static site generator. It transforms a directory of templates (Liquid, Nunjucks, Markdown, HTML and custom formats) into HTML.
+A Rust port of [Build Awesome](https://github.com/11ty/buildawesome), a simpler static site generator. It transforms a directory of templates (Liquid, Nunjucks, Markdown, HTML and custom formats) into HTML.
 
 The port follows the upstream code closely. Most upstream modules have a Rust counterpart with the same responsibilities and method names in snake_case. Where JavaScript patterns don't translate directly (dynamic objects, Proxies, async callbacks), the code uses Rust equivalents.
 
@@ -24,7 +24,7 @@ Upstream configuration files are JavaScript modules. Twelvety supports two alter
 
 ### Declarative configuration files
 
-These cover the serializable subset of the configuration API: `buildawesome.config.{json,toml,yaml}`, `eleventy.config.{json,toml,yaml}` or `.eleventy.json`.
+These cover the serializable subset of the configuration API: `buildawesome.config.{json,toml,yaml}`, `twelvety.config.{json,toml,yaml}` or `.twelvety.json`.
 
 ```toml
 pathPrefix = "/docs/"
@@ -49,10 +49,10 @@ Built-in plugins: `html-base`, `id-attribute`, `i18n`, `input-path-to-url`, `ren
 
 ### The Rust API
 
-The Rust API is the equivalent of `eleventyConfig`. JavaScript callbacks are Rust closures.
+The Rust API is the equivalent of `twelvetyConfig`. JavaScript callbacks are Rust closures.
 
 ```rust
-use twelvety::{Eleventy, Options, Value};
+use twelvety::{Twelvety, Options, Value};
 
 let options = Options::default().with_config(|cfg| {
     cfg.add_filter("shout", |_ctx, input, _args| {
@@ -64,8 +64,8 @@ let options = Options::default().with_config(|cfg| {
     cfg.add_plugin("html-base", twelvety::plugins::html_base::plugin, Value::object())?;
     Ok(())
 });
-let mut eleventy = Eleventy::new(Some("src"), Some("dist"), options);
-eleventy.write()?;
+let mut twelvety = Twelvety::new(Some("src"), Some("dist"), options);
+twelvety.write()?;
 ```
 
 ## Architecture
@@ -89,13 +89,13 @@ Notable adaptations:
 - **Data model:** `src/value.rs` is a dynamic `Value` that models JavaScript values: `undefined`, `null`, numbers as `f64`, dates, and reference-counted copy-on-write objects and arrays. Collection items are lazy host objects (`src/page_entry.rs`), so `templateContent` becomes available after rendering, like the getter upstream.
 - **Liquid:** a native Liquid engine in `src/liquid/` that follows liquidjs semantics (JS truthiness, lenient undefined variables, the standard tags and filters, `include`/`render`, shortcodes).
 - **Nunjucks:** built on [minijinja](https://github.com/mitsuhiko/minijinja) with a compatibility pass for Nunjucks-only syntax (shortcodes, `for k, v in obj`, `elseif`, `===`) and Nunjucks-style escaping and output.
-- **Markdown:** uses the [markdown-it](https://crates.io/crates/markdown-it) Rust port, configured like Eleventy's markdown-it defaults.
+- **Markdown:** uses the [markdown-it](https://crates.io/crates/markdown-it) Rust port, configured like Twelvety's markdown-it defaults.
 - **HTML transforms:** the HTML transformer (`<base>`, InputPathToUrl, the id attribute and html-relative copies) runs on [lol_html](https://github.com/cloudflare/lol-html) instead of posthtml.
 - **Computed data:** dependencies are found by parsing template strings. Rust function entries declare their dependencies explicitly instead of relying on Proxy read tracking.
 
 ## Not supported
 
-These need a JavaScript runtime: JavaScript configuration files, `*.11ty.js` templates, JavaScript data files (`*.11tydata.js`, `_data/*.js`) and JavaScript front matter.
+These need a JavaScript runtime: JavaScript configuration files, `*.12ty.js` templates, JavaScript data files (`*.12tydata.js`, `_data/*.js`) and JavaScript front matter.
 
 ## Tests
 

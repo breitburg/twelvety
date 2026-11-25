@@ -8,8 +8,8 @@ import { jsxToString } from "jsx-async-runtime";
 const dir = path.relative(".", import.meta.dirname);
 
 export default async function (configApi) {
-	configApi.addExtension(["11ty.jsx", "11ty.ts", "11ty.tsx"], {
-		key: "11ty.js",
+	configApi.addExtension(["12ty.jsx", "12ty.ts", "12ty.tsx"], {
+		key: "12ty.js",
 		compile: async function (inputContent, inputPath) {
 			this.addDependencies(inputPath, [`./${dir}/_includes/head.tsx`]);
 
@@ -21,7 +21,7 @@ export default async function (configApi) {
 		},
 	});
 
-	configApi.addTemplateFormats(["11ty.jsx", "11ty.tsx"]);
+	configApi.addTemplateFormats(["12ty.jsx", "12ty.tsx"]);
 
 	let unregister;
 	configApi.on("buildawesome.before", () => {

@@ -29,8 +29,8 @@ fn easy_slug_with_dot() {
 }
 
 #[test]
-fn easy_slug_with_dot_11ty_js() {
-    let (slug, stem) = slug("./file.test.11ty.js", None);
+fn easy_slug_with_dot_12ty_js() {
+    let (slug, stem) = slug("./file.test.12ty.js", None);
     assert_eq!(slug, "file.test");
     assert_eq!(stem, "/file.test");
 }

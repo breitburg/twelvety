@@ -102,7 +102,7 @@ impl TemplateEngine for CustomEngine {
             None => match &self.default_engine {
                 Some(e) => e.compile(src, input_path),
                 None => bail!(
-                    "Missing `compile` property for custom template syntax definition eleventyConfig.addExtension(\"{}\"). This is not necessary when aliasing to an existing template syntax.",
+                    "Missing `compile` property for custom template syntax definition twelvetyConfig.addExtension(\"{}\"). This is not necessary when aliasing to an existing template syntax.",
                     self.name
                 ),
             },

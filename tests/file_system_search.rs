@@ -93,8 +93,8 @@ fn glob_search_seeds_exists_cache_directory_listings() {
 
     assert!(cache.exists("./test/_issues/4224/sub/sub.JSON"));
     assert_eq!(
-        cache.resolve("./test/_issues/4224/child.11tydata.json").as_deref(),
-        Some("./test/_issues/4224/child.11TYDATA.json")
+        cache.resolve("./test/_issues/4224/child.12tydata.json").as_deref(),
+        Some("./test/_issues/4224/child.12TYDATA.json")
     );
     // Only the folders above the glob’s starting folder are read
     assert_eq!(cache.get_lookup_count(), 3);

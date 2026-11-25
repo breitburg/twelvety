@@ -1,8 +1,8 @@
 import test from "node:test";
-import Eleventy from "../../../src/Core.js";
+import Twelvety from "../../../src/Core.js";
 
 test("Mixed-case extensions for templates, layouts and data files #4224", async (t) => {
-	let elev = new Eleventy("./test/_issues/4224/", "./test/_issues/4224/_site", {
+	let elev = new Twelvety("./test/_issues/4224/", "./test/_issues/4224/_site", {
 		config($config) {
 			$config.addDataExtension("YAML", (content) => {
 				let [key, value] = content.trim().split(": ");

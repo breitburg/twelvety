@@ -12,11 +12,11 @@ use std::time::Duration;
 
 use anyhow::{Result, anyhow};
 
-const RELOAD_PATH: &str = "/.11ty/reload";
+const RELOAD_PATH: &str = "/.12ty/reload";
 
 const RELOAD_SCRIPT: &str = r#"<script type="module">
 (() => {
-  const source = new EventSource("/.11ty/reload");
+  const source = new EventSource("/.12ty/reload");
   source.onmessage = (e) => { if (e.data === "reload") location.reload(); };
 })();
 </script>"#;

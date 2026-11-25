@@ -1,4 +1,4 @@
 ---
-eleventyImport:
+twelvetyImport:
   collections: ["post"]
 ---

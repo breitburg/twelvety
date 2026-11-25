@@ -25,9 +25,9 @@ const COLLECTION_TEMPLATES: &[(&str, &str)] = &[
     ("test3.md", "---\ntags:\n  - post\n  - cat\n---\n\n# Test 3\n"),
     ("test4.md", "---\ndate: 1983-01-01\n---\n\n# Test 3\n"),
     ("test5.md", "---\ndate: 2038-01-01\n---\n\n# Test 3\n"),
-    ("test8.md", "---\ntitle: Test Title\ntags:\n  - post\n  - office\neleventyExcludeFromCollections: true\n---\n\n# Test 1\n"),
-    ("test9.md", "---\ntitle: Test Title\ntags:\n  - post\n  - office\neleventyExcludeFromCollections: post\n---\n\n# Test 1\n"),
-    ("test10.md", "---\ntitle: Test Title\ntags:\n  - post\n  - office\neleventyExcludeFromCollections:\n  - post\n---\n\n# Test 1\n"),
+    ("test8.md", "---\ntitle: Test Title\ntags:\n  - post\n  - office\ntwelvetyExcludeFromCollections: true\n---\n\n# Test 1\n"),
+    ("test9.md", "---\ntitle: Test Title\ntags:\n  - post\n  - office\ntwelvetyExcludeFromCollections: post\n---\n\n# Test 1\n"),
+    ("test10.md", "---\ntitle: Test Title\ntags:\n  - post\n  - office\ntwelvetyExcludeFromCollections:\n  - post\n---\n\n# Test 1\n"),
 ];
 
 const COLLECTION2_TEMPLATES: &[(&str, &str)] = &[
@@ -454,7 +454,7 @@ fn file_slug_should_exist_in_a_collection() {
     assert_eq!(rendered(map, "./test/stubs-virtual-nowrite/template.njk"), "fileSlug:/dog1/:dog1");
 }
 
-// "Write Test 11ty.js": JavaScript templates (skipped). "Markdown with alias" and
+// "Write Test 12ty.js": JavaScript templates (skipped). "Markdown with alias" and
 // "JavaScript with alias" are skipped upstream.
 
 /// "Passthrough file output"

@@ -16,7 +16,7 @@ use std::sync::{Arc, Mutex};
 use anyhow::Result;
 use twelvety::testing::{TestOptions, get_context, json, render_string};
 use twelvety::template_render::TemplateRender;
-use twelvety::{Eleventy, Options, UserConfig, Value};
+use twelvety::{Twelvety, Options, UserConfig, Value};
 
 fn options(input: Option<&str>) -> TestOptions {
     match input {
@@ -92,7 +92,7 @@ where
         ..Default::default()
     }
     .with_config(config);
-    let mut elev = Eleventy::new(Some(input), None, options);
+    let mut elev = Twelvety::new(Some(input), None, options);
     elev.disable_logger();
     let results = elev.to_json()?;
     Ok(results.into_iter().next().expect("one result").content)
@@ -343,7 +343,7 @@ fn render_include_subfolder() {
 }
 
 // Related to https://github.com/harttle/liquidjs/issues/61
-// (dynamicPartials defaults to true since Eleventy 1.0)
+// (dynamicPartials defaults to true since Twelvety 1.0)
 #[test]
 fn render_include_subfolder_quoted() {
     for src in [
@@ -740,7 +740,7 @@ fn parse_for_symbols() {
     let engine = engine();
     let symbols = |src: &str| engine.parse_for_symbols(src).unwrap();
     assert_eq!(symbols("<p>{{ name }}</p>"), vec!["name"]);
-    assert_eq!(symbols("<p>{{ eleventy.deep.nested }}</p>"), vec!["eleventy.deep.nested"]);
+    assert_eq!(symbols("<p>{{ twelvety.deep.nested }}</p>"), vec!["twelvety.deep.nested"]);
     assert_eq!(symbols("<p>{{ a }} {{ b }}</p>"), vec!["a", "b"]);
     assert_eq!(symbols("<p>{% if true %}{{ c }}{% endif %}</p>"), vec!["c"]);
     assert_eq!(symbols("<p>{% if false %}{{ c }}{% endif %}</p>"), vec!["c"]);

@@ -5,7 +5,7 @@ const { RenderManager } = RenderPlugin;
 export default function($config) {
 	const rm = new RenderManager();
 
-	$config.on('eleventy.config', cfg => {
+	$config.on('twelvety.config', cfg => {
 		rm.templateConfig = cfg;
 	});
 

@@ -38,7 +38,7 @@ pub struct Files {
     pub file_ignores: Vec<String>,
     pub git_ignores: Vec<String>,
     pub unique_ignores: Vec<String>,
-    pub eleventy_ignore_content: Option<String>,
+    pub twelvety_ignore_content: Option<String>,
     pub local_path_root: Option<String>,
 }
 
@@ -58,7 +58,7 @@ impl Files {
             file_ignores: vec![],
             git_ignores: vec![],
             unique_ignores: vec![],
-            eleventy_ignore_content: None,
+            twelvety_ignore_content: None,
             local_path_root: None,
         };
         f.init();
@@ -151,11 +151,11 @@ impl Files {
         if self.config.use_git_ignore {
             files.insert(template_path::join(&[&root, ".gitignore"]));
         }
-        if self.eleventy_ignore_content.is_none() {
+        if self.twelvety_ignore_content.is_none() {
             let absolute_input = template_path::absolute_path(&[&self.dirs.input()]);
-            files.insert(template_path::join(&[&root, ".eleventyignore"]));
+            files.insert(template_path::join(&[&root, ".twelvetyignore"]));
             if root != absolute_input {
-                files.insert(template_path::join(&[&self.dirs.input(), ".eleventyignore"]));
+                files.insert(template_path::join(&[&self.dirs.input(), ".twelvetyignore"]));
             }
         }
         files.into_iter().collect()
@@ -174,7 +174,7 @@ impl Files {
             }
         }
         self.git_ignores = git;
-        if let Some(c) = &self.eleventy_ignore_content {
+        if let Some(c) = &self.twelvety_ignore_content {
             files.insert(c.clone());
         }
         if let Some(o) = self.get_output_dir_ignore() {

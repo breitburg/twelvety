@@ -119,7 +119,7 @@ impl TemplateContent {
                 self.input_path
             )
         })?;
-        front_matter::apply_eleventy_excerpt(&mut fm, &options);
+        front_matter::apply_twelvety_excerpt(&mut fm, &options);
         let fm = Arc::new(fm);
         *self.read_cache.lock().unwrap() = Some(fm.clone());
         Ok(fm)

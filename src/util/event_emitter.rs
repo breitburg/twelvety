@@ -8,33 +8,33 @@ use crate::value::Value;
 pub type EventListener = Arc<dyn Fn(&Value) -> anyhow::Result<()> + Send + Sync>;
 
 const ALIASES: &[(&str, &[&str])] = &[
-    ("buildawesome.before", &["beforeBuild", "eleventy.before", "buildawesome.before"]),
+    ("buildawesome.before", &["beforeBuild", "twelvety.before", "buildawesome.before"]),
     (
         "buildawesome.beforewatch",
-        &["beforeWatch", "eleventy.beforeWatch", "buildawesome.beforewatch"],
+        &["beforeWatch", "twelvety.beforeWatch", "buildawesome.beforewatch"],
     ),
-    ("buildawesome.beforeconfig", &["eleventy.beforeConfig", "buildawesome.beforeconfig"]),
-    ("buildawesome.after", &["afterBuild", "eleventy.after", "buildawesome.after"]),
-    ("buildawesome.aftererror", &["eleventy.afterError", "buildawesome.aftererror"]),
-    ("buildawesome.engine.njk", &["eleventy.engine.njk", "buildawesome.engine.njk"]),
+    ("buildawesome.beforeconfig", &["twelvety.beforeConfig", "buildawesome.beforeconfig"]),
+    ("buildawesome.after", &["afterBuild", "twelvety.after", "buildawesome.after"]),
+    ("buildawesome.aftererror", &["twelvety.afterError", "buildawesome.aftererror"]),
+    ("buildawesome.engine.njk", &["twelvety.engine.njk", "buildawesome.engine.njk"]),
     (
         "buildawesome.globaldatafiles",
-        &["eleventy.globalDataFiles", "buildawesome.globaldatafiles"],
+        &["twelvety.globalDataFiles", "buildawesome.globaldatafiles"],
     ),
-    ("buildawesome.contentmap", &["eleventy.contentMap", "buildawesome.contentmap"]),
-    ("buildawesome.layouts", &["eleventy.layouts", "buildawesome.layouts"]),
-    ("buildawesome.datafiles", &["eleventy.dataFiles", "buildawesome.datafiles"]),
-    ("buildawesome.passthrough", &["eleventy.passthrough", "buildawesome.passthrough"]),
-    ("buildawesome.config", &["eleventy.config", "buildawesome.config"]),
-    ("buildawesome.env", &["eleventy.env", "buildawesome.env"]),
-    ("buildawesome.extensionmap", &["eleventy.extensionmap", "buildawesome.extensionmap"]),
-    ("buildawesome.directories", &["eleventy.directories", "buildawesome.directories"]),
-    ("buildawesome.ignores", &["eleventy.ignores", "buildawesome.ignores"]),
-    ("buildawesome.reset", &["eleventy.reset", "buildawesome.reset"]),
-    ("buildawesome.afterwatch", &["eleventy.afterwatch", "buildawesome.afterwatch"]),
+    ("buildawesome.contentmap", &["twelvety.contentMap", "buildawesome.contentmap"]),
+    ("buildawesome.layouts", &["twelvety.layouts", "buildawesome.layouts"]),
+    ("buildawesome.datafiles", &["twelvety.dataFiles", "buildawesome.datafiles"]),
+    ("buildawesome.passthrough", &["twelvety.passthrough", "buildawesome.passthrough"]),
+    ("buildawesome.config", &["twelvety.config", "buildawesome.config"]),
+    ("buildawesome.env", &["twelvety.env", "buildawesome.env"]),
+    ("buildawesome.extensionmap", &["twelvety.extensionmap", "buildawesome.extensionmap"]),
+    ("buildawesome.directories", &["twelvety.directories", "buildawesome.directories"]),
+    ("buildawesome.ignores", &["twelvety.ignores", "buildawesome.ignores"]),
+    ("buildawesome.reset", &["twelvety.reset", "buildawesome.reset"]),
+    ("buildawesome.afterwatch", &["twelvety.afterwatch", "buildawesome.afterwatch"]),
     (
         "buildawesome.resourcemodified",
-        &["eleventy.resourceModified", "buildawesome.resourcemodified"],
+        &["twelvety.resourceModified", "buildawesome.resourcemodified"],
     ),
 ];
 
@@ -45,7 +45,7 @@ pub fn normalize_event_name(name: &str) -> String {
             return canonical.to_string();
         }
     }
-    if let Some(rest) = name.strip_prefix("eleventy.") {
+    if let Some(rest) = name.strip_prefix("twelvety.") {
         return format!("buildawesome.{}", rest.to_lowercase());
     }
     name.to_string()

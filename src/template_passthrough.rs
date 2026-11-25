@@ -175,7 +175,7 @@ fn copy_predicate(options: &Value, key: &str, arg: &str) -> Result<bool> {
     Ok(f.call(&[Value::str(arg)])?.is_truthy())
 }
 
-/// Recursive copy (`recursive-copy` with Eleventy’s defaults)
+/// Recursive copy (`recursive-copy` with Twelvety’s defaults)
 fn copy_recursive(src: &str, dest: &str, options: &Value, result: &mut CopyResult, dirs: &ProjectDirectories) -> Result<()> {
     let dot = copy_option(options, "dot", true);
     let junk = copy_option(options, "junk", false);

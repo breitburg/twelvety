@@ -71,7 +71,7 @@ fn default_paths(dirs: &[(&str, &str)]) -> Vec<String> {
     let mut out = vec![];
     for (dir, name) in dirs {
         out.push(format!("{dir}/{name}.json"));
-        out.push(format!("{dir}/{name}.11tydata.json"));
+        out.push(format!("{dir}/{name}.12tydata.json"));
         out.push(format!("{dir}/{name}.data.json"));
     }
     out
@@ -226,12 +226,12 @@ fn get_local_data_paths_with_set_data_file_base_name_1699() {
     assert_eq!(
         paths,
         [
-            "./test/stubs/index.11tydata.json",
+            "./test/stubs/index.12tydata.json",
             "./test/stubs/index.data.json",
-            "./test/stubs/component/index.11tydata.json",
+            "./test/stubs/component/index.12tydata.json",
             "./test/stubs/component/index.data.json",
             "./test/stubs/component/component.json",
-            "./test/stubs/component/component.11tydata.json",
+            "./test/stubs/component/component.12tydata.json",
             "./test/stubs/component/component.data.json",
         ]
     );
@@ -317,10 +317,10 @@ fn deeper_get_local_data_paths() {
 }
 
 #[test]
-fn get_local_data_paths_with_an_11ty_js_template() {
+fn get_local_data_paths_with_an_12ty_js_template() {
     with_data(input("test/stubs"), |td| {
         assert_eq!(
-            local_data_paths(td, "./test/stubs/component/component.11ty.js"),
+            local_data_paths(td, "./test/stubs/component/component.12ty.js"),
             default_paths(STUBS_COMPONENT)
         );
     });
@@ -344,7 +344,7 @@ fn get_template_data_file_glob() {
     with_data(input("test/stubs"), |td| {
         assert_eq!(
             td.get_template_data_file_glob(),
-            ["./test/stubs/**/*.{json,data.mjs,data.cjs,data.js,11tydata.mjs,11tydata.cjs,11tydata.js}"]
+            ["./test/stubs/**/*.{json,data.mjs,data.cjs,data.js,12tydata.mjs,12tydata.cjs,12tydata.js}"]
         );
     });
 }
@@ -443,7 +443,7 @@ fn add_global_data_complex_key() {
 }
 
 #[test]
-fn eleventy_version_and_generator_returned_from_data() {
+fn twelvety_version_and_generator_returned_from_data() {
     let options = input_with("./test/stubs-empty/", |cfg| {
         cfg.add_global_data("deep.nested.one", Value::function(|_| Ok(Value::str("first"))));
         cfg.add_global_data("deep.nested.two", Value::function(|_| Ok(Value::str("second"))));
@@ -452,10 +452,10 @@ fn eleventy_version_and_generator_returned_from_data() {
     with_data(options, |td| {
         let data = td.get_global_data().unwrap();
         let version = twelvety::data::template_data::UPSTREAM_VERSION;
-        assert_eq!(data.get_path("eleventy.version").as_str(), Some(version));
+        assert_eq!(data.get_path("twelvety.version").as_str(), Some(version));
         assert_eq!(
-            data.get_path("eleventy.generator").to_js_string(),
-            format!("Eleventy (Build Awesome) v{version}")
+            data.get_path("twelvety.generator").to_js_string(),
+            format!("Twelvety (Build Awesome) v{version}")
         );
         assert_eq!(data.get_path("deep.nested.one").as_str(), Some("first"));
         assert_eq!(data.get_path("deep.nested.two").as_str(), Some("second"));
@@ -480,16 +480,16 @@ fn tag_names(data: &str) -> Vec<String> {
 #[test]
 fn collection_names_from_data_empty_assigned() {
     assert_eq!(collection_names(r#"{"tags": []}"#), ["all"]);
-    assert!(collection_names(r#"{"tags": [], "eleventyExcludeFromCollections": true}"#).is_empty());
-    assert_eq!(collection_names(r#"{"tags": [], "eleventyExcludeFromCollections": ["one"]}"#), ["all"]);
+    assert!(collection_names(r#"{"tags": [], "twelvetyExcludeFromCollections": true}"#).is_empty());
+    assert_eq!(collection_names(r#"{"tags": [], "twelvetyExcludeFromCollections": ["one"]}"#), ["all"]);
 }
 
 #[test]
 fn collection_names_from_data_tags_assigned() {
     assert_eq!(collection_names(r#"{"tags": ["one", "two"]}"#), ["all", "one", "two"]);
-    assert!(collection_names(r#"{"tags": ["one", "two"], "eleventyExcludeFromCollections": true}"#).is_empty());
+    assert!(collection_names(r#"{"tags": ["one", "two"], "twelvetyExcludeFromCollections": true}"#).is_empty());
     assert_eq!(
-        collection_names(r#"{"tags": ["one", "two"], "eleventyExcludeFromCollections": ["one"]}"#),
+        collection_names(r#"{"tags": ["one", "two"], "twelvetyExcludeFromCollections": ["one"]}"#),
         ["all", "two"]
     );
 }
@@ -497,16 +497,16 @@ fn collection_names_from_data_tags_assigned() {
 #[test]
 fn tag_names_from_data_empty_assigned() {
     assert!(tag_names(r#"{"tags": []}"#).is_empty());
-    assert!(tag_names(r#"{"tags": [], "eleventyExcludeFromCollections": true}"#).is_empty());
-    assert!(tag_names(r#"{"tags": [], "eleventyExcludeFromCollections": ["one"]}"#).is_empty());
+    assert!(tag_names(r#"{"tags": [], "twelvetyExcludeFromCollections": true}"#).is_empty());
+    assert!(tag_names(r#"{"tags": [], "twelvetyExcludeFromCollections": ["one"]}"#).is_empty());
 }
 
 #[test]
 fn tag_names_from_data_tags_assigned() {
     assert_eq!(tag_names(r#"{"tags": ["one", "two"]}"#), ["one", "two"]);
-    assert!(tag_names(r#"{"tags": ["one", "two"], "eleventyExcludeFromCollections": true}"#).is_empty());
+    assert!(tag_names(r#"{"tags": ["one", "two"], "twelvetyExcludeFromCollections": true}"#).is_empty());
     assert_eq!(
-        tag_names(r#"{"tags": ["one", "two"], "eleventyExcludeFromCollections": ["one"]}"#),
+        tag_names(r#"{"tags": ["one", "two"], "twelvetyExcludeFromCollections": ["one"]}"#),
         ["two"]
     );
 }

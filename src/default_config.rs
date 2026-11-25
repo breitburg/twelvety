@@ -13,7 +13,7 @@ use crate::util::slugify::{SlugifyOptions, slugify};
 use crate::util::transforms_util;
 use crate::value::Value;
 
-pub const TEMPLATE_FORMATS: &[&str] = &["liquid", "md", "njk", "html", "11ty.js"];
+pub const TEMPLATE_FORMATS: &[&str] = &["liquid", "md", "njk", "html", "12ty.js"];
 
 fn get_locale_collection_item(
     ctx: &CallContext,
@@ -38,14 +38,14 @@ pub fn apply(config: &mut UserConfig, handle: ConfigHandle) -> Result<()> {
     // defaultConfigExtended.js
     plugins::html_transformer::register(config, handle.clone())?;
     config.add_plugin(
-        "@11ty/eleventy/html-relative-copy-plugin",
+        "@12ty/twelvety/html-relative-copy-plugin",
         |c, _| plugins::html_relative_copy::register(c),
         Value::object(),
     )?;
     plugins::input_path_to_url::register_filter(config, handle.clone())?;
 
     config.add_filter("slug", |_, _, _| {
-        bail!("The `slug` filter (deprecated since v1) has been removed in Eleventy v4. You can add it manually to your configuration file for backwards compatibility, read more at GitHub Issue #3893: https://github.com/11ty/eleventy/issues/3893 Alternatively (more risky), you can swap to use the `slugify` filter instead (outputs may be different and production URLs may break!)")
+        bail!("The `slug` filter (deprecated since v1) has been removed in Twelvety v4. You can add it manually to your configuration file for backwards compatibility, read more at GitHub Issue #3893: https://github.com/11ty/eleventy/issues/3893 Alternatively (more risky), you can swap to use the `slugify` filter instead (outputs may be different and production URLs may break!)")
     });
 
     let memo: Arc<Mutex<HashMap<String, String>>> = Arc::new(Mutex::new(HashMap::new()));

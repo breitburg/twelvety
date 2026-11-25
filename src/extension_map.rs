@@ -32,12 +32,12 @@ impl ExtensionMap {
             ("html", "html"),
             ("njk", "njk"),
             ("liquid", "liquid"),
-            ("server.js", "11ty.js"),
-            ("server.cjs", "11ty.js"),
-            ("server.mjs", "11ty.js"),
-            ("11ty.js", "11ty.js"),
-            ("11ty.cjs", "11ty.js"),
-            ("11ty.mjs", "11ty.js"),
+            ("server.js", "12ty.js"),
+            ("server.cjs", "12ty.js"),
+            ("server.mjs", "12ty.js"),
+            ("12ty.js", "12ty.js"),
+            ("12ty.cjs", "12ty.js"),
+            ("12ty.mjs", "12ty.js"),
         ];
         for (ext, key) in builtin {
             map.insert(
@@ -118,7 +118,7 @@ impl ExtensionMap {
             .any(|ext| normalized.ends_with(&format!(".{ext}")))
     }
 
-    /// Valid template extensions matching a path, longest first (e.g. `11ty.js` then `js`)
+    /// Valid template extensions matching a path, longest first (e.g. `12ty.js` then `js`)
     pub fn get_valid_extensions_for_path(&self, path: &str) -> Vec<String> {
         let normalized = path.to_lowercase();
         let valid = self.valid_template_extensions();
@@ -190,7 +190,7 @@ impl ExtensionMap {
 
     fn matching_extension(&self, path_or_key: &str) -> Option<(&String, &ExtensionEntry)> {
         let lower = path_or_key.to_lowercase();
-        // Prefer the longest matching extension (e.g. `11ty.js` over `js`)
+        // Prefer the longest matching extension (e.g. `12ty.js` over `js`)
         self.extension_to_key_map
             .iter()
             .filter(|(ext, _)| lower == **ext || lower.ends_with(&format!(".{ext}")))
@@ -251,9 +251,9 @@ mod tests {
     fn keys() {
         let m = map();
         assert_eq!(m.get_key("./test.md").as_deref(), Some("md"));
-        assert_eq!(m.get_key("./test.11ty.js"), None);
+        assert_eq!(m.get_key("./test.12ty.js"), None);
         assert_eq!(m.remove_template_extension("test.njk"), "test");
-        assert_eq!(m.remove_template_extension("test.11ty.js"), "test");
+        assert_eq!(m.remove_template_extension("test.12ty.js"), "test");
         assert_eq!(m.passthrough_copy_keys, vec!["png".to_string()]);
     }
 

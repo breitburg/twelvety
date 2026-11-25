@@ -30,8 +30,8 @@ pub fn compile(ctx: &Arc<BuildContext>, content: &str, template_lang: &str) -> R
         .last()
         .cloned()
         .unwrap_or_else(|| template_pipeline::PLAINTEXT_FORMAT.to_string());
-    if engine.starts_with("11ty.") {
-        bail!("11ty.js is not yet supported as a template engine for `renderTemplate`. Use `renderFile` instead!");
+    if engine.starts_with("12ty.") {
+        bail!("12ty.js is not yet supported as a template engine for `renderTemplate`. Use `renderFile` instead!");
     }
     let tr = TemplateRender::new(ctx.clone(), &engine)?;
     tr.get_compiled_template(content, false, Some(template_lang))
@@ -78,7 +78,7 @@ fn render_with(fn_: &RenderFn, data: Value, call: &CallContext, access_global_da
         proxy_wrap(&data, &call.get("__all__"))
     } else {
         let mut m = Map::new();
-        for key in ["page", "eleventy", "buildawesome"] {
+        for key in ["page", "twelvety", "buildawesome"] {
             m.insert(key.into(), call.get(key));
         }
         if let Value::Object(o) = &data {

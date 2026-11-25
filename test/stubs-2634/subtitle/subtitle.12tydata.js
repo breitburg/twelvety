@@ -1,5 +1,5 @@
 export default {
-  eleventyComputed: {
+  twelvetyComputed: {
     subtitle: () => "Computed",
   },
 };

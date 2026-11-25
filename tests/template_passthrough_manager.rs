@@ -11,7 +11,7 @@ use twelvety::template_passthrough::{CopyResult, TemplatePassthrough, TemplatePa
 use twelvety::testing::{json, quiet_logger};
 use twelvety::user_config::UserConfig;
 use twelvety::util::project_directories::{ConfigDirs, ProjectDirectories};
-use twelvety::{Eleventy, Options, Value};
+use twelvety::{Twelvety, Options, Value};
 
 fn strings(v: &[&str]) -> Vec<String> {
     v.iter().map(|s| s.to_string()).collect()
@@ -297,7 +297,7 @@ fn write_site(output: &str, config: impl Fn(&mut UserConfig) -> anyhow::Result<(
         ..Default::default()
     }
     .with_config(config);
-    let mut core = Eleventy::new(Some("test/stubs/template-passthrough"), Some(output), options);
+    let mut core = Twelvety::new(Some("test/stubs/template-passthrough"), Some(output), options);
     core.disable_logger();
     core.write().map(|_| ())
 }

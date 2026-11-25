@@ -281,7 +281,7 @@ impl Pagination {
             let first = items[page_number].first().cloned().unwrap_or_default();
             let group = first.get("buildawesomeTranslationKey");
             let group = if group.is_nullish() {
-                first.get("eleventyPaginationGroupNumber")
+                first.get("twelvetyPaginationGroupNumber")
             } else {
                 group
             };

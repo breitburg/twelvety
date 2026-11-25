@@ -1,9 +1,9 @@
 //! Ported from upstream `test/TemplateMapTest-ComputedData.js`. The `---js` front matter
-//! (and the `child.11ty.cjs` template’s data) is passed to `addTemplate` as data with Rust
+//! (and the `child.12ty.cjs` template’s data) is passed to `addTemplate` as data with Rust
 //! closures for the computed data functions.
 //!
 //! Skipped (JS-only): "Computed data in directory data file consumes data file data, Issue #1137"
-//! (`.11ty.cjs` templates and a `dir.data.cjs` directory data file).
+//! (`.12ty.cjs` templates and a `dir.data.cjs` directory data file).
 
 use std::sync::Arc;
 
@@ -26,12 +26,12 @@ fn virtual_config(templates: Vec<(&'static str, &'static str, Value)>) -> Arc<Bu
     .unwrap()
 }
 
-/// `eleventyComputed` with `test: "hello"` and `dogCollection` from `f(collections.dog)`
+/// `twelvetyComputed` with `test: "hello"` and `dogCollection` from `f(collections.dog)`
 fn computed_collections_data(f: fn(Value) -> Value) -> Value {
     let mut computed = json(r#"{"test": "hello"}"#);
     computed.set("dogCollection", Value::function(move |args| Ok(f(args[0].get_path("collections.dog")))));
     let mut data = Value::object();
-    data.set("eleventyComputed", computed);
+    data.set("twelvetyComputed", computed);
     data
 }
 
@@ -72,13 +72,13 @@ fn computed_data_can_see_paginated_data_issue_1138() {
     let mut child_computed = Value::object();
     child_computed.set("venues", Value::function(|args| Ok(args[0].get_path("collections.venue"))));
     let mut child_data = Value::object();
-    child_data.set("eleventyComputed", child_computed);
+    child_data.set("twelvetyComputed", child_computed);
 
-    // upstream’s consumer is a `child.11ty.cjs` template with the same data
+    // upstream’s consumer is a `child.12ty.cjs` template with the same data
     let ctx = virtual_config(vec![
         (
             "paginated.njk",
-            "---\nvenues:\n  - first\n  - second\npagination:\n  data: venues\n  size: 1\n  alias: venue\n  addAllPagesToCollections: true\npermalink: \"venues/{{ venue }}/\"\ntags: venue\neleventyComputed:\n  title: \"{{ venue }}\"\n---",
+            "---\nvenues:\n  - first\n  - second\npagination:\n  data: venues\n  size: 1\n  alias: venue\n  addAllPagesToCollections: true\npermalink: \"venues/{{ venue }}/\"\ntags: venue\ntwelvetyComputed:\n  title: \"{{ venue }}\"\n---",
             Value::object(),
         ),
         ("child.njk", "", child_data),
@@ -104,7 +104,7 @@ fn computed_data_can_see_paginated_data_issue_1138() {
 }
 
 #[test]
-#[ignore = "JS-only: `.11ty.cjs` templates and a `dir.data.cjs` directory data file"]
+#[ignore = "JS-only: `.12ty.cjs` templates and a `dir.data.cjs` directory data file"]
 fn computed_data_in_directory_data_file_consumes_data_file_data_issue_1137() {}
 
 #[test]

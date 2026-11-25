@@ -1,4 +1,4 @@
-//! Twelvety: a Rust port of Build Awesome (Eleventy), a simpler static site generator.
+//! Twelvety: a Rust port of Build Awesome (Twelvety), a simpler static site generator.
 
 pub mod build_context;
 pub mod config_file;
@@ -31,7 +31,7 @@ pub mod user_config;
 pub mod util;
 pub mod value;
 
-pub use crate::core::{Eleventy, Options};
+pub use crate::core::{Twelvety, Options};
 pub use crate::user_config::UserConfig;
 pub use crate::value::Value;
 pub mod serve;

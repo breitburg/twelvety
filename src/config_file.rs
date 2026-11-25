@@ -1,7 +1,7 @@
 //! Declarative configuration files (`buildawesome.config.json` / `.toml` / `.yaml`).
 //!
 //! Upstream configuration files are JavaScript modules calling the
-//! `eleventyConfig` API. This applies the serializable subset of that API from
+//! `twelvetyConfig` API. This applies the serializable subset of that API from
 //! a data file:
 //!
 //! ```toml

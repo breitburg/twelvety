@@ -84,7 +84,7 @@ pub fn get_context(options: TestOptions) -> Result<Arc<BuildContext>> {
     Ok(ctx)
 }
 
-/// `getNewTemplate(path, inputDir, outputDir, eleventyConfig)`
+/// `getNewTemplate(path, inputDir, outputDir, twelvetyConfig)`
 pub fn get_new_template(path: &str, options: TestOptions) -> Result<Arc<Template>> {
     let ctx = get_context(options)?;
     Ok(Arc::new(Template::new(path, ctx, false)))

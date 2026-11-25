@@ -1,6 +1,6 @@
 {
 	"permalink": "/blog/{{ page.fileSlug }}/",
-	"eleventyComputed": {
+	"twelvetyComputed": {
 		"pageUrl": "{{ page.url }}"
 	}
 }

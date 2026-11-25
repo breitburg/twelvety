@@ -90,7 +90,7 @@ fn data_should_not_process_in_version() {
 fn version_prints_the_package_name_before_the_version() {
     let o = run("--version");
     assert!(o.status.success());
-    assert!(regex::Regex::new(r"^eleventy \d+\.\d+\.\d+\S*\n$").unwrap().is_match(&stdout(&o)), "{}", stdout(&o));
+    assert!(regex::Regex::new(r"^twelvety \d+\.\d+\.\d+\S*\n$").unwrap().is_match(&stdout(&o)), "{}", stdout(&o));
 }
 
 /// "Test command line --events-file writes build.end on success"

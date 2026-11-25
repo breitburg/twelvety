@@ -22,7 +22,7 @@ fn unsupported_engine() {
 #[test]
 fn supported_engine() {
     let ctx = get_context(TestOptions::default()).unwrap();
-    assert!(ctx.engine_manager.has_engine("11ty.js"));
+    assert!(ctx.engine_manager.has_engine("12ty.js"));
 }
 
 #[test]

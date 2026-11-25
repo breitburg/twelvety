@@ -10,7 +10,7 @@ use std::time::{Duration, Instant};
 use anyhow::Result;
 use notify::{RecursiveMode, Watcher};
 
-use crate::core::Eleventy;
+use crate::core::Twelvety;
 use crate::serve::DevServer;
 use crate::util::glob_matcher::{build_glob_set, is_glob_match};
 use crate::util::template_path;
@@ -22,7 +22,7 @@ fn relative(path: &Path) -> String {
 }
 
 /// Watch for changes and rebuild. Blocks forever.
-pub fn watch(eleventy: &mut Eleventy, server: Option<&DevServer>) -> Result<()> {
+pub fn watch(twelvety: &mut Twelvety, server: Option<&DevServer>) -> Result<()> {
     let (tx, rx) = channel();
     let mut watcher = notify::recommended_watcher(move |res: notify::Result<notify::Event>| {
         if let Ok(event) = res {
@@ -37,7 +37,7 @@ pub fn watch(eleventy: &mut Eleventy, server: Option<&DevServer>) -> Result<()> 
         }
     })?;
     watcher.watch(Path::new("."), RecursiveMode::Recursive)?;
-    let logger = eleventy.logger();
+    let logger = twelvety.logger();
     logger.force_log("Watching…");
 
     let throttle = Duration::from_millis(100);
@@ -56,16 +56,16 @@ pub fn watch(eleventy: &mut Eleventy, server: Option<&DevServer>) -> Result<()> 
                 Err(RecvTimeoutError::Disconnected) => return Ok(()),
             }
         }
-        let output_dir = eleventy.output_dir.clone();
+        let output_dir = twelvety.output_dir.clone();
         let output_glob = format!("{}**", template_path::add_leading_dot_slash(&output_dir));
-        let ignores: Vec<String> = eleventy
+        let ignores: Vec<String> = twelvety
             .watch_ignores
             .iter()
             .cloned()
             .chain([output_glob, "./.git/**".to_string(), "**/node_modules/**".to_string()])
             .collect();
         let ignore_set = build_glob_set(&ignores);
-        let targets = eleventy.watch_targets.clone();
+        let targets = twelvety.watch_targets.clone();
         let relevant: Vec<String> = changed
             .iter()
             .map(|p| relative(p))
@@ -79,7 +79,7 @@ pub fn watch(eleventy: &mut Eleventy, server: Option<&DevServer>) -> Result<()> 
         unique.sort();
         unique.dedup();
         logger.force_log(&format!("File changed: {}", unique.join(", ")));
-        match eleventy.write() {
+        match twelvety.write() {
             Ok(_) => {
                 if let Some(s) = server {
                     s.reload();

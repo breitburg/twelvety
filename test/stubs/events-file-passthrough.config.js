@@ -1,4 +1,4 @@
-export default function (eleventyConfig) {
-	eleventyConfig.addPassthroughCopy("test/stubs/events-file-passthrough/robots.txt");
-	eleventyConfig.addPassthroughCopy({ "test/stubs/events-file-passthrough/img": "img" });
+export default function (twelvetyConfig) {
+	twelvetyConfig.addPassthroughCopy("test/stubs/events-file-passthrough/robots.txt");
+	twelvetyConfig.addPassthroughCopy({ "test/stubs/events-file-passthrough/img": "img" });
 }

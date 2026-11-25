@@ -124,7 +124,7 @@ pub fn plugin(config: &mut UserConfig, options: &Value) -> Result<()> {
             apply_base_to_url(url.trim(), &base, Some(&pp), Some(page_url.as_str()).filter(|s| !s.is_empty()))
         }),
         AddOptions {
-            name: Some("@11ty/eleventy/html-base-plugin".into()),
+            name: Some("@12ty/twelvety/html-base-plugin".into()),
             priority: -2,
             enabled: Some(Arc::new(move |ctx| {
                 ctx.base_href.as_ref().map(|b| !b.is_empty()).unwrap_or(false) || bh2 != "/"

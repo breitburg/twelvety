@@ -1,6 +1,6 @@
-import { Eleventy } from "@11ty/eleventy";
+import { Twelvety } from "@11ty/eleventy";
 
-new Eleventy({
+new Twelvety({
 	input: "src",
 	output: "_site",
 	config($config) {
@@ -11,4 +11,4 @@ new Eleventy({
 });
 
 // @ts-expect-error
-new Eleventy({ runMode: "not-a-run-mode" });
+new Twelvety({ runMode: "not-a-run-mode" });

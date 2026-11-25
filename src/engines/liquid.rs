@@ -1,4 +1,4 @@
-//! Port of `Engines/Liquid.js`: wires the Liquid library into Eleventy.
+//! Port of `Engines/Liquid.js`: wires the Liquid library into Twelvety.
 
 use std::sync::{Arc, Mutex};
 
@@ -162,7 +162,7 @@ impl TemplateEngine for LiquidEngine {
         let user_globals = self.globals.clone();
         Ok(Arc::new(move |data: &Value| {
             let mut globals = Map::new();
-            for key in ["page", "eleventy", "buildawesome", "collections"] {
+            for key in ["page", "twelvety", "buildawesome", "collections"] {
                 globals.insert(key.to_string(), data.get(key));
             }
             if let Value::Object(g) = &user_globals {

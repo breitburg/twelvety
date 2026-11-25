@@ -9,7 +9,7 @@ export default function(cfg) {
 
 export const config = {
   dir: {
-    input: path.resolve("../eleventy-input-folder"),
+    input: path.resolve("../twelvety-input-folder"),
     output: path.resolve("../_site")
   }
 }

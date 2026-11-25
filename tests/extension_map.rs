@@ -110,9 +110,9 @@ fn file_list_with_dir_in_path_and_dir() {
 
 #[test]
 fn remove_template_extension() {
-    let map = map_for(&["njk", "11ty.js"]);
+    let map = map_for(&["njk", "12ty.js"]);
     assert_eq!(map.remove_template_extension("component.njk"), "component");
-    assert_eq!(map.remove_template_extension("component.11ty.js"), "component");
+    assert_eq!(map.remove_template_extension("component.12ty.js"), "component");
 
     assert_eq!(map.remove_template_extension(""), "");
     assert_eq!(map.remove_template_extension("component"), "component");
@@ -121,7 +121,7 @@ fn remove_template_extension() {
 
 #[test]
 fn has_engine() {
-    let map = map_for(&["liquid", "njk", "11ty.js"]);
+    let map = map_for(&["liquid", "njk", "12ty.js"]);
     assert!(map.has_engine("default.liquid"));
     assert_eq!(map.get_key("default.liquid").as_deref(), Some("liquid"));
     assert_eq!(map.get_key(""), None);
@@ -131,8 +131,8 @@ fn has_engine() {
     assert_eq!(map.get_key("sldkjfkldsj"), None);
     assert!(!map.has_engine("sldkjfkldsj"));
 
-    assert_eq!(map.get_key("11ty.js").as_deref(), Some("11ty.js"));
-    assert!(map.has_engine("11ty.js"));
+    assert_eq!(map.get_key("12ty.js").as_deref(), Some("12ty.js"));
+    assert!(map.has_engine("12ty.js"));
 
     assert_eq!(map.get_key("md"), None);
     assert!(!map.has_engine("md"));
@@ -149,19 +149,19 @@ fn has_engine_no_formats_passed_in() {
     assert!(!map.has_engine("liquid"));
     assert_eq!(map.get_key("sldkjfkldsj"), None);
     assert!(!map.has_engine("sldkjfkldsj"));
-    assert_eq!(map.get_key("11ty.js"), None);
-    assert!(!map.has_engine("11ty.js"));
+    assert_eq!(map.get_key("12ty.js"), None);
+    assert!(!map.has_engine("12ty.js"));
     assert_eq!(map.get_key("md"), None);
     assert!(!map.has_engine("md"));
 }
 
 #[test]
 fn get_key() {
-    let map = map_for(&["njk", "11ty.js", "md"]);
+    let map = map_for(&["njk", "12ty.js", "md"]);
     assert_eq!(map.get_key("component.njk").as_deref(), Some("njk"));
-    assert_eq!(map.get_key("component.11ty.js").as_deref(), Some("11ty.js"));
-    assert_eq!(map.get_key("11ty.js").as_deref(), Some("11ty.js"));
-    assert_eq!(map.get_key(".11ty.js").as_deref(), Some("11ty.js"));
+    assert_eq!(map.get_key("component.12ty.js").as_deref(), Some("12ty.js"));
+    assert_eq!(map.get_key("12ty.js").as_deref(), Some("12ty.js"));
+    assert_eq!(map.get_key(".12ty.js").as_deref(), Some("12ty.js"));
 
     assert_eq!(map.get_key("sample.md").as_deref(), Some("md"));
 
@@ -173,10 +173,10 @@ fn get_key() {
 
 #[test]
 fn is_full_template_file_path_not_a_passthrough_copy_extension() {
-    let map = map_for(&["liquid", "njk", "11ty.js", "js", "css"]);
+    let map = map_for(&["liquid", "njk", "12ty.js", "js", "css"]);
     assert!(map.is_full_template_file_path("template.liquid"));
     assert!(map.is_full_template_file_path("template.njk"));
-    assert!(map.is_full_template_file_path("template.11ty.js"));
+    assert!(map.is_full_template_file_path("template.12ty.js"));
     assert!(!map.is_full_template_file_path("template.ejs"));
     assert!(!map.is_full_template_file_path("template.pug"));
     assert!(!map.is_full_template_file_path("passthrough.js"));
@@ -185,9 +185,9 @@ fn is_full_template_file_path_not_a_passthrough_copy_extension() {
 
 #[test]
 fn is_full_template_file_path_with_other_extensions_for_a_key() {
-    let map = map_for(&["njk", "11ty.js"]);
-    assert!(map.is_full_template_file_path("template.11ty.cjs"));
-    assert!(map.is_full_template_file_path("template.11ty.mjs"));
+    let map = map_for(&["njk", "12ty.js"]);
+    assert!(map.is_full_template_file_path("template.12ty.cjs"));
+    assert!(map.is_full_template_file_path("template.12ty.mjs"));
     assert!(map.is_full_template_file_path("template.server.js"));
     assert!(map.is_full_template_file_path("template.server.mjs"));
     assert!(!map.is_full_template_file_path("template.js"));
@@ -197,19 +197,19 @@ fn is_full_template_file_path_with_other_extensions_for_a_key() {
 #[test]
 fn get_valid_extensions_for_path() {
     let cfg = config_with_js_extension();
-    let map = get_extension_map(&["liquid", "njk", "11ty.js", "js"], &cfg);
+    let map = get_extension_map(&["liquid", "njk", "12ty.js", "js"], &cfg);
 
     assert_eq!(map.get_valid_extensions_for_path("template.liquid"), strings(&["liquid"]));
-    assert_eq!(map.get_valid_extensions_for_path("template.11ty.js"), strings(&["11ty.js", "js"]));
+    assert_eq!(map.get_valid_extensions_for_path("template.12ty.js"), strings(&["12ty.js", "js"]));
     assert_eq!(map.get_valid_extensions_for_path("template.pug"), Vec::<String>::new());
     assert_eq!(map.get_valid_extensions_for_path("template.liquid.js"), strings(&["js"]));
-    assert_eq!(map.get_valid_extensions_for_path("njk.liquid.11ty.js"), strings(&["11ty.js", "js"]));
+    assert_eq!(map.get_valid_extensions_for_path("njk.liquid.12ty.js"), strings(&["12ty.js", "js"]));
     assert_eq!(map.get_valid_extensions_for_path("template.server.js"), strings(&["server.js", "js"]));
-    assert_eq!(map.get_valid_extensions_for_path("template.11ty.mjs"), strings(&["11ty.mjs"]));
+    assert_eq!(map.get_valid_extensions_for_path("template.12ty.mjs"), strings(&["12ty.mjs"]));
 }
 
 // Skipped: `shouldSpiderJavaScriptDependencies` (JavaScript dependency spidering for
-// `11ty.js` templates is a JS-only feature, not part of the Rust port).
+// `12ty.js` templates is a JS-only feature, not part of the Rust port).
 
 #[test]
 fn custom_add_extension_keys_are_mapped_to_lower_case_4224() {

@@ -588,7 +588,7 @@ impl TemplateMap {
                 let data = page.data();
                 if output.as_bool() == Some(false)
                     || url.as_bool() == Some(false)
-                    || data.get("eleventyAllowMissingExtension").is_truthy()
+                    || data.get("twelvetyAllowMissingExtension").is_truthy()
                     || EXTENSIONLESS_URL_ALLOWLIST
                         .iter()
                         .any(|u| url.to_output_string().ends_with(u))
@@ -599,7 +599,7 @@ impl TemplateMap {
                 if template_path::get_extension(&output).is_empty() {
                     let permalink = data.get("permalink");
                     bail!(
-                        "The template at '{}' attempted to write to '{output}'{}, which is a target on the file system that does not include a file extension.\nYou *probably* want to add a file extension to your permalink so that hosts will know how to correctly serve this file to web browsers. Without a file extension, this file may not be reliably deployed without additional hosting configuration (it won’t have a mime type) and may also cause local development issues if you later attempt to write to a subdirectory of the same name.\nLearn more: https://v3.11ty.dev/docs/permalinks/#trailing-slashes\nThis is usually but not *always* an error so if you’d like to disable this error message, add `eleventyAllowMissingExtension: true` somewhere in the data cascade for this template or use `$config.configureErrorReporting({{ missingExtensions: \"allow\" }});` to disable this feature globally.",
+                        "The template at '{}' attempted to write to '{output}'{}, which is a target on the file system that does not include a file extension.\nYou *probably* want to add a file extension to your permalink so that hosts will know how to correctly serve this file to web browsers. Without a file extension, this file may not be reliably deployed without additional hosting configuration (it won’t have a mime type) and may also cause local development issues if you later attempt to write to a subdirectory of the same name.\nLearn more: https://v3.11ty.dev/docs/permalinks/#trailing-slashes\nThis is usually but not *always* an error so if you’d like to disable this error message, add `twelvetyAllowMissingExtension: true` somewhere in the data cascade for this template or use `$config.configureErrorReporting({{ missingExtensions: \"allow\" }});` to disable this feature globally.",
                         page.input_path,
                         if permalink.is_truthy() {
                             format!(" (via `permalink` value: '{}')", permalink.to_output_string())

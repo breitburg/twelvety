@@ -313,10 +313,10 @@ pub fn rewrite_urls(
     Ok(String::from_utf8_lossy(&output).to_string())
 }
 
-/// Registers the `@11ty/eleventy/html-transformer` transform (defaultConfigExtended.js)
+/// Registers the `@12ty/twelvety/html-transformer` transform (defaultConfigExtended.js)
 pub fn register(config: &mut UserConfig, _handle: ConfigHandle) -> Result<()> {
     let transformer = config.html_transformer.clone();
-    config.add_transform("@11ty/eleventy/html-transformer", move |ctx, content| {
+    config.add_transform("@12ty/twelvety/html-transformer", move |ctx, content| {
         let output_path = ctx.output_path.to_output_string();
         transformer.transform_content(&output_path, content, ctx)
     });

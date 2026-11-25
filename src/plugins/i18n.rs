@@ -206,7 +206,7 @@ fn get_locale_urls_map(url_to_input_path: &Value, remove_ext: &dyn Fn(&str) -> S
             let original = entry.get("inputPath").to_output_string();
             let group = entry.get("groupNumber");
             let filepath = remove_ext(&original);
-            let mut replaced = swap_language_code_no_check(&filepath, "__11ty_i18n", langs);
+            let mut replaced = swap_language_code_no_check(&filepath, "__12ty_i18n", langs);
             if group.is_nullish() {
                 let url_lang = get_language_code_from_url(url, langs);
                 let rest = if url_lang.is_empty() { url.clone() } else { url[url_lang.len() + 1..].to_string() };
@@ -332,7 +332,7 @@ pub fn plugin(config: &mut UserConfig, opts: &Value) -> Result<()> {
         Value::Array(a) => {
             options.languages = Some(a.iter().map(|v| v.to_output_string()).collect());
         }
-        _ => bail!("The `languages` option in Eleventy’s Internationalization (I18N) plugin must be an array of language codes."),
+        _ => bail!("The `languages` option in Twelvety’s Internationalization (I18N) plugin must be an array of language codes."),
     }
     if options.default_language.is_empty() {
         options.default_language = options
@@ -342,7 +342,7 @@ pub fn plugin(config: &mut UserConfig, opts: &Value) -> Result<()> {
             .unwrap_or_default();
     }
     if options.default_language.is_empty() {
-        bail!("You must specify a `defaultLanguage` (or `languages`) in Eleventy’s Internationalization (I18N) plugin.");
+        bail!("You must specify a `defaultLanguage` (or `languages`) in Twelvety’s Internationalization (I18N) plugin.");
     }
     if let Some(langs) = &options.languages {
         let mut all = vec![options.default_language.clone()];
@@ -389,7 +389,7 @@ pub fn plugin(config: &mut UserConfig, opts: &Value) -> Result<()> {
 
     let o = options.clone();
     config.add_global_data(
-        "eleventyComputed.page.lang",
+        "twelvetyComputed.page.lang",
         Value::function(move |_| {
             let o = o.clone();
             Ok(Value::function(move |args| {

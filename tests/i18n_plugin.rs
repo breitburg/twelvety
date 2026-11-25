@@ -89,8 +89,8 @@ fn lang_utils_swap_language_code() {
     assert_eq!(swap_language_code("/es/es/es/", "en", None), "/en/es/es/"); // first only
 }
 
-// "contentMap Event from Eleventy" and "locale_url and locale_links Filters": the
-// `test/stubs-i18n` fixture includes a JavaScript template (`en-us/index.11ty.cjs`), which the
+// "contentMap Event from Twelvety" and "locale_url and locale_links Filters": the
+// `test/stubs-i18n` fixture includes a JavaScript template (`en-us/index.12ty.cjs`), which the
 // port doesn’t support (skipped).
 
 /// "errorMode default (strict)"
@@ -378,7 +378,7 @@ fn previous_and_next_collection_item_resolve_a_localized_item_njk() {
     );
 }
 
-// "… (11ty.js)" needs JavaScript templates and "… (custom)" needs
+// "… (12ty.js)" needs JavaScript templates and "… (custom)" needs
 // `augmentFunctionContext` on a JavaScript `compile` function (skipped).
 
 /// "locale_links and locale_url match paginated pages by URL"
@@ -442,7 +442,7 @@ fn buildawesome_translation_key_groups_paginated_translations_with_different_url
             json(
                 r#"[
                     {"buildawesomeTranslationKey": "wood", "en": "wood", "de": "holz"},
-                    {"eleventyPaginationGroupNumber": "metal", "en": "metal", "de": "metall"}
+                    {"twelvetyPaginationGroupNumber": "metal", "en": "metal", "de": "metall"}
                 ]"#,
             ),
         );

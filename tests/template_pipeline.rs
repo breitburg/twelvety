@@ -3,7 +3,7 @@
 use std::sync::{Arc, Mutex};
 
 use indexmap::IndexMap;
-use twelvety::core::{Eleventy, Options};
+use twelvety::core::{Twelvety, Options};
 use twelvety::template::PageResult;
 use twelvety::testing::json;
 use twelvety::user_config::{CompiledFn, ExtensionOptions, UserConfig};
@@ -24,7 +24,7 @@ fn get_result<F>(config: F) -> PageResult
 where
     F: Fn(&mut UserConfig) -> anyhow::Result<()> + Send + Sync + 'static,
 {
-    let mut elev = Eleventy::new(Some("./test/stubs-virtual/"), None, options(config));
+    let mut elev = Twelvety::new(Some("./test/stubs-virtual/"), None, options(config));
     elev.disable_logger();
     elev.to_json().unwrap().into_iter().next().expect("no results")
 }
@@ -74,7 +74,7 @@ fn liquid_md_override_on_an_html_file() {
 fn template_syntax_reflects_the_pipeline() {
     let syntaxes: Arc<Mutex<IndexMap<String, String>>> = Arc::default();
     let collected = syntaxes.clone();
-    let mut elev = Eleventy::new(
+    let mut elev = Twelvety::new(
         Some("./test/stubs-virtual/"),
         None,
         options(move |cfg| {

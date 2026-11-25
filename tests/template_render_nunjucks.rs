@@ -1,5 +1,5 @@
 //! Tests for the Nunjucks engine, ported from upstream `test/TemplateRenderNunjucksTest.js`
-//! and `test/EleventyNunjucksTest.js`.
+//! and `test/TwelvetyNunjucksTest.js`.
 //!
 //! Skipped upstream tests (JavaScript-only APIs):
 //! - "Nunjucks getEngineLib", "Nunjucks Render: with Library Override": `setLibrary`/`getEngineLib`
@@ -22,7 +22,7 @@ use anyhow::{Result, anyhow};
 use twelvety::testing::{TestOptions, get_context, json, render_string};
 use twelvety::template_render::TemplateRender;
 use twelvety::user_config::{CallContext, UserConfig};
-use twelvety::{Eleventy, Options, Value};
+use twelvety::{Twelvety, Options, Value};
 
 fn input(dir: &str) -> TestOptions {
     TestOptions::input(dir)
@@ -662,7 +662,7 @@ fn nunjucks_parse_for_symbols() {
     let tr = TemplateRender::new(ctx, "njk").unwrap();
     let symbols = |src: &str| tr.engine.parse_for_symbols(src).unwrap();
     assert_eq!(symbols("<p>{{ name }}</p>"), ["name"]);
-    assert_eq!(symbols("<p>{{ eleventy.deep.nested }}</p>"), ["eleventy.deep.nested"]);
+    assert_eq!(symbols("<p>{{ twelvety.deep.nested }}</p>"), ["twelvety.deep.nested"]);
     assert_eq!(symbols("<p>{{ a }} {{ b }}</p>"), ["a", "b"]);
     assert_eq!(symbols("<p>{% if true %}{{ c }}{% endif %}</p>"), ["c"]);
     assert_eq!(symbols("<p>{% if false %}{{ c }}{% endif %}</p>"), ["c"]);
@@ -798,7 +798,7 @@ fn asynchronous_filters_via_add_nunjucks_filter() {
     assert_eq!(out.unwrap(), "<p>12</p>");
 }
 
-/* EleventyNunjucksTest.js */
+/* TwelvetyNunjucksTest.js */
 
 fn build(input: &str, output: &str, config: impl Fn(&mut UserConfig) -> Result<()> + Send + Sync + 'static) -> Vec<String> {
     let options = Options {
@@ -807,7 +807,7 @@ fn build(input: &str, output: &str, config: impl Fn(&mut UserConfig) -> Result<(
         ..Default::default()
     }
     .with_config(config);
-    let mut elev = Eleventy::new(Some(input), Some(output), options);
+    let mut elev = Twelvety::new(Some(input), Some(output), options);
     elev.to_json().unwrap().into_iter().map(|r| r.content).collect()
 }
 

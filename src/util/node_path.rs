@@ -184,9 +184,9 @@ mod tests {
         assert_eq!(p.base, "index.md");
         assert_eq!(p.name, "index");
         assert_eq!(p.ext, ".md");
-        let p = parse("index.11ty.js");
+        let p = parse("index.12ty.js");
         assert_eq!(p.ext, ".js");
-        assert_eq!(p.name, "index.11ty");
+        assert_eq!(p.name, "index.12ty");
         assert_eq!(parse(".htaccess").ext, "");
     }
 

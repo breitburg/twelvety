@@ -1,4 +1,4 @@
-//! Port of `CoreMinimal.js` and `Core.js`: the `Eleventy` class.
+//! Port of `CoreMinimal.js` and `Core.js`: the `Twelvety` class.
 
 use std::sync::Arc;
 use std::time::Instant;
@@ -47,7 +47,7 @@ impl Options {
     }
 }
 
-pub struct Eleventy {
+pub struct Twelvety {
     pub raw_input: Option<String>,
     pub raw_output: Option<String>,
     pub options: Options,
@@ -77,7 +77,7 @@ pub enum BuildOutput {
     Json,
 }
 
-impl Eleventy {
+impl Twelvety {
     pub fn new(input: Option<&str>, output: Option<&str>, options: Options) -> Self {
         let source = options.source.clone().unwrap_or_else(|| "script".into());
         let run_mode = options.run_mode.clone().unwrap_or_else(|| "build".into());
@@ -87,7 +87,7 @@ impl Eleventy {
         } else {
             options.quiet_mode.map(|q| !q)
         };
-        Eleventy {
+        Twelvety {
             raw_input: input.filter(|s| !s.is_empty()).map(String::from),
             raw_output: output.filter(|s| !s.is_empty()).map(String::from),
             options,
@@ -180,7 +180,7 @@ impl Eleventy {
         ] {
             let v = value.to_output_string();
             unsafe {
-                std::env::set_var(format!("ELEVENTY_{suffix}"), &v);
+                std::env::set_var(format!("TWELVETY_{suffix}"), &v);
                 std::env::set_var(format!("BUILDAWESOME_{suffix}"), &v);
             }
         }
@@ -318,7 +318,7 @@ impl Eleventy {
                         "Problem in `buildawesome.aftererror` event listener: {listener_error:#}"
                     ));
                 }
-                // Logged as “Problem writing Eleventy templates” by the CLI
+                // Logged as “Problem writing Twelvety templates” by the CLI
                 Err(e)
             }
         };
@@ -434,7 +434,7 @@ impl TemplateWriter {
 
 /// Convenience: build a site programmatically
 pub fn build(input: &str, output: &str, options: Options) -> Result<Vec<PageResult>> {
-    let mut e = Eleventy::new(Some(input), Some(output), options);
+    let mut e = Twelvety::new(Some(input), Some(output), options);
     let (_, results) = e.write().context("Build failed")?;
     Ok(results)
 }
