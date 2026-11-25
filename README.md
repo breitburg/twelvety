@@ -1,5 +1,7 @@
 # Twelvety
 
+[![Test](https://github.com/breitburg/twelvety/actions/workflows/test.yml/badge.svg)](https://github.com/breitburg/twelvety/actions/workflows/test.yml)
+
 Twelvety is a simple static site generator written in Rust. You give it a folder of templates (Markdown, Liquid, Nunjucks or plain HTML) and it turns them into a folder of HTML files you can host anywhere.
 
 It is a port of [Build Awesome](https://github.com/11ty/buildawesome) and follows the original closely, so most of its documentation applies here too. The main difference is that there is no JavaScript: configuration is a JSON, TOML or YAML file, or Rust code if you use Twelvety as a library.
