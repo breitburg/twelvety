@@ -1,58 +1,106 @@
 # Twelvety
 
-A Rust port of [Build Awesome](https://github.com/11ty/buildawesome), a simpler static site generator. It transforms a directory of templates (Liquid, Nunjucks, Markdown, HTML and custom formats) into HTML.
+Twelvety is a simple static site generator written in Rust. You give it a folder of templates (Markdown, Liquid, Nunjucks or plain HTML) and it turns them into a folder of HTML files you can host anywhere.
 
-The port follows the upstream code closely. Most upstream modules have a Rust counterpart with the same responsibilities and method names in snake_case. Where JavaScript patterns don't translate directly (dynamic objects, Proxies, async callbacks), the code uses Rust equivalents.
+It is a port of [Build Awesome](https://github.com/11ty/buildawesome) and follows the original closely, so most of its documentation applies here too. The main difference is that there is no JavaScript: configuration is a JSON, TOML or YAML file, or Rust code if you use Twelvety as a library.
 
-## Usage
+## Installation
+
+You need a recent Rust toolchain. Install the `twelvety` command with Cargo:
 
 ```sh
-cargo build --release
-./target/release/twelvety                      # build ./ into ./_site
-./target/release/twelvety --input=src --output=dist
-./target/release/twelvety --serve --port=8080  # dev server with live reload
-./target/release/twelvety --watch
-./target/release/twelvety --to=json            # print rendered results as JSON
-./target/release/twelvety --help
+cargo install --git https://github.com/breitburg/twelvety
 ```
 
-The CLI supports the upstream flags: `--input`, `--output`, `--formats`, `--config`, `--pathprefix`, `--port`, `--to`, `--quiet`, `--dryrun`, `--watch`, `--serve`, `--ignore-initial`, `--version` and `--help`.
+Or clone the repository and build it yourself with `cargo build --release`. The binary ends up in `target/release/twelvety`.
+
+## Getting started
+
+Make a new folder for your site and add a page called `index.md`:
+
+```md
+---
+title: Home
+---
+# Welcome
+
+This is my new site.
+```
+
+Run `twelvety` in that folder. It finds every template, renders it and writes the result to `_site`. In this case it creates `_site/index.html`.
+
+While you work on the site, run `twelvety --serve` instead. It starts a local server at http://localhost:8080, rebuilds when you save a file and reloads the page in your browser.
+
+### Layouts
+
+Most pages share the same surrounding HTML. Put it in a layout in the `_includes` folder, for example `_includes/base.njk`:
+
+```html
+<!doctype html>
+<html>
+<head><title>{{ title }}</title></head>
+<body>
+{{ content | safe }}
+</body>
+</html>
+```
+
+Then add `layout: base.njk` to the front matter of a page. The rendered page is inserted where `content` appears.
+
+### Data
+
+The block between the `---` lines at the top of a page is front matter. Its values, like `title`, are available in the page and in its layout.
+
+For data that many pages use, add a JSON file to the `_data` folder. A file called `_data/site.json` containing `{ "name": "My site" }` makes `{{ site.name }}` available everywhere.
+
+To set data for a whole folder, add a JSON file named after it. For example, `posts/posts.json` applies to every page in `posts`:
+
+```json
+{ "layout": "base.njk", "tags": "post" }
+```
+
+### Collections
+
+Pages with the same tag are grouped into a collection. With the file above, every post is in `collections.post`, so the home page can list them:
+
+```md
+{% for post in collections.post %}
+- [{{ post.data.title }}]({{ post.url }})
+{% endfor %}
+```
+
+Each page gets a clean URL based on its path. `posts/hello.md` becomes `/posts/hello/`. You can choose a different one with `permalink` in the front matter.
 
 ## Configuration
 
-Upstream configuration files are JavaScript modules. Twelvety supports two alternatives.
-
-### Declarative configuration files
-
-These cover the serializable subset of the configuration API: `buildawesome.config.{json,toml,yaml}`, `twelvety.config.{json,toml,yaml}` or `.twelvety.json`.
+To change the defaults, add a `twelvety.config.toml` (or `.json` or `.yaml`) to the root of your project:
 
 ```toml
-pathPrefix = "/docs/"
 templateFormats = ["md", "njk", "html", "liquid"]
 markdownTemplateEngine = "njk"
 passthroughCopy = ["src/img", { "src/fonts" = "fonts" }]
-dataExtensions = ["yaml", "toml"]
 
 [dir]
 input = "src"
 output = "dist"
 
 [[plugins]]
-name = "id-attribute"
-
-[[plugins]]
 name = "html-base"
 options = { baseHref = "https://example.com/" }
 ```
 
-Built-in plugins: `html-base`, `id-attribute`, `i18n`, `input-path-to-url`, `render` and `preserve-closing-tags`.
+This example reads the site from `src` and writes it to `dist`. It also copies images and fonts without processing them, and the `html-base` plugin points root-relative links at a base URL.
 
-### The Rust API
+The built-in plugins are `html-base`, `id-attribute`, `i18n`, `input-path-to-url`, `render` and `preserve-closing-tags`.
 
-The Rust API is the equivalent of `twelvetyConfig`. JavaScript callbacks are Rust closures.
+Run `twelvety --help` to see all command-line options. They include `--input` and `--output` to choose the folders, `--watch` to rebuild without a server and `--to=json` to print the rendered pages instead of writing them.
+
+## Using it as a library
+
+You can also run Twelvety from Rust. That lets you add your own filters, shortcodes and collections as closures:
 
 ```rust
-use twelvety::{Twelvety, Options, Value};
+use twelvety::{Options, Twelvety, Value};
 
 let options = Options::default().with_config(|cfg| {
     cfg.add_filter("shout", |_ctx, input, _args| {
@@ -61,49 +109,29 @@ let options = Options::default().with_config(|cfg| {
     cfg.add_shortcode("year", |_ctx, _args| Ok("2026".into()));
     cfg.add_collection("posts", |api| Ok(api.get_filtered_by_glob("src/posts/*.md")))?;
     cfg.add_passthrough_copy("src/img");
-    cfg.add_plugin("html-base", twelvety::plugins::html_base::plugin, Value::object())?;
     Ok(())
 });
-let mut twelvety = Twelvety::new(Some("src"), Some("dist"), options);
-twelvety.write()?;
+let mut site = Twelvety::new(Some("src"), Some("dist"), options);
+site.write()?;
 ```
 
-## Architecture
+## What isn't supported
 
-| Upstream (JS) | Rust |
-| --- | --- |
-| `Core.js`, `CoreMinimal.js` | `src/core.rs` |
-| `TemplateConfig.js`, `UserConfig.js`, `defaultConfig*.js` | `src/template_config.rs`, `src/user_config.rs`, `src/default_config.rs`, `src/config_file.rs` |
-| `TemplateWriter.js`, `TemplateMap.js`, `TemplateCollection.js` | `src/template_writer.rs`, `src/template_map.rs`, `src/template_collection.rs` |
-| `Template.js`, `TemplateContent.js`, `TemplateLayout*.js`, `TemplatePermalink.js` | `src/template.rs`, `src/template_content.rs`, `src/template_layout.rs`, `src/template_permalink.rs` |
-| `TemplateRender.js`, `TemplatePipeline.js`, `ExtensionMap.js` | `src/template_render.rs`, `src/template_pipeline.rs`, `src/extension_map.rs` |
-| `Data/*` (TemplateData, ComputedData, …) | `src/data/*` |
-| `GlobalDependencyMap.js`, `Util/TemplateDepGraph.js` | `src/global_dependency_map.rs` |
-| `Engines/*` | `src/engines/*` |
-| `Plugins/*` | `src/plugins/*` |
-| `Files.js`, `FileSystemSearch.js`, `TemplatePassthrough*.js` | `src/files.rs`, `src/file_system_search.rs`, `src/template_passthrough.rs` |
-| `@11ty/eleventy-utils` (TemplatePath, Merge) | `src/util/template_path.rs`, `src/util/merge.rs` |
+Anything that needs a JavaScript runtime is not supported. This includes JavaScript configuration files, `*.12ty.js` templates, JavaScript data files and JavaScript front matter.
 
-Notable adaptations:
+## How the port is organized
 
-- **Data model:** `src/value.rs` is a dynamic `Value` that models JavaScript values: `undefined`, `null`, numbers as `f64`, dates, and reference-counted copy-on-write objects and arrays. Collection items are lazy host objects (`src/page_entry.rs`), so `templateContent` becomes available after rendering, like the getter upstream.
-- **Liquid:** a native Liquid engine in `src/liquid/` that follows liquidjs semantics (JS truthiness, lenient undefined variables, the standard tags and filters, `include`/`render`, shortcodes).
-- **Nunjucks:** built on [minijinja](https://github.com/mitsuhiko/minijinja) with a compatibility pass for Nunjucks-only syntax (shortcodes, `for k, v in obj`, `elseif`, `===`) and Nunjucks-style escaping and output.
-- **Markdown:** uses the [markdown-it](https://crates.io/crates/markdown-it) Rust port, configured like Twelvety's markdown-it defaults.
-- **HTML transforms:** the HTML transformer (`<base>`, InputPathToUrl, the id attribute and html-relative copies) runs on [lol_html](https://github.com/cloudflare/lol-html) instead of posthtml.
-- **Computed data:** dependencies are found by parsing template strings. Rust function entries declare their dependencies explicitly instead of relying on Proxy read tracking.
+Most upstream source files have a Rust module with the same role, and functions keep their names in snake_case. For example, `TemplateMap.js` is `src/template_map.rs`, and the files in `Engines/` and `Plugins/` are in `src/engines/` and `src/plugins/`.
 
-## Not supported
+Some parts had to work differently in Rust:
 
-These need a JavaScript runtime: JavaScript configuration files, `*.12ty.js` templates, JavaScript data files (`*.12tydata.js`, `_data/*.js`) and JavaScript front matter.
+- Upstream relies on JavaScript's dynamic values. Here, `src/value.rs` defines a `Value` type that behaves like them.
+- Liquid has its own engine in `src/liquid/`, which follows liquidjs.
+- Nunjucks templates run on [minijinja](https://github.com/mitsuhiko/minijinja), with an extra pass that handles Nunjucks-only syntax.
+- Markdown uses [markdown-it](https://crates.io/crates/markdown-it).
+- HTML transforms use [lol_html](https://github.com/cloudflare/lol-html) instead of posthtml.
 
-## Tests
-
-```sh
-cargo test
-```
-
-The integration tests in `tests/` are ported from the upstream test suite and use the upstream fixtures in `test/`.
+The tests in `tests/` are ported from the upstream test suite and use its fixtures in `test/`. Run them with `cargo test`.
 
 ## License
 
