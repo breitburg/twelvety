@@ -29,13 +29,14 @@ pub fn run_all(
         content = callback(&ctx, content).with_context(|| {
             format!("Transform `{name}` encountered an error when transforming {input_path}.")
         })?;
-        if had_content_before && content.is_empty() {
-            if let Some(logger) = logger {
-                logger.warn(&format!(
-                    "Warning: Transform `{name}` returned empty when writing {} from {input_path}.",
-                    output_path.to_output_string()
-                ));
-            }
+        if had_content_before
+            && content.is_empty()
+            && let Some(logger) = logger
+        {
+            logger.warn(&format!(
+                "Warning: Transform `{name}` returned empty when writing {} from {input_path}.",
+                output_path.to_output_string()
+            ));
         }
     }
     Ok(content)

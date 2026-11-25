@@ -49,7 +49,7 @@ fn week_number(d: &DateTime<FixedOffset>, start_day: u32) -> i64 {
     let wday = jan1.weekday().num_days_from_sunday();
     let offset = (7 + wday as i64 - start_day as i64) % 7;
     let yday = day_of_year(d) - 1;
-    ((yday + offset) / 7) as i64
+    (yday + offset) / 7
 }
 
 pub fn strftime(d: &DateTime<FixedOffset>, format: &str) -> String {

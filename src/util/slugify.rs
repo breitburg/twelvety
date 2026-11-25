@@ -25,7 +25,8 @@ impl Default for SlugifyOptions {
     }
 }
 
-const BUILTIN_REPLACEMENTS: &[(&str, &str)] = &[("&", " and "), ("🦄", " unicorn "), ("♥", " love ")];
+const BUILTIN_REPLACEMENTS: &[(&str, &str)] =
+    &[("&", " and "), ("🦄", " unicorn "), ("♥", " love ")];
 
 const TRANSLITERATE_REPLACEMENTS: &[(&str, &str)] = &[
     ("Ä", "Ae"),
@@ -100,8 +101,7 @@ fn remove_moot_separators(s: &str, separator: &str) -> String {
 }
 
 pub fn slugify(input: &str, options: &SlugifyOptions) -> String {
-    let should_prepend_underscore =
-        options.preserve_leading_underscore && input.starts_with('_');
+    let should_prepend_underscore = options.preserve_leading_underscore && input.starts_with('_');
     let should_append_dash = options.preserve_trailing_dash && input.ends_with('-');
 
     let mut replacements: Vec<(String, String)> = BUILTIN_REPLACEMENTS
@@ -160,7 +160,10 @@ mod tests {
         assert_eq!(slugify("Hello World", &opts), "hello-world");
         assert_eq!(slugify("This is a test", &opts), "this-is-a-test");
         assert_eq!(slugify("Déjà Vu!", &opts), "deja-vu");
-        assert_eq!(slugify("Fußgängerübergänge", &opts), "fussgaengeruebergaenge");
+        assert_eq!(
+            slugify("Fußgängerübergänge", &opts),
+            "fussgaengeruebergaenge"
+        );
         assert_eq!(slugify("I ♥ Dogs", &opts), "i-love-dogs");
         assert_eq!(slugify("  --foo--bar--  ", &opts), "foo-bar");
         assert_eq!(slugify("fooBar", &SlugifyOptions::default()), "foo-bar");

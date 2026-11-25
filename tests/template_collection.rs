@@ -16,13 +16,22 @@ const COLLECTION_TEMPLATES: &[(&str, &str)] = &[
         "test/stubs/collection/test1.md",
         "---\ntitle: Test Title\ndate: 2020-01-01\ntags:\n  - post\n  - dog\n---\n\n# Test 1\n",
     ),
-    ("test/stubs/collection/test2.md", "---\ndate: 2020-01-01\ntags: cat\n---\n\n# Test 2\n"),
+    (
+        "test/stubs/collection/test2.md",
+        "---\ndate: 2020-01-01\ntags: cat\n---\n\n# Test 2\n",
+    ),
     (
         "test/stubs/collection/test3.md",
         "---\ndate: 2020-01-01\ntags:\n  - post\n  - cat\n---\n\n# Test 3\n",
     ),
-    ("test/stubs/collection/test4.md", "---\ndate: 1983-01-01\n---\n\n# Test 3\n"),
-    ("test/stubs/collection/test5.md", "---\ndate: 2038-01-01\n---\n\n# Test 3\n"),
+    (
+        "test/stubs/collection/test4.md",
+        "---\ndate: 1983-01-01\n---\n\n# Test 3\n",
+    ),
+    (
+        "test/stubs/collection/test5.md",
+        "---\ndate: 2038-01-01\n---\n\n# Test 3\n",
+    ),
     ("test/stubs/collection/test6.html", "# Test 6\n"),
     ("test/stubs/collection/test7.njk", "# Test 7"),
     (
@@ -37,20 +46,34 @@ const COLLECTION_TEMPLATES: &[(&str, &str)] = &[
         "test/stubs/collection/test10.md",
         "---\ntitle: Test Title\ndate: 2020-01-01\ntags:\n  - post\n  - office\ntwelvetyExcludeFromCollections:\n  - post\n---\n\n# Test 1\n",
     ),
-    ("test/stubs/issue-95/cat.md", "---\ntags: \n  - cat\n---\n\n# Test 8\n"),
-    ("test/stubs/issue-95/notacat.md", "---\ntags: notacat\n---\n\n# Test 8\n"),
+    (
+        "test/stubs/issue-95/cat.md",
+        "---\ntags: \n  - cat\n---\n\n# Test 8\n",
+    ),
+    (
+        "test/stubs/issue-95/notacat.md",
+        "---\ntags: notacat\n---\n\n# Test 8\n",
+    ),
 ];
 
-const EXTENSIONS: [&str; 10] = ["md", "md", "md", "md", "md", "html", "njk", "md", "md", "md"];
+const EXTENSIONS: [&str; 10] = [
+    "md", "md", "md", "md", "md", "html", "njk", "md", "md", "md",
+];
 
 fn get_config() -> Arc<BuildContext> {
-    get_context(TestOptions::new("./test/stubs/", "./test/stubs/_site").with_config(|cfg| {
-        for (path, content) in COLLECTION_TEMPLATES {
-            // virtual template paths are relative to the input directory
-            cfg.add_template(path.trim_start_matches("test/stubs/"), content, Value::object())?;
-        }
-        Ok(())
-    }))
+    get_context(
+        TestOptions::new("./test/stubs/", "./test/stubs/_site").with_config(|cfg| {
+            for (path, content) in COLLECTION_TEMPLATES {
+                // virtual template paths are relative to the input directory
+                cfg.add_template(
+                    path.trim_start_matches("test/stubs/"),
+                    content,
+                    Value::object(),
+                )?;
+            }
+            Ok(())
+        }),
+    )
     .unwrap()
 }
 
@@ -80,7 +103,11 @@ fn collection(nums: &[usize]) -> TemplateCollection {
 }
 
 fn input_paths(items: &Value) -> Vec<String> {
-    items.to_vec().iter().map(|i| i.get("inputPath").to_output_string()).collect()
+    items
+        .to_vec()
+        .iter()
+        .map(|i| i.get("inputPath").to_output_string())
+        .collect()
 }
 
 fn paths(nums: &[usize]) -> Vec<String> {
@@ -95,7 +122,11 @@ fn basic_setup() {
 #[test]
 fn sort_function_date() {
     let c = collection(&[1, 4, 5]);
-    let posts: Vec<String> = c.sort_entries(sort_by_date).iter().map(|p| p.input_path.clone()).collect();
+    let posts: Vec<String> = c
+        .sort_entries(sort_by_date)
+        .iter()
+        .map(|p| p.input_path.clone())
+        .collect();
     assert_eq!(posts, paths(&[4, 1, 5]));
 }
 
@@ -176,30 +207,48 @@ fn get_filtered_by_tag_no_tag_name_returns_everything_sorted() {
 #[test]
 fn get_filtered_by_tags() {
     let c = collection(&[1, 2, 3]);
-    assert_eq!(input_paths(&c.get_filtered_by_tags(&["post", "cat"])), paths(&[3]));
-    assert_eq!(input_paths(&c.get_filtered_by_tags(&["cat"])), paths(&[2, 3]));
+    assert_eq!(
+        input_paths(&c.get_filtered_by_tags(&["post", "cat"])),
+        paths(&[3])
+    );
+    assert_eq!(
+        input_paths(&c.get_filtered_by_tags(&["cat"])),
+        paths(&[2, 3])
+    );
     assert_eq!(input_paths(&c.get_filtered_by_tags(&["dog"])), paths(&[1]));
 }
 
 #[test]
 fn get_filtered_by_tags_added_out_of_order_sorted() {
     let c = collection(&[3, 2, 1]);
-    assert_eq!(input_paths(&c.get_filtered_by_tags(&["post", "cat"])), paths(&[3]));
-    assert_eq!(input_paths(&c.get_filtered_by_tags(&["cat"])), paths(&[2, 3]));
+    assert_eq!(
+        input_paths(&c.get_filtered_by_tags(&["post", "cat"])),
+        paths(&[3])
+    );
+    assert_eq!(
+        input_paths(&c.get_filtered_by_tags(&["cat"])),
+        paths(&[2, 3])
+    );
     assert_eq!(input_paths(&c.get_filtered_by_tags(&["dog"])), paths(&[1]));
 }
 
 #[test]
 fn get_filtered_by_glob() {
     let c = collection(&[1, 6, 7]);
-    assert_eq!(input_paths(&c.get_filtered_by_glob("./**/*.md")), paths(&[1]));
+    assert_eq!(
+        input_paths(&c.get_filtered_by_glob("./**/*.md")),
+        paths(&[1])
+    );
 }
 
 #[test]
 fn get_filtered_by_glob_no_dash_dot() {
     let c = collection(&[1, 6, 7]);
     assert_eq!(input_paths(&c.get_filtered_by_glob("**/*.md")), paths(&[1]));
-    assert_eq!(input_paths(&c.get_filtered_by_glob("**/*.{html,njk}")), paths(&[6, 7]));
+    assert_eq!(
+        input_paths(&c.get_filtered_by_glob("**/*.{html,njk}")),
+        paths(&[6, 7])
+    );
 }
 
 #[test]
@@ -223,26 +272,48 @@ fn get_filtered_by_glob_cache_is_invalidated_by_add() {
 fn partial_match_on_tag_string_issue_95() {
     let ctx = get_config();
     let mut c = TemplateCollection::new();
-    add_template(&mut c, &template_with_context("./test/stubs/issue-95/cat.md", &ctx));
-    add_template(&mut c, &template_with_context("./test/stubs/issue-95/notacat.md", &ctx));
+    add_template(
+        &mut c,
+        &template_with_context("./test/stubs/issue-95/cat.md", &ctx),
+    );
+    add_template(
+        &mut c,
+        &template_with_context("./test/stubs/issue-95/notacat.md", &ctx),
+    );
     assert_eq!(c.get_filtered_by_tag("cat").len(), 1);
 }
 
 #[test]
 fn micromatch_assumptions_issue_127() {
     let is_match = |path: &str, globs: &[&str]| {
-        is_glob_match(path, &globs.iter().map(|g| g.to_string()).collect::<Vec<_>>())
+        is_glob_match(
+            path,
+            &globs.iter().map(|g| g.to_string()).collect::<Vec<_>>(),
+        )
     };
-    assert!(is_match("src/bookmarks/test.md", &["**/+(bookmarks|posts|screencasts)/**/!(index)*.md"]));
-    assert!(is_match("./src/bookmarks/test.md", &["./**/+(bookmarks|posts|screencasts)/**/!(index)*.md"]));
+    assert!(is_match(
+        "src/bookmarks/test.md",
+        &["**/+(bookmarks|posts|screencasts)/**/!(index)*.md"]
+    ));
+    assert!(is_match(
+        "./src/bookmarks/test.md",
+        &["./**/+(bookmarks|posts|screencasts)/**/!(index)*.md"]
+    ));
 
-    let globs = TemplateCollection::get_globs(&["**/+(bookmarks|posts|screencasts)/**/!(index)*.md"]);
-    assert_eq!(globs, vec!["./**/+(bookmarks|posts|screencasts)/**/!(index)*.md".to_string()]);
+    let globs =
+        TemplateCollection::get_globs(&["**/+(bookmarks|posts|screencasts)/**/!(index)*.md"]);
+    assert_eq!(
+        globs,
+        vec!["./**/+(bookmarks|posts|screencasts)/**/!(index)*.md".to_string()]
+    );
 
     assert!(is_glob_match("./src/bookmarks/test.md", &globs));
     assert!(!is_glob_match("./src/bookmarks/index.md", &globs));
     assert!(!is_glob_match("./src/bookmarks/index2.md", &globs));
-    assert!(is_glob_match("./src/_content/bookmarks/2018-03-27-git-message.md", &globs));
+    assert!(is_glob_match(
+        "./src/_content/bookmarks/2018-03-27-git-message.md",
+        &globs
+    ));
 }
 
 #[test]

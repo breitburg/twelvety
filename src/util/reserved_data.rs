@@ -50,7 +50,9 @@ pub fn error_message(reserved: &[String], source: Option<&str>) -> String {
         } else {
             format!(": {}", reserved.join(", "))
         },
-        source.map(|s| format!(" (source: {s})")).unwrap_or_default()
+        source
+            .map(|s| format!(" (source: {s})"))
+            .unwrap_or_default()
     )
 }
 
@@ -70,10 +72,16 @@ pub fn check_subset(data: &Value, source: Option<&str>) -> Result<()> {
     check_with(data, source, PROPERTIES)
 }
 
-pub fn check_global_overrides(data: &Value, global_keys: &[&str], source: Option<&str>) -> Result<()> {
+pub fn check_global_overrides(
+    data: &Value,
+    global_keys: &[&str],
+    source: Option<&str>,
+) -> Result<()> {
     let reserved: Vec<String> = global_keys
         .iter()
-        .filter(|k| data.get(k).is_plain_object() || data.get(&format!("override:{k}")).is_plain_object())
+        .filter(|k| {
+            data.get(k).is_plain_object() || data.get(&format!("override:{k}")).is_plain_object()
+        })
         .map(|k| k.to_string())
         .collect();
     if reserved.is_empty() {

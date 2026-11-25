@@ -117,7 +117,10 @@ impl TemplateConfig {
         let (paths, manual) = match project_config_path {
             Some("") => (vec![], true),
             Some(p) => (vec![p.to_string()], true),
-            None => (DEFAULT_CONFIG_PATHS.iter().map(|s| s.to_string()).collect(), false),
+            None => (
+                DEFAULT_CONFIG_PATHS.iter().map(|s| s.to_string()).collect(),
+                false,
+            ),
         };
         TemplateConfig {
             user_config: UserConfig::new(),
@@ -265,7 +268,11 @@ impl TemplateConfig {
         if let Some(cfg) = &local_config {
             crate::config_file::apply(&mut self.user_config, cfg)?;
             let dir = cfg.get("dir");
-            let dir = if dir.is_undefined() { cfg.get("directories") } else { dir };
+            let dir = if dir.is_undefined() {
+                cfg.get("directories")
+            } else {
+                dir
+            };
             if dir.is_object() {
                 local_dirs = Some(ConfigDirs {
                     input: dir.get("input").as_str().map(String::from),
@@ -300,7 +307,10 @@ impl TemplateConfig {
             .iter()
             .map(|s| s.to_string())
             .collect();
-        match (&self.user_config.template_formats, &self.cli_template_formats) {
+        match (
+            &self.user_config.template_formats,
+            &self.cli_template_formats,
+        ) {
             (Some(f), Some(cli)) if f == cli => {
                 self.template_formats.set_via_config(&default_formats);
             }
@@ -323,10 +333,10 @@ impl TemplateConfig {
             self.template_formats.add_via_config(&added)?;
         }
 
-        if let Some(tags) = &self.user_config.keys.tags {
-            if tags.contains('.') {
-                bail!("Nested properties are not supported in `keys.tags`, received: {tags:?}");
-            }
+        if let Some(tags) = &self.user_config.keys.tags
+            && tags.contains('.')
+        {
+            bail!("Nested properties are not supported in `keys.tags`, received: {tags:?}");
         }
         if !self.user_config.features_collections && !self.user_config.collections.is_empty() {
             let names: Vec<String> = self.user_config.collections.keys().cloned().collect();

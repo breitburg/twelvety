@@ -11,13 +11,16 @@ use twelvety::template_passthrough::{CopyResult, TemplatePassthrough, TemplatePa
 use twelvety::testing::{json, quiet_logger};
 use twelvety::user_config::UserConfig;
 use twelvety::util::project_directories::{ConfigDirs, ProjectDirectories};
-use twelvety::{Twelvety, Options, Value};
+use twelvety::{Options, Twelvety, Value};
 
 fn strings(v: &[&str]) -> Vec<String> {
     v.iter().map(|s| s.to_string()).collect()
 }
 
-fn config_with(dirs: Option<ProjectDirectories>, callback: impl Fn(&mut UserConfig)) -> TemplateConfig {
+fn config_with(
+    dirs: Option<ProjectDirectories>,
+    callback: impl Fn(&mut UserConfig),
+) -> TemplateConfig {
     let mut tc = TemplateConfig::new(Some(""));
     tc.set_logger(quiet_logger());
     if let Some(dirs) = dirs {
@@ -46,7 +49,12 @@ fn extension_map(tc: &TemplateConfig, formats: &[&str]) -> ExtensionMap {
 
 /// `{ inputPath, outputPath, isDynamicPattern, copyOptions }`
 fn describe(p: &TemplatePassthrough) -> (String, Value, bool, Value) {
-    (p.input_path.clone(), p.output_path.clone(), p.is_dynamic_pattern(), p.copy_options.clone())
+    (
+        p.input_path.clone(),
+        p.output_path.clone(),
+        p.is_dynamic_pattern(),
+        p.copy_options.clone(),
+    )
 }
 
 fn entry(input: &str, output: Value, dynamic: bool) -> (String, Value, bool, Value) {
@@ -65,7 +73,10 @@ fn get_paths_from_config() {
     });
     let mgr = manager(&tc);
     assert_eq!(
-        mgr.get_config_paths().iter().map(describe).collect::<Vec<_>>(),
+        mgr.get_config_paths()
+            .iter()
+            .map(describe)
+            .collect::<Vec<_>>(),
         vec![entry("./img", Value::Bool(true), false)]
     );
 }
@@ -82,7 +93,11 @@ fn get_glob_paths_from_config() {
     });
     assert_eq!(
         manager(&tc).get_config_path_globs(),
-        strings(&["./test/stubs/img/**", "./test/stubs/img/**", "./test/stubs/img/*.js"])
+        strings(&[
+            "./test/stubs/img/**",
+            "./test/stubs/img/**",
+            "./test/stubs/img/*.js"
+        ])
     );
 }
 
@@ -91,7 +106,10 @@ fn get_glob_paths_from_config() {
 fn get_file_paths() {
     let tc = config_with(None, |_| {});
     let map = extension_map(&tc, &[]);
-    assert_eq!(manager(&tc).get_non_template_paths(&strings(&["test.png"]), &map), strings(&["test.png"]));
+    assert_eq!(
+        manager(&tc).get_non_template_paths(&strings(&["test.png"]), &map),
+        strings(&["test.png"])
+    );
 }
 
 /// "Get file paths (filter out real templates)"
@@ -99,7 +117,10 @@ fn get_file_paths() {
 fn get_file_paths_filter_out_real_templates() {
     let tc = config_with(None, |_| {});
     let map = extension_map(&tc, &["njk"]);
-    assert_eq!(manager(&tc).get_non_template_paths(&strings(&["test.njk"]), &map), Vec::<String>::new());
+    assert_eq!(
+        manager(&tc).get_non_template_paths(&strings(&["test.njk"]), &map),
+        Vec::<String>::new()
+    );
 }
 
 /// "Get file paths (filter out real templates), multiple"
@@ -129,7 +150,10 @@ fn get_file_paths_with_a_js_file_filter_out_real_templates_multiple() {
 fn get_file_paths_one_image_path() {
     let tc = config_with(None, |_| {});
     let map = extension_map(&tc, &[]);
-    assert_eq!(manager(&tc).get_non_template_paths(&strings(&["test.png"]), &map), strings(&["test.png"]));
+    assert_eq!(
+        manager(&tc).get_non_template_paths(&strings(&["test.png"]), &map),
+        strings(&["test.png"])
+    );
 }
 
 /// "Naughty paths outside of project dir"
@@ -138,12 +162,17 @@ fn get_file_paths_one_image_path() {
 #[test]
 fn naughty_paths_outside_of_project_dir() {
     let mut dirs = ProjectDirectories::new();
-    dirs.set_input(Some("./test/stubs/template-passthrough2/"), None).unwrap();
+    dirs.set_input(Some("./test/stubs/template-passthrough2/"), None)
+        .unwrap();
     dirs.set_output(Some("./test/stubs/template-passthrough2/_site/"));
     let tc = config_with(Some(dirs), |cfg| {
         cfg.add_passthrough_copy("../static");
         passthrough_mapping(cfg, "./test/stubs/template-passthrough2/static/*.css", "./");
-        passthrough_mapping(cfg, "./test/stubs/template-passthrough2/static/*.js", "../../");
+        passthrough_mapping(
+            cfg,
+            "./test/stubs/template-passthrough2/static/*.js",
+            "../../",
+        );
         passthrough_mapping(cfg, "./test/stubs/template-passthrough2/img.jpg", "../../");
     });
     let mgr = manager(&tc);
@@ -176,7 +205,11 @@ fn get_all_normalized_paths() {
     });
     let map = extension_map(&tc, &[]);
     assert_eq!(
-        manager(&tc).get_all_normalized_paths(&[], &map).iter().map(describe).collect::<Vec<_>>(),
+        manager(&tc)
+            .get_all_normalized_paths(&[], &map)
+            .iter()
+            .map(describe)
+            .collect::<Vec<_>>(),
         vec![entry("./img", Value::Bool(true), false)]
     );
 }
@@ -191,7 +224,11 @@ fn get_all_normalized_paths_with_globs() {
     });
     let map = extension_map(&tc, &[]);
     assert_eq!(
-        manager(&tc).get_all_normalized_paths(&[], &map).iter().map(describe).collect::<Vec<_>>(),
+        manager(&tc)
+            .get_all_normalized_paths(&[], &map)
+            .iter()
+            .map(describe)
+            .collect::<Vec<_>>(),
         vec![
             entry("./img", Value::Bool(true), false),
             entry("./img/**", Value::str(""), true),
@@ -216,14 +253,26 @@ fn get_aliases_from_passthrough_results_with_unicode_filenames() {
     ];
     let expected: IndexMap<String, String> = [
         ("/path/file", "./path/file"),
-        ("/%E6%B5%8B%E8%AF%95.%E7%94%A8%E4%BE%8B/%E2%8C%98", "./测试.用例/⌘"),
-        ("/path/%E6%B5%8B%E8%AF%95.%E7%94%A8%E4%BE%8B", "./path/测试.用例"),
-        ("/%E6%B5%8B%E8%AF%95.%E7%94%A8%E4%BE%8B/file", "./测试.用例/file"),
+        (
+            "/%E6%B5%8B%E8%AF%95.%E7%94%A8%E4%BE%8B/%E2%8C%98",
+            "./测试.用例/⌘",
+        ),
+        (
+            "/path/%E6%B5%8B%E8%AF%95.%E7%94%A8%E4%BE%8B",
+            "./path/测试.用例",
+        ),
+        (
+            "/%E6%B5%8B%E8%AF%95.%E7%94%A8%E4%BE%8B/file",
+            "./测试.用例/file",
+        ),
     ]
     .into_iter()
     .map(|(a, b)| (a.to_string(), b.to_string()))
     .collect();
-    assert_eq!(manager(&tc).get_aliases_from_passthrough_results(&results), expected);
+    assert_eq!(
+        manager(&tc).get_aliases_from_passthrough_results(&results),
+        expected
+    );
 }
 
 /// "Look for uniqueness on template passthrough paths #1677"
@@ -237,7 +286,11 @@ fn look_for_uniqueness_on_template_passthrough_paths_1677() {
     })
     .unwrap();
     let tc = config_with(Some(dirs), |cfg| {
-        passthrough_mapping(cfg, "./test/stubs/template-passthrough-duplicates/input/**/*.png", "./");
+        passthrough_mapping(
+            cfg,
+            "./test/stubs/template-passthrough-duplicates/input/**/*.png",
+            "./",
+        );
     });
     let map = extension_map(&tc, &[]);
     let err = manager(&tc).copy_all(&[], &map).unwrap_err();
@@ -258,13 +311,21 @@ fn look_for_uniqueness_on_template_passthrough_paths_1677() {
 #[test]
 fn set_passthrough_copy_options_sets_defaults_that_per_call_options_override() {
     let tc = config_with(None, |cfg| {
-        cfg.set_passthrough_copy_options(json(r#"{"junk": true, "dot": false}"#)).unwrap();
+        cfg.set_passthrough_copy_options(json(r#"{"junk": true, "dot": false}"#))
+            .unwrap();
         cfg.add_passthrough_copy("img");
         cfg.add_passthrough_copy_with_options("static", json(r#"{"dot": true}"#));
     });
     assert_eq!(
-        manager(&tc).get_config_paths().iter().map(|p| p.copy_options.clone()).collect::<Vec<_>>(),
-        vec![json(r#"{"junk": true, "dot": false}"#), json(r#"{"junk": true, "dot": true}"#)]
+        manager(&tc)
+            .get_config_paths()
+            .iter()
+            .map(|p| p.copy_options.clone())
+            .collect::<Vec<_>>(),
+        vec![
+            json(r#"{"junk": true, "dot": false}"#),
+            json(r#"{"junk": true, "dot": true}"#)
+        ]
     );
 }
 
@@ -290,14 +351,21 @@ impl Drop for TempOutput {
     }
 }
 
-fn write_site(output: &str, config: impl Fn(&mut UserConfig) -> anyhow::Result<()> + Send + Sync + 'static) -> anyhow::Result<()> {
+fn write_site(
+    output: &str,
+    config: impl Fn(&mut UserConfig) -> anyhow::Result<()> + Send + Sync + 'static,
+) -> anyhow::Result<()> {
     let options = Options {
         quiet_mode: Some(true),
         config_path: Some(String::new()),
         ..Default::default()
     }
     .with_config(config);
-    let mut core = Twelvety::new(Some("test/stubs/template-passthrough"), Some(output), options);
+    let mut core = Twelvety::new(
+        Some("test/stubs/template-passthrough"),
+        Some(output),
+        options,
+    );
     core.disable_logger();
     core.write().map(|_| ())
 }
@@ -324,10 +392,19 @@ fn raw_path_filter_receives_full_paths_when_copying() {
     let output = tmp.output();
     write_site(&output, |cfg| {
         let mut options = Value::object();
-        options.set("rawPathFilter", Value::function(|args| {
-            Ok(Value::Bool(!args[0].to_output_string().ends_with("test.js")))
-        }));
-        cfg.add_passthrough_copy_mapping_with_options("test/stubs/template-passthrough/static", "static", options)?;
+        options.set(
+            "rawPathFilter",
+            Value::function(|args| {
+                Ok(Value::Bool(
+                    !args[0].to_output_string().ends_with("test.js"),
+                ))
+            }),
+        );
+        cfg.add_passthrough_copy_mapping_with_options(
+            "test/stubs/template-passthrough/static",
+            "static",
+            options,
+        )?;
         Ok(())
     })
     .unwrap();
@@ -342,12 +419,22 @@ fn passthrough_copy_rename_outside_of_the_output_directory_throws() {
     let output = tmp.output();
     let err = write_site(&output, |cfg| {
         let mut options = Value::object();
-        options.set("rename", Value::function(|args| Ok(Value::str(format!("../../{}", args[0].to_output_string())))));
-        cfg.add_passthrough_copy_mapping_with_options("test/stubs/template-passthrough/src/views", "views", options)?;
+        options.set(
+            "rename",
+            Value::function(|args| Ok(Value::str(format!("../../{}", args[0].to_output_string())))),
+        );
+        cfg.add_passthrough_copy_mapping_with_options(
+            "test/stubs/template-passthrough/src/views",
+            "views",
+            options,
+        )?;
         Ok(())
     })
     .unwrap_err();
-    assert!(format!("{err:#}").contains("outside of the site output directory"), "{err:#}");
+    assert!(
+        format!("{err:#}").contains("outside of the site output directory"),
+        "{err:#}"
+    );
     let others: Vec<_> = std::fs::read_dir(&tmp.0)
         .unwrap()
         .flatten()

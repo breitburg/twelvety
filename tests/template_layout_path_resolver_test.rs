@@ -19,7 +19,9 @@ where
 }
 
 fn file_name(path: &str) -> String {
-    resolver_with(path, "./test/stubs", |_| Ok(())).get_file_name().unwrap()
+    resolver_with(path, "./test/stubs", |_| Ok(()))
+        .get_file_name()
+        .unwrap()
 }
 
 fn liquid_with<F>(path: &str, dirs: F) -> String
@@ -47,7 +49,10 @@ fn layout_already_has_extension() {
 #[test]
 fn layout_uses_empty_string_includes_folder() {
     for path in ["includesemptystring", "includesemptystring.liquid"] {
-        assert_eq!(liquid_with(path, |cfg| cfg.set_includes_directory("")), "includesemptystring.liquid");
+        assert_eq!(
+            liquid_with(path, |cfg| cfg.set_includes_directory("")),
+            "includesemptystring.liquid"
+        );
     }
 }
 
@@ -58,14 +63,19 @@ fn layout_uses_layouts_folder() {
         cfg.set_includes_directory("_includes")
     });
     assert_eq!(name, "layoutsdefault.liquid");
-    let name = liquid_with("layoutsdefault.liquid", |cfg| cfg.set_layouts_directory("_layouts"));
+    let name = liquid_with("layoutsdefault.liquid", |cfg| {
+        cfg.set_layouts_directory("_layouts")
+    });
     assert_eq!(name, "layoutsdefault.liquid");
 }
 
 #[test]
 fn layout_uses_empty_string_layouts_folder() {
     for path in ["layoutsemptystring", "layoutsemptystring.liquid"] {
-        assert_eq!(liquid_with(path, |cfg| cfg.set_layouts_directory("")), "layoutsemptystring.liquid");
+        assert_eq!(
+            liquid_with(path, |cfg| cfg.set_layouts_directory("")),
+            "layoutsemptystring.liquid"
+        );
     }
 }
 
@@ -109,12 +119,18 @@ fn aliased(path: &str, from: &'static str) -> TemplateLayoutPathResolver {
 
 #[test]
 fn layout_is_aliased_to_a_new_location() {
-    assert_eq!(aliased("post", "post").get_file_name().unwrap(), "layouts/post.liquid");
+    assert_eq!(
+        aliased("post", "post").get_file_name().unwrap(),
+        "layouts/post.liquid"
+    );
 }
 
 #[test]
 fn global_default_with_empty_string_alias() {
-    assert_eq!(aliased("", "").get_file_name().unwrap(), "layouts/post.liquid");
+    assert_eq!(
+        aliased("", "").get_file_name().unwrap(),
+        "layouts/post.liquid"
+    );
 }
 
 #[test]
@@ -136,13 +152,19 @@ fn layout_with_mixed_case_extensions_and_folders_4224() {
         cfg.add_extension(
             "vZome",
             ExtensionOptions {
-                compile: Some(Arc::new(|_, _| Ok(Arc::new(|_: &twelvety::Value| Ok(String::new()))))),
+                compile: Some(Arc::new(|_, _| {
+                    Ok(Arc::new(|_: &twelvety::Value| Ok(String::new())))
+                })),
                 ..Default::default()
             },
         )
     }))
     .unwrap();
-    let name = |p: &str| TemplateLayoutPathResolver::new(p, &ctx).get_file_name().unwrap();
+    let name = |p: &str| {
+        TemplateLayoutPathResolver::new(p, &ctx)
+            .get_file_name()
+            .unwrap()
+    };
     assert_eq!(name("base"), "base.vZome");
     assert_eq!(name("Base.VZOME"), "base.vZome");
     assert_eq!(name("Partials/Inner"), "partials/inner.vZome");

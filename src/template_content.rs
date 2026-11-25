@@ -45,9 +45,7 @@ impl TemplateContent {
     }
 
     pub fn render(&self) -> Result<&TemplateRender> {
-        self.template_render
-            .as_ref()
-            .map_err(|e| anyhow!("{e}"))
+        self.template_render.as_ref().map_err(|e| anyhow!("{e}"))
     }
 
     pub fn engine(&self) -> Result<Arc<dyn TemplateEngine>> {
@@ -90,10 +88,10 @@ impl TemplateContent {
         if !self.engine()?.needs_to_read_file_contents() {
             return Ok(String::new());
         }
-        if self.ctx.config.use_template_cache {
-            if let Some(c) = self.ctx.input_cache.lock().unwrap().get(&self.input_path) {
-                return Ok(c.clone());
-            }
+        if self.ctx.config.use_template_cache
+            && let Some(c) = self.ctx.input_cache.lock().unwrap().get(&self.input_path)
+        {
+            return Ok(c.clone());
         }
         let content = std::fs::read_to_string(&self.input_path)
             .with_context(|| format!("Having trouble reading template {}", self.input_path))?;
@@ -113,12 +111,13 @@ impl TemplateContent {
         }
         let content = self.get_input_content()?;
         let options = self.front_matter_options();
-        let mut fm = front_matter::parse(&content, &options, &self.input_path).with_context(|| {
-            format!(
-                "Having trouble reading front matter from template {}",
-                self.input_path
-            )
-        })?;
+        let mut fm =
+            front_matter::parse(&content, &options, &self.input_path).with_context(|| {
+                format!(
+                    "Having trouble reading front matter from template {}",
+                    self.input_path
+                )
+            })?;
         front_matter::apply_twelvety_excerpt(&mut fm, &options);
         let fm = Arc::new(fm);
         *self.read_cache.lock().unwrap() = Some(fm.clone());
@@ -138,10 +137,20 @@ impl TemplateContent {
         let virtual_def = self.get_virtual_template_definition();
         let is_virtual = virtual_def.is_some();
         let virtual_data = match virtual_def {
-            Some(def) => Some(cleanup_data_with(def.data.clone(), tags_key.as_deref(), &self.input_path, true)?),
+            Some(def) => Some(cleanup_data_with(
+                def.data.clone(),
+                tags_key.as_deref(),
+                &self.input_path,
+                true,
+            )?),
             None => None,
         };
-        let mut data = cleanup_data_with(fm.data.clone(), tags_key.as_deref(), &self.input_path, is_virtual)?;
+        let mut data = cleanup_data_with(
+            fm.data.clone(),
+            tags_key.as_deref(),
+            &self.input_path,
+            is_virtual,
+        )?;
         if !data.is_object() {
             data = Value::object();
         }
@@ -178,7 +187,12 @@ impl TemplateContent {
     }
 
     /// `compile(str, { templateOnly, engineOverride })` with the compile cache
-    pub fn compile(&self, src: &str, template_only: bool, engine_override: Option<&str>) -> Result<RenderFn> {
+    pub fn compile(
+        &self,
+        src: &str,
+        template_only: bool,
+        engine_override: Option<&str>,
+    ) -> Result<RenderFn> {
         let tr = self.render()?;
         let resolved = tr.resolve(engine_override)?;
         if template_only && !resolved.engine.needs_compilation(src) {
@@ -198,16 +212,20 @@ impl TemplateContent {
         } else {
             None
         };
-        if let Some(key) = &cache_key {
-            if let Some(f) = self.ctx.compile_cache.lock().unwrap().get(key) {
-                return Ok(f.clone());
-            }
+        if let Some(key) = &cache_key
+            && let Some(f) = self.ctx.compile_cache.lock().unwrap().get(key)
+        {
+            return Ok(f.clone());
         }
         let f = tr
             .get_compiled_template(src, template_only, engine_override)
             .with_context(|| format!("Having trouble compiling template {}", self.input_path))?;
         if let Some(key) = cache_key {
-            self.ctx.compile_cache.lock().unwrap().insert(key, f.clone());
+            self.ctx
+                .compile_cache
+                .lock()
+                .unwrap()
+                .insert(key, f.clone());
         }
         Ok(f)
     }
@@ -221,7 +239,11 @@ impl TemplateContent {
             .flatten()
     }
 
-    pub fn parse_for_symbols(&self, value: &Value, engine: Option<&Arc<dyn TemplateEngine>>) -> Vec<String> {
+    pub fn parse_for_symbols(
+        &self,
+        value: &Value,
+        engine: Option<&Arc<dyn TemplateEngine>>,
+    ) -> Vec<String> {
         let parse = |s: &str| -> Vec<String> {
             let mut symbols = engine
                 .and_then(|e| e.parse_for_symbols(s))
@@ -259,7 +281,7 @@ impl TemplateContent {
 
     pub fn render_permalink(&self, permalink: &Value, data: &Value) -> Result<Value> {
         if let Value::Function(f) = permalink {
-            return f(&[data.clone()]);
+            return f(std::slice::from_ref(data));
         }
         let s = permalink.to_output_string();
         let engine = self.engine()?;
@@ -286,7 +308,9 @@ impl TemplateContent {
         clear_premature_use();
         let result = f(data);
         if let Some(message) = take_premature_use() {
-            return Err(anyhow::Error::new(TemplateContentPrematureUseError(message)));
+            return Err(anyhow::Error::new(TemplateContentPrematureUseError(
+                message,
+            )));
         }
         let _ = options.step_inputs;
         result.with_context(|| {

@@ -19,11 +19,11 @@ pub fn normalize(p: &str) -> String {
         match seg {
             "" | "." => {}
             ".." => {
-                if let Some(last) = out.last() {
-                    if *last != ".." {
-                        out.pop();
-                        continue;
-                    }
+                if let Some(last) = out.last()
+                    && *last != ".."
+                {
+                    out.pop();
+                    continue;
                 }
                 if !is_abs {
                     out.push("..");
@@ -73,7 +73,11 @@ pub fn parse(p: &str) -> ParsedPath {
     if is_abs {
         parsed.root = "/".into();
     }
-    let trimmed = if p.len() > 1 { p.trim_end_matches('/') } else { p };
+    let trimmed = if p.len() > 1 {
+        p.trim_end_matches('/')
+    } else {
+        p
+    };
     let (dir, base) = match trimmed.rfind('/') {
         Some(0) => ("/".to_string(), trimmed[1..].to_string()),
         Some(i) => (trimmed[..i].to_string(), trimmed[i + 1..].to_string()),
@@ -137,7 +141,11 @@ pub fn resolve(parts: &[&str]) -> String {
         };
     }
     let n = normalize(&resolved);
-    if n.len() > 1 { n.trim_end_matches('/').to_string() } else { n }
+    if n.len() > 1 {
+        n.trim_end_matches('/').to_string()
+    } else {
+        n
+    }
 }
 
 /// `path.relative(from, to)`
@@ -156,10 +164,7 @@ pub fn relative(from: &str, to: &str) -> String {
     {
         common += 1;
     }
-    let mut out: Vec<&str> = Vec::new();
-    for _ in common..from_parts.len() {
-        out.push("..");
-    }
+    let mut out = vec![".."; from_parts.len() - common];
     out.extend_from_slice(&to_parts[common..]);
     out.join("/")
 }

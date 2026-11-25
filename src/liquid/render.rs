@@ -14,8 +14,7 @@ use crate::user_config::{CallContext, FilterFn, PairedShortcodeFn, ShortcodeFn};
 use crate::value::{Map, Value};
 
 /// Resolves a partial name (from the including file) to a file path and its contents
-pub type PartialLoader =
-    Arc<dyn Fn(&str, Option<&str>) -> Result<(String, String)> + Send + Sync>;
+pub type PartialLoader = Arc<dyn Fn(&str, Option<&str>) -> Result<(String, String)> + Send + Sync>;
 
 #[derive(Clone)]
 pub struct LiquidOptions {
@@ -397,7 +396,12 @@ impl Liquid {
         }
     }
 
-    fn render_nodes(&self, nodes: &[Node], ctx: &mut RenderContext, out: &mut String) -> Result<Flow> {
+    fn render_nodes(
+        &self,
+        nodes: &[Node],
+        ctx: &mut RenderContext,
+        out: &mut String,
+    ) -> Result<Flow> {
         for node in nodes {
             match self.render_node(node, ctx, out)? {
                 Flow::Normal => {}
@@ -603,7 +607,9 @@ impl Liquid {
     fn render_for(&self, tag: &ForTag, ctx: &mut RenderContext, out: &mut String) -> Result<Flow> {
         let items = self.loop_items(tag, ctx)?;
         if items.is_empty() {
-            return self.render_nodes(&tag.else_body, ctx, out).map(|_| Flow::Normal);
+            return self
+                .render_nodes(&tag.else_body, ctx, out)
+                .map(|_| Flow::Normal);
         }
         let length = items.len();
         let parent = ctx.get("forloop");
@@ -681,7 +687,12 @@ impl Liquid {
         Ok(())
     }
 
-    fn render_include(&self, tag: &IncludeTag, ctx: &mut RenderContext, out: &mut String) -> Result<()> {
+    fn render_include(
+        &self,
+        tag: &IncludeTag,
+        ctx: &mut RenderContext,
+        out: &mut String,
+    ) -> Result<()> {
         if ctx.depth > 100 {
             bail!("Maximum include depth exceeded");
         }
@@ -823,35 +834,71 @@ mod tests {
 
     #[test]
     fn basics() {
-        assert_eq!(render("Hello {{ name }}", serde_json::json!({"name": "Zach"})), "Hello Zach");
+        assert_eq!(
+            render("Hello {{ name }}", serde_json::json!({"name": "Zach"})),
+            "Hello Zach"
+        );
         assert_eq!(render("{{ missing }}", serde_json::json!({})), "");
         assert_eq!(
-            render("{% if a > 1 %}big{% else %}small{% endif %}", serde_json::json!({"a": 2})),
+            render(
+                "{% if a > 1 %}big{% else %}small{% endif %}",
+                serde_json::json!({"a": 2})
+            ),
             "big"
         );
         assert_eq!(
-            render("{% for i in (1..3) %}{{ i }}{% unless forloop.last %},{% endunless %}{% endfor %}", serde_json::json!({})),
+            render(
+                "{% for i in (1..3) %}{{ i }}{% unless forloop.last %},{% endunless %}{% endfor %}",
+                serde_json::json!({})
+            ),
             "1,2,3"
         );
         assert_eq!(
-            render("{% assign x = 'a,b' | split: ',' %}{{ x | join: '-' }}", serde_json::json!({})),
+            render(
+                "{% assign x = 'a,b' | split: ',' %}{{ x | join: '-' }}",
+                serde_json::json!({})
+            ),
             "a-b"
         );
         assert_eq!(
-            render("{% capture c %}hi {{ n }}{% endcapture %}{{ c | upcase }}", serde_json::json!({"n": 1})),
+            render(
+                "{% capture c %}hi {{ n }}{% endcapture %}{{ c | upcase }}",
+                serde_json::json!({"n": 1})
+            ),
             "HI 1"
         );
-        assert_eq!(render("{{ arr.size }} {{ arr.first }}", serde_json::json!({"arr": [3, 4]})), "2 3");
         assert_eq!(
-            render("{% case x %}{% when 1, 2 %}a{% else %}b{% endcase %}", serde_json::json!({"x": 2})),
+            render(
+                "{{ arr.size }} {{ arr.first }}",
+                serde_json::json!({"arr": [3, 4]})
+            ),
+            "2 3"
+        );
+        assert_eq!(
+            render(
+                "{% case x %}{% when 1, 2 %}a{% else %}b{% endcase %}",
+                serde_json::json!({"x": 2})
+            ),
             "a"
         );
-        assert_eq!(render("{% if '' %}t{% else %}f{% endif %}", serde_json::json!({})), "f");
-        assert_eq!(render("{% if arr == empty %}e{% endif %}", serde_json::json!({"arr": []})), "e");
+        assert_eq!(
+            render("{% if '' %}t{% else %}f{% endif %}", serde_json::json!({})),
+            "f"
+        );
+        assert_eq!(
+            render(
+                "{% if arr == empty %}e{% endif %}",
+                serde_json::json!({"arr": []})
+            ),
+            "e"
+        );
     }
 
     #[test]
     fn whitespace() {
-        assert_eq!(render("a {%- if true -%} b {%- endif -%} c", serde_json::json!({})), "abc");
+        assert_eq!(
+            render("a {%- if true -%} b {%- endif -%} c", serde_json::json!({})),
+            "abc"
+        );
     }
 }

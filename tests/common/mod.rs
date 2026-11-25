@@ -5,7 +5,7 @@ use std::path::{Path, PathBuf};
 
 use twelvety::template::PageResult;
 use twelvety::user_config::UserConfig;
-use twelvety::{Twelvety, Options};
+use twelvety::{Options, Twelvety};
 
 /// Programmatic options without a configuration file (`configPath: false`, quiet)
 pub fn options<F>(config: F) -> Options
@@ -28,7 +28,11 @@ pub fn twelvety(input: &str, output: Option<&str>, options: Options) -> Twelvety
 }
 
 /// `new Twelvety(input, output, options).toJSON()`
-pub fn to_json(input: &str, output: Option<&str>, options: Options) -> anyhow::Result<Vec<PageResult>> {
+pub fn to_json(
+    input: &str,
+    output: Option<&str>,
+    options: Options,
+) -> anyhow::Result<Vec<PageResult>> {
     twelvety(input, output, options).to_json()
 }
 

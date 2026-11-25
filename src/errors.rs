@@ -50,8 +50,10 @@ impl std::error::Error for DuplicatePermalinkOutputError {}
 
 /// `ErrorUtil.isPrematureTemplateContentError`
 pub fn is_premature_template_content_error(e: &anyhow::Error) -> bool {
-    e.chain()
-        .any(|c| c.downcast_ref::<TemplateContentPrematureUseError>().is_some())
+    e.chain().any(|c| {
+        c.downcast_ref::<TemplateContentPrematureUseError>()
+            .is_some()
+    })
 }
 
 /// Format an error and its causes the way `ErrorHandler` logs them.

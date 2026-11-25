@@ -11,17 +11,28 @@ use std::sync::Arc;
 use template_support::*;
 use twelvety::template::Template;
 use twelvety::testing::{TestOptions, get_new_template, json};
-use twelvety::{Twelvety, Options, Value};
+use twelvety::{Options, Twelvety, Value};
 
 fn computed_template(path: &str, input: &str, output: &str, content: &str) -> Arc<Template> {
     virtual_template(path, input, output, &[(&path[input.len()..], content)])
 }
 
-fn data_template(path: &str, input: &str, output: &str, content: &str, data: Value) -> Arc<Template> {
+fn data_template(
+    path: &str,
+    input: &str,
+    output: &str,
+    content: &str,
+    data: Value,
+) -> Arc<Template> {
     let key = path[input.len()..].to_string();
     get_new_template(
         path,
-        virtual_options(input, output, vec![(key, content.to_string(), data)], |_| Ok(())),
+        virtual_options(
+            input,
+            output,
+            vec![(key, content.to_string(), data)],
+            |_| Ok(()),
+        ),
     )
     .unwrap()
 }
@@ -65,7 +76,10 @@ fn twelvety_computed_overrides_existing_value() {
         "./dist",
         "---\nkey1: value1\ntwelvetyComputed:\n  key1: override\n---\nhi:{{ key1 }}\n",
     );
-    assert_eq!(rendered_data(&tmpl, 0).get("key1").as_str(), Some("override"));
+    assert_eq!(
+        rendered_data(&tmpl, 0).get("key1").as_str(),
+        Some("override")
+    );
     assert_eq!(render_page(&tmpl), "hi:override");
 }
 
@@ -77,7 +91,10 @@ fn twelvety_computed_overrides_existing_value_and_reuses_upstream_value() {
         "./dist",
         "---\nkey1: value1\ntwelvetyComputed:\n  key1: \"over({{key1}})ride\"\n---\nhi:{{ key1 }}\n",
     );
-    assert_eq!(rendered_data(&tmpl, 0).get("key1").as_str(), Some("over(value1)ride"));
+    assert_eq!(
+        rendered_data(&tmpl, 0).get("key1").as_str(),
+        Some("over(value1)ride")
+    );
     assert_eq!(render_page(&tmpl), "hi:over(value1)ride");
 }
 
@@ -90,12 +107,24 @@ fn twelvety_computed_permalink() {
         "---\nkey1: value1\ntwelvetyComputed:\n  permalink: \"haha-{{key2}}.html\"\n  key2: \"{{key1}}\"\n  dependsOnPage: \"depends:{{page.url}}\"\n  nested:\n    key3: \"{{key1}}\"\n    key4: \"depends on computed {{key2}}\"\n---\nhi:{{ key2 }}\n",
     );
     let data = rendered_data(&tmpl, 0);
-    assert_eq!(data.get_path("page.url").as_str(), Some("/haha-value1.html"));
-    assert_eq!(data.get_path("page.outputPath").as_str(), Some("./dist/haha-value1.html"));
+    assert_eq!(
+        data.get_path("page.url").as_str(),
+        Some("/haha-value1.html")
+    );
+    assert_eq!(
+        data.get_path("page.outputPath").as_str(),
+        Some("./dist/haha-value1.html")
+    );
     assert_eq!(data.get("permalink").as_str(), Some("haha-value1.html"));
     assert_eq!(data.get_path("nested.key3").as_str(), Some("value1"));
-    assert_eq!(data.get_path("nested.key4").as_str(), Some("depends on computed value1"));
-    assert_eq!(data.get("dependsOnPage").as_str(), Some("depends:/haha-value1.html"));
+    assert_eq!(
+        data.get_path("nested.key4").as_str(),
+        Some("depends on computed value1")
+    );
+    assert_eq!(
+        data.get("dependsOnPage").as_str(),
+        Some("depends:/haha-value1.html")
+    );
 }
 
 #[test]
@@ -107,8 +136,14 @@ fn twelvety_computed_simple_permalink() {
         "---\nkey1: value1\ntwelvetyComputed:\n  permalink: \"haha-{{key1}}.html\"\n---\nhi:{{ key2 }}",
     );
     let data = rendered_data(&tmpl, 0);
-    assert_eq!(data.get_path("page.url").as_str(), Some("/haha-value1.html"));
-    assert_eq!(data.get_path("page.outputPath").as_str(), Some("./dist/haha-value1.html"));
+    assert_eq!(
+        data.get_path("page.url").as_str(),
+        Some("/haha-value1.html")
+    );
+    assert_eq!(
+        data.get_path("page.outputPath").as_str(),
+        Some("./dist/haha-value1.html")
+    );
     assert_eq!(data.get("permalink").as_str(), Some("haha-value1.html"));
 }
 
@@ -121,9 +156,18 @@ fn twelvety_computed_permalink_using_slug() {
         "---\nkey1: \"This is a string\"\ntwelvetyComputed:\n  permalink: \"haha-{{key1 | slugify}}.html\"\n---",
     );
     let data = rendered_data(&tmpl, 0);
-    assert_eq!(data.get_path("page.url").as_str(), Some("/haha-this-is-a-string.html"));
-    assert_eq!(data.get_path("page.outputPath").as_str(), Some("./dist/haha-this-is-a-string.html"));
-    assert_eq!(data.get("permalink").as_str(), Some("haha-this-is-a-string.html"));
+    assert_eq!(
+        data.get_path("page.url").as_str(),
+        Some("/haha-this-is-a-string.html")
+    );
+    assert_eq!(
+        data.get_path("page.outputPath").as_str(),
+        Some("./dist/haha-this-is-a-string.html")
+    );
+    assert_eq!(
+        data.get("permalink").as_str(),
+        Some("haha-this-is-a-string.html")
+    );
 }
 
 #[test]
@@ -133,13 +177,28 @@ fn twelvety_computed_js_front_matter_function() {
         (
             "twelvetyComputed",
             object(vec![
-                ("key3", function(|d| format!("value3-{}", d.get("key2").to_js_string()))),
-                ("key2", function(|d| format!("value2-{}.css", d.get("key1").to_js_string()))),
+                (
+                    "key3",
+                    function(|d| format!("value3-{}", d.get("key2").to_js_string())),
+                ),
+                (
+                    "key2",
+                    function(|d| format!("value2-{}.css", d.get("key1").to_js_string())),
+                ),
             ]),
         ),
     ]);
-    let tmpl = data_template("./test/stubs/twelvetyComputed/second.njk", "./test/stubs/", "./dist", "hi:{{ key2 }}\n", data);
-    assert_eq!(rendered_data(&tmpl, 0).get("key3").as_str(), Some("value3-value2-value1.css"));
+    let tmpl = data_template(
+        "./test/stubs/twelvetyComputed/second.njk",
+        "./test/stubs/",
+        "./dist",
+        "hi:{{ key2 }}\n",
+        data,
+    );
+    assert_eq!(
+        rendered_data(&tmpl, 0).get("key3").as_str(),
+        Some("value3-value2-value1.css")
+    );
     assert_eq!(render_page(&tmpl), "hi:value2-value1.css");
 }
 
@@ -149,11 +208,23 @@ fn twelvety_computed_js_front_matter_key_reuses_and_overrides() {
         ("key1", Value::str("value1")),
         (
             "twelvetyComputed",
-            object(vec![("key1", function(|d| format!("value2-{}", d.get("key1").to_js_string())))]),
+            object(vec![(
+                "key1",
+                function(|d| format!("value2-{}", d.get("key1").to_js_string())),
+            )]),
         ),
     ]);
-    let tmpl = data_template("./test/stubs/twelvetyComputed/third.njk", "./test/stubs/", "./dist", "hi:{{ key1 }}\n", data);
-    assert_eq!(rendered_data(&tmpl, 0).get("key1").as_str(), Some("value2-value1"));
+    let tmpl = data_template(
+        "./test/stubs/twelvetyComputed/third.njk",
+        "./test/stubs/",
+        "./dist",
+        "hi:{{ key1 }}\n",
+        data,
+    );
+    assert_eq!(
+        rendered_data(&tmpl, 0).get("key1").as_str(),
+        Some("value2-value1")
+    );
     assert_eq!(render_page(&tmpl), "hi:value2-value1");
 }
 
@@ -176,7 +247,10 @@ fn twelvety_computed_true_primitive() {
 fn twelvety_computed_relies_on_global_data() {
     let data = object(vec![(
         "twelvetyComputed",
-        object(vec![("image", function(|d| d.get_path("globalData.datakey1").to_js_string()))]),
+        object(vec![(
+            "image",
+            function(|d| d.get_path("globalData.datakey1").to_js_string()),
+        )]),
     )]);
     let tmpl = data_template(
         "./test/stubs/twelvetyComputed/use-global-data.njk",
@@ -185,7 +259,10 @@ fn twelvety_computed_relies_on_global_data() {
         "Issue #1043",
         data,
     );
-    assert_eq!(rendered_data(&tmpl, 0).get("image").as_str(), Some("datavalue1"));
+    assert_eq!(
+        rendered_data(&tmpl, 0).get("image").as_str(),
+        Some("datavalue1")
+    );
 }
 
 #[test]
@@ -229,10 +306,17 @@ fn twelvety_computed_intermixes_with_global_data() {
     assert_eq!(data.get("image").as_str(), Some("first"));
     assert_eq!(data.get("image2").as_str(), Some("second"));
     assert_eq!(data.get("image3").as_str(), Some("third-global"));
-    assert_eq!(data.get_path("twelvetyNavigation.key").as_str(), Some("nested-first-global"));
+    assert_eq!(
+        data.get_path("twelvetyNavigation.key").as_str(),
+        Some("nested-first-global")
+    );
 }
 
-fn fail_filter(_ctx: &twelvety::user_config::CallContext, input: Value, _args: &[Value]) -> anyhow::Result<Value> {
+fn fail_filter(
+    _ctx: &twelvety::user_config::CallContext,
+    input: Value,
+    _args: &[Value],
+) -> anyhow::Result<Value> {
     // Filter expects a certain String format
     match input.as_str() {
         Some(s) if s.chars().count() == 1 => Ok(input),
@@ -334,7 +418,9 @@ fn issue_3827_computed_data_with_arrays_and_layouts_two_twelvety_computed() {
         (
             "page2.njk",
             "{{ arr }}",
-            json(r#"{"layout": "base.njk", "twelvetyComputed": {"arr": ["override", "override2"]}}"#),
+            json(
+                r#"{"layout": "base.njk", "twelvetyComputed": {"arr": ["override", "override2"]}}"#,
+            ),
         ),
     ]);
     assert_eq!(result.len(), 2);
@@ -348,7 +434,11 @@ fn issue_3827_computed_data_with_arrays_and_layouts_two_twelvety_computed() {
 #[test]
 fn issue_3728_computed_data_with_arrays_and_layouts_one_twelvety_computed() {
     let result = to_json(vec![
-        ("_includes/base.njk", "{{ content | safe }}", json(r#"{"arr": ["base", 1]}"#)),
+        (
+            "_includes/base.njk",
+            "{{ content | safe }}",
+            json(r#"{"arr": ["base", 1]}"#),
+        ),
         ("page1.njk", "{{ arr }}", json(r#"{"layout": "base.njk"}"#)),
         (
             "page2.njk",

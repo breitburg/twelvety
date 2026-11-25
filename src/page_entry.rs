@@ -147,7 +147,13 @@ impl PageEntry {
     }
 
     fn content_pipeline(&self) -> Value {
-        let Ok(names) = self.template.content.template_render.as_ref().map(|t| t.pipeline_step_names()) else {
+        let Ok(names) = self
+            .template
+            .content
+            .template_render
+            .as_ref()
+            .map(|t| t.pipeline_step_names())
+        else {
             return Value::object();
         };
         let inputs = self.step_inputs.lock().unwrap();
@@ -227,7 +233,10 @@ impl DynObject for PageEntry {
                 "data" => {
                     let mut d = self.data();
                     if d.has("collections") {
-                        d.set("collections", Value::str("[Internals: collections omitted]"));
+                        d.set(
+                            "collections",
+                            Value::str("[Internals: collections omitted]"),
+                        );
                     }
                     d
                 }

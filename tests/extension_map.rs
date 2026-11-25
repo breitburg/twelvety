@@ -66,7 +66,10 @@ fn keys_are_mapped_to_lower_case() {
 #[test]
 fn pruned_globs() {
     let map = map_for(&["liquid", "njk", "png"]);
-    assert_eq!(map.get_passthrough_copy_globs("."), strings(&["./**/*.png"]));
+    assert_eq!(
+        map.get_passthrough_copy_globs("."),
+        strings(&["./**/*.png"])
+    );
 }
 
 #[test]
@@ -78,7 +81,10 @@ fn empty_path_for_file_list() {
 #[test]
 fn file_list() {
     let map = map_for(&["njk", "liquid"]);
-    assert_eq!(map.get_file_list("filename", None), strings(&["filename.njk", "filename.liquid"]));
+    assert_eq!(
+        map.get_file_list("filename", None),
+        strings(&["filename.njk", "filename.liquid"])
+    );
 }
 
 #[test]
@@ -104,7 +110,10 @@ fn file_list_with_dir_in_path_and_dir() {
     let map = map_for(&["njk", "liquid", "pug"]);
     assert_eq!(
         map.get_file_list("layouts/filename", Some("_includes")),
-        strings(&["_includes/layouts/filename.njk", "_includes/layouts/filename.liquid"])
+        strings(&[
+            "_includes/layouts/filename.njk",
+            "_includes/layouts/filename.liquid"
+        ])
     );
 }
 
@@ -112,11 +121,17 @@ fn file_list_with_dir_in_path_and_dir() {
 fn remove_template_extension() {
     let map = map_for(&["njk", "12ty.js"]);
     assert_eq!(map.remove_template_extension("component.njk"), "component");
-    assert_eq!(map.remove_template_extension("component.12ty.js"), "component");
+    assert_eq!(
+        map.remove_template_extension("component.12ty.js"),
+        "component"
+    );
 
     assert_eq!(map.remove_template_extension(""), "");
     assert_eq!(map.remove_template_extension("component"), "component");
-    assert_eq!(map.remove_template_extension("component.js"), "component.js");
+    assert_eq!(
+        map.remove_template_extension("component.js"),
+        "component.js"
+    );
 }
 
 #[test]
@@ -199,13 +214,34 @@ fn get_valid_extensions_for_path() {
     let cfg = config_with_js_extension();
     let map = get_extension_map(&["liquid", "njk", "12ty.js", "js"], &cfg);
 
-    assert_eq!(map.get_valid_extensions_for_path("template.liquid"), strings(&["liquid"]));
-    assert_eq!(map.get_valid_extensions_for_path("template.12ty.js"), strings(&["12ty.js", "js"]));
-    assert_eq!(map.get_valid_extensions_for_path("template.pug"), Vec::<String>::new());
-    assert_eq!(map.get_valid_extensions_for_path("template.liquid.js"), strings(&["js"]));
-    assert_eq!(map.get_valid_extensions_for_path("njk.liquid.12ty.js"), strings(&["12ty.js", "js"]));
-    assert_eq!(map.get_valid_extensions_for_path("template.server.js"), strings(&["server.js", "js"]));
-    assert_eq!(map.get_valid_extensions_for_path("template.12ty.mjs"), strings(&["12ty.mjs"]));
+    assert_eq!(
+        map.get_valid_extensions_for_path("template.liquid"),
+        strings(&["liquid"])
+    );
+    assert_eq!(
+        map.get_valid_extensions_for_path("template.12ty.js"),
+        strings(&["12ty.js", "js"])
+    );
+    assert_eq!(
+        map.get_valid_extensions_for_path("template.pug"),
+        Vec::<String>::new()
+    );
+    assert_eq!(
+        map.get_valid_extensions_for_path("template.liquid.js"),
+        strings(&["js"])
+    );
+    assert_eq!(
+        map.get_valid_extensions_for_path("njk.liquid.12ty.js"),
+        strings(&["12ty.js", "js"])
+    );
+    assert_eq!(
+        map.get_valid_extensions_for_path("template.server.js"),
+        strings(&["server.js", "js"])
+    );
+    assert_eq!(
+        map.get_valid_extensions_for_path("template.12ty.mjs"),
+        strings(&["12ty.mjs"])
+    );
 }
 
 // Skipped: `shouldSpiderJavaScriptDependencies` (JavaScript dependency spidering for
@@ -230,14 +266,26 @@ fn custom_add_extension_keys_are_mapped_to_lower_case_4224() {
     assert_eq!(map.get_valid_globs("."), strings(&["./**/*.vzome"]));
     assert_eq!(map.get_key("component.vZome").as_deref(), Some("vzome"));
     assert!(map.is_full_template_file_path("component.vZome"));
-    assert_eq!(map.get_valid_extensions_for_path("component.vZome"), strings(&["vzome"]));
-    assert_eq!(map.remove_template_extension("component.vZome"), "component");
+    assert_eq!(
+        map.get_valid_extensions_for_path("component.vZome"),
+        strings(&["vzome"])
+    );
+    assert_eq!(
+        map.remove_template_extension("component.vZome"),
+        "component"
+    );
 }
 
 #[test]
 fn custom_add_extension_detects_mixed_case_duplicates_4224() {
     let mut cfg = UserConfig::new();
-    cfg.add_extension("vZome", ExtensionOptions::default()).unwrap();
-    let err = cfg.add_extension("VZOME", ExtensionOptions::default()).unwrap_err();
-    assert!(err.to_string().contains("\"vzome\" template syntax twice"), "{err}");
+    cfg.add_extension("vZome", ExtensionOptions::default())
+        .unwrap();
+    let err = cfg
+        .add_extension("VZOME", ExtensionOptions::default())
+        .unwrap_err();
+    assert!(
+        err.to_string().contains("\"vzome\" template syntax twice"),
+        "{err}"
+    );
 }

@@ -5,12 +5,12 @@ use std::sync::{Arc, Mutex};
 
 use anyhow::{Result, bail};
 
+use super::TemplateEngine;
 use super::custom::CustomEngine;
 use super::html::Html;
 use super::liquid::LiquidEngine;
 use super::markdown::MarkdownEngine;
 use super::nunjucks::NunjucksEngine;
-use super::TemplateEngine;
 use crate::extension_map::ExtensionMap;
 use crate::global_dependency_map::GlobalDependencyMap;
 use crate::template_config::Config;
@@ -35,7 +35,11 @@ fn builtin_class(key: &str) -> Option<&'static str> {
 }
 
 impl TemplateEngineManager {
-    pub fn new(config: Arc<Config>, dirs: ProjectDirectories, uses: Arc<Mutex<GlobalDependencyMap>>) -> Self {
+    pub fn new(
+        config: Arc<Config>,
+        dirs: ProjectDirectories,
+        uses: Arc<Mutex<GlobalDependencyMap>>,
+    ) -> Self {
         TemplateEngineManager {
             config,
             dirs,
@@ -71,7 +75,11 @@ impl TemplateEngineManager {
         self.cache.lock().unwrap().clear();
     }
 
-    pub fn get_engine(&self, name: &str, extension_map: &ExtensionMap) -> Result<Arc<dyn TemplateEngine>> {
+    pub fn get_engine(
+        &self,
+        name: &str,
+        extension_map: &ExtensionMap,
+    ) -> Result<Arc<dyn TemplateEngine>> {
         if ["ejs", "hbs", "mustache", "haml", "pug"].contains(&name) && !self.has_engine(name) {
             bail!(
                 "Per the 2023 community survey, the \"{name}\" template language was moved from core to an officially supported plugin in v3.0. These plugins live here: https://github.com/11ty/eleventy-plugin-template-languages and are documented on their respective template language docs at https://v3.11ty.dev/docs/languages/ You are also empowered to implement *any* template language yourself using https://v3.11ty.dev/docs/languages/custom/"
@@ -92,8 +100,18 @@ impl TemplateEngineManager {
         Ok(match class {
             "Markdown" => Arc::new(MarkdownEngine::new(name, &self.config)),
             "Html" => Arc::new(Html::new(name)),
-            "Nunjucks" => Arc::new(NunjucksEngine::new(name, &self.config, &self.dirs, self.uses.clone())),
-            "Liquid" => Arc::new(LiquidEngine::new(name, &self.config, &self.dirs, self.uses.clone())),
+            "Nunjucks" => Arc::new(NunjucksEngine::new(
+                name,
+                &self.config,
+                &self.dirs,
+                self.uses.clone(),
+            )),
+            "Liquid" => Arc::new(LiquidEngine::new(
+                name,
+                &self.config,
+                &self.dirs,
+                self.uses.clone(),
+            )),
             "JavaScript" => bail!(
                 "JavaScript templates (`*.12ty.js`) are not supported in the Rust port. Use `addExtension` with a Rust `compile` function instead."
             ),
@@ -101,7 +119,11 @@ impl TemplateEngineManager {
         })
     }
 
-    fn create_engine(&self, name: &str, extension_map: &ExtensionMap) -> Result<Arc<dyn TemplateEngine>> {
+    fn create_engine(
+        &self,
+        name: &str,
+        extension_map: &ExtensionMap,
+    ) -> Result<Arc<dyn TemplateEngine>> {
         let Some(class) = self.class_name_for(name) else {
             bail!("Template Engine {name} does not exist in getEngine()");
         };
@@ -116,7 +138,9 @@ impl TemplateEngineManager {
             .find(|e| e.alias_key.as_deref().unwrap_or(&e.key) == name)
             .cloned();
         let Some(entry) = entry else {
-            bail!("Could not find a custom extension for {name}. Did you add it to your config file?");
+            bail!(
+                "Could not find a custom extension for {name}. Did you add it to your config file?"
+            );
         };
         let mut default_engine = None;
         if entry.alias_key.is_some() && entry.key != name {

@@ -19,10 +19,10 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
 use anyhow::{Result, anyhow};
-use twelvety::testing::{TestOptions, get_context, json, render_string};
 use twelvety::template_render::TemplateRender;
+use twelvety::testing::{TestOptions, get_context, json, render_string};
 use twelvety::user_config::{CallContext, UserConfig};
-use twelvety::{Twelvety, Options, Value};
+use twelvety::{Options, Twelvety, Value};
 
 fn input(dir: &str) -> TestOptions {
     TestOptions::input(dir)
@@ -64,7 +64,10 @@ fn hi_page(extra: &str) -> Value {
 }
 
 fn arg(args: &[Value], i: usize) -> String {
-    args.get(i).cloned().unwrap_or(Value::Undefined).to_js_string()
+    args.get(i)
+        .cloned()
+        .unwrap_or(Value::Undefined)
+        .to_js_string()
 }
 
 #[test]
@@ -76,13 +79,21 @@ fn nunjucks_engine_name() {
 
 #[test]
 fn nunjucks_render() {
-    let out = render("<p>{{ name }}</p>", json(r#"{"name": "Zach"}"#), TestOptions::default());
+    let out = render(
+        "<p>{{ name }}</p>",
+        json(r#"{"name": "Zach"}"#),
+        TestOptions::default(),
+    );
     assert_eq!(out.unwrap(), "<p>Zach</p>");
 }
 
 #[test]
 fn nunjucks_render_addition() {
-    let out = render("<p>{{ number + 1 }}</p>", json(r#"{"number": 1}"#), TestOptions::default());
+    let out = render(
+        "<p>{{ number + 1 }}</p>",
+        json(r#"{"number": 1}"#),
+        TestOptions::default(),
+    );
     assert_eq!(out.unwrap(), "<p>2</p>");
 }
 
@@ -109,13 +120,21 @@ fn nunjucks_render_relative_extends() {
 
 #[test]
 fn nunjucks_render_include() {
-    let out = render("<p>{% include 'included.njk' %}</p>", Value::object(), input("test/stubs"));
+    let out = render(
+        "<p>{% include 'included.njk' %}</p>",
+        Value::object(),
+        input("test/stubs"),
+    );
     assert_eq!(out.unwrap(), "<p>This is an include.</p>");
 }
 
 #[test]
 fn nunjucks_render_include_different_extension() {
-    let out = render("<p>{% include 'included.nunj' %}</p>", Value::object(), input("test/stubs"));
+    let out = render(
+        "<p>{% include 'included.nunj' %}</p>",
+        Value::object(),
+        input("test/stubs"),
+    );
     assert_eq!(out.unwrap(), "<p>Nunjabusiness</p>");
 }
 
@@ -203,7 +222,11 @@ fn nunjucks_render_set_with_a_filter() {
         });
         Ok(())
     });
-    let out = render(r#"{% set test = "hi" | uppercase %}{{ test }}"#, Value::object(), options);
+    let out = render(
+        r#"{% set test = "hi" | uppercase %}{{ test }}"#,
+        Value::object(),
+        options,
+    );
     assert_eq!(out.unwrap().trim(), "HI");
 }
 
@@ -218,7 +241,10 @@ fn nunjucks_render_include_a_js_file_issue_398() {
         Value::object(),
         options,
     );
-    assert_eq!(out.unwrap().trim(), r#"/* THIS IS A COMMENT */ alert("Issue #398");"#);
+    assert_eq!(
+        out.unwrap().trim(),
+        r#"/* THIS IS A COMMENT */ alert("Issue #398");"#
+    );
 }
 
 #[test]
@@ -233,7 +259,11 @@ fn nunjucks_render_include_subfolder() {
 
 #[test]
 fn nunjucks_render_include_double_quotes() {
-    let out = render(r#"<p>{% include "included.njk" %}</p>"#, Value::object(), input("test/stubs"));
+    let out = render(
+        r#"<p>{% include "included.njk" %}</p>"#,
+        Value::object(),
+        input("test/stubs"),
+    );
     assert_eq!(out.unwrap(), "<p>This is an include.</p>");
 }
 
@@ -315,7 +345,11 @@ fn nunjucks_shortcode() {
         });
         Ok(())
     });
-    let out = render("{% postfixWithZach name %}", hi_page(r#""name": "test","#), options);
+    let out = render(
+        "{% postfixWithZach name %}",
+        hi_page(r#""name": "test","#),
+        options,
+    );
     assert_eq!(out.unwrap(), "testZach");
     assert_eq!(calls.load(Ordering::SeqCst), 1);
 }
@@ -331,7 +365,11 @@ fn nunjucks_async_shortcode() {
         });
         Ok(())
     });
-    let out = render("{% postfixWithZach name %}", hi_page(r#""name": "test","#), options);
+    let out = render(
+        "{% postfixWithZach name %}",
+        hi_page(r#""name": "test","#),
+        options,
+    );
     assert_eq!(out.unwrap(), "testZach");
     assert_eq!(calls.load(Ordering::SeqCst), 1);
 }
@@ -344,32 +382,57 @@ fn nunjucks_sync_function_shortcode_error_throwing() {
         });
         Ok(())
     });
-    let err = render("{% postfixWithZach name %}", json(r#"{"name": "test"}"#), options).unwrap_err();
+    let err = render(
+        "{% postfixWithZach name %}",
+        json(r#"{"name": "test"}"#),
+        options,
+    )
+    .unwrap_err();
     let msg = error_chain(&err);
-    assert!(msg.contains("Error with Nunjucks shortcode `postfixWithZach`"), "{msg}");
-    assert!(msg.contains("Nunjucks sync function Shortcode (error throwing)"), "{msg}");
+    assert!(
+        msg.contains("Error with Nunjucks shortcode `postfixWithZach`"),
+        "{msg}"
+    );
+    assert!(
+        msg.contains("Nunjucks sync function Shortcode (error throwing)"),
+        "{msg}"
+    );
 }
 
 #[test]
 fn nunjucks_async_function_shortcode_error_throwing() {
     let options = config(Some("./test/stubs/"), |cfg| {
         cfg.add_async_shortcode("postfixWithZachError", |_, _| {
-            Err(anyhow!("Nunjucks Async function Shortcode (error throwing)"))
+            Err(anyhow!(
+                "Nunjucks Async function Shortcode (error throwing)"
+            ))
         });
         Ok(())
     });
-    let err =
-        render("{% postfixWithZachError name %}", json(r#"{"name": "test"}"#), options).unwrap_err();
+    let err = render(
+        "{% postfixWithZachError name %}",
+        json(r#"{"name": "test"}"#),
+        options,
+    )
+    .unwrap_err();
     let msg = error_chain(&err);
-    assert!(msg.contains("Error with Nunjucks shortcode `postfixWithZachError`"), "{msg}");
-    assert!(msg.contains("Nunjucks Async function Shortcode (error throwing)"), "{msg}");
+    assert!(
+        msg.contains("Error with Nunjucks shortcode `postfixWithZachError`"),
+        "{msg}"
+    );
+    assert!(
+        msg.contains("Nunjucks Async function Shortcode (error throwing)"),
+        "{msg}"
+    );
 }
 
 #[test]
 fn nunjucks_sync_function_paired_shortcode_error_throwing() {
     let options = config(Some("./test/stubs/"), |cfg| {
         cfg.add_paired_nunjucks_shortcode("postfixWithZachError", |_, _, _| {
-            Err(anyhow!("Nunjucks sync function paired Shortcode (error throwing)"))
+            Err(anyhow!(
+                "Nunjucks sync function paired Shortcode (error throwing)"
+            ))
         });
         Ok(())
     });
@@ -380,15 +443,23 @@ fn nunjucks_sync_function_paired_shortcode_error_throwing() {
     )
     .unwrap_err();
     let msg = error_chain(&err);
-    assert!(msg.contains("Error with Nunjucks paired shortcode `postfixWithZachError`"), "{msg}");
-    assert!(msg.contains("Nunjucks sync function paired Shortcode (error throwing)"), "{msg}");
+    assert!(
+        msg.contains("Error with Nunjucks paired shortcode `postfixWithZachError`"),
+        "{msg}"
+    );
+    assert!(
+        msg.contains("Nunjucks sync function paired Shortcode (error throwing)"),
+        "{msg}"
+    );
 }
 
 #[test]
 fn nunjucks_async_function_paired_shortcode_error_throwing() {
     let options = config(Some("./test/stubs/"), |cfg| {
         cfg.add_paired_async_shortcode("postfixWithZachError", |_, _, _| {
-            Err(anyhow!("Nunjucks Async function paired Shortcode (error throwing)"))
+            Err(anyhow!(
+                "Nunjucks Async function paired Shortcode (error throwing)"
+            ))
         });
         Ok(())
     });
@@ -399,8 +470,14 @@ fn nunjucks_async_function_paired_shortcode_error_throwing() {
     )
     .unwrap_err();
     let msg = error_chain(&err);
-    assert!(msg.contains("Error with Nunjucks paired shortcode `postfixWithZachError`"), "{msg}");
-    assert!(msg.contains("Nunjucks Async function paired Shortcode (error throwing)"), "{msg}");
+    assert!(
+        msg.contains("Error with Nunjucks paired shortcode `postfixWithZachError`"),
+        "{msg}"
+    );
+    assert!(
+        msg.contains("Nunjucks Async function paired Shortcode (error throwing)"),
+        "{msg}"
+    );
 }
 
 #[test]
@@ -414,7 +491,11 @@ fn nunjucks_shortcode_safe_output() {
         });
         Ok(())
     });
-    let out = render("{% postfixWithZach name %}", hi_page(r#""name": "test","#), options);
+    let out = render(
+        "{% postfixWithZach name %}",
+        hi_page(r#""name": "test","#),
+        options,
+    );
     assert_eq!(out.unwrap(), "<span>test</span>");
     assert_eq!(calls.load(Ordering::SeqCst), 1);
 }
@@ -564,7 +645,11 @@ fn named_args_options(calls: Arc<AtomicUsize>) -> TestOptions {
         cfg.add_nunjucks_shortcode("postfixWithZach", move |ctx, args| {
             assert_page_url(ctx, &c);
             let a = args.first().cloned().unwrap_or(Value::Undefined);
-            Ok(format!("{}{}Zach", a.get("arg1").to_js_string(), a.get("arg2").to_js_string()))
+            Ok(format!(
+                "{}{}Zach",
+                a.get("arg1").to_js_string(),
+                a.get("arg2").to_js_string()
+            ))
         });
         Ok(())
     })
@@ -607,7 +692,10 @@ fn nunjucks_shortcode_named_args_are_a_trailing_object_marked_with_keywords() {
         json(r#"{"name": "test", "other": "howdy"}"#),
         options,
     );
-    assert_eq!(out.unwrap(), r#"["test",{"key":"howdy","__keywords":true}]"#);
+    assert_eq!(
+        out.unwrap(),
+        r#"["test",{"key":"howdy","__keywords":true}]"#
+    );
 }
 
 #[test]
@@ -642,7 +730,10 @@ fn nunjucks_if_statements_on_arrays_issue_524() {
 #[test]
 fn issue_611_run_a_function() {
     let mut data = Value::object();
-    data.set("test", Value::function(|_| Ok(Value::str("alkdsjfksljaZach"))));
+    data.set(
+        "test",
+        Value::function(|_| Ok(Value::str("alkdsjfksljaZach"))),
+    );
     let out = render("{{ test() }}", data, input("./test/stubs/"));
     assert_eq!(out.unwrap(), "alkdsjfksljaZach");
 }
@@ -662,7 +753,10 @@ fn nunjucks_parse_for_symbols() {
     let tr = TemplateRender::new(ctx, "njk").unwrap();
     let symbols = |src: &str| tr.engine.parse_for_symbols(src).unwrap();
     assert_eq!(symbols("<p>{{ name }}</p>"), ["name"]);
-    assert_eq!(symbols("<p>{{ twelvety.deep.nested }}</p>"), ["twelvety.deep.nested"]);
+    assert_eq!(
+        symbols("<p>{{ twelvety.deep.nested }}</p>"),
+        ["twelvety.deep.nested"]
+    );
     assert_eq!(symbols("<p>{{ a }} {{ b }}</p>"), ["a", "b"]);
     assert_eq!(symbols("<p>{% if true %}{{ c }}{% endif %}</p>"), ["c"]);
     assert_eq!(symbols("<p>{% if false %}{{ c }}{% endif %}</p>"), ["c"]);
@@ -670,7 +764,10 @@ fn nunjucks_parse_for_symbols() {
     assert_eq!(symbols("{{ collections.all[0] }}>"), ["collections.all"]);
     assert_eq!(symbols("{{ collections.mine }}>"), ["collections.mine"]);
     // TODO (upstream) not ideal to have `test` in here?
-    assert_eq!(symbols("{{ collections.mine | test }}>"), ["test", "collections.mine"]);
+    assert_eq!(
+        symbols("{{ collections.mine | test }}>"),
+        ["test", "collections.mine"]
+    );
 }
 
 #[test]
@@ -681,7 +778,12 @@ fn nunjucks_parse_for_symbols_with_custom_block() {
     });
     let ctx = get_context(options).unwrap();
     let tr = TemplateRender::new(ctx, "njk").unwrap();
-    assert_eq!(tr.engine.parse_for_symbols("<p>{{ name }} {% test %}</p>").unwrap(), ["name"]);
+    assert_eq!(
+        tr.engine
+            .parse_for_symbols("<p>{{ name }} {% test %}</p>")
+            .unwrap(),
+        ["name"]
+    );
 }
 
 #[test]
@@ -720,7 +822,11 @@ fn use_config_driven_nunjucks_environment_options_autoescape() {
         cfg.set_nunjucks_environment_options(json(r#"{"autoescape": false}"#));
         Ok(())
     });
-    let out = render("<p>{{ test }}</p>", json(r#"{"test": "<b>Hi</b>"}"#), options);
+    let out = render(
+        "<p>{{ test }}</p>",
+        json(r#"{"test": "<b>Hi</b>"}"#),
+        options,
+    );
     assert_eq!(out.unwrap(), "<p><b>Hi</b></p>");
 }
 
@@ -800,7 +906,11 @@ fn asynchronous_filters_via_add_nunjucks_filter() {
 
 /* TwelvetyNunjucksTest.js */
 
-fn build(input: &str, output: &str, config: impl Fn(&mut UserConfig) -> Result<()> + Send + Sync + 'static) -> Vec<String> {
+fn build(
+    input: &str,
+    output: &str,
+    config: impl Fn(&mut UserConfig) -> Result<()> + Send + Sync + 'static,
+) -> Vec<String> {
     let options = Options {
         config_path: Some(String::new()),
         quiet_mode: Some(true),
@@ -808,7 +918,11 @@ fn build(input: &str, output: &str, config: impl Fn(&mut UserConfig) -> Result<(
     }
     .with_config(config);
     let mut elev = Twelvety::new(Some(input), Some(output), options);
-    elev.to_json().unwrap().into_iter().map(|r| r.content).collect()
+    elev.to_json()
+        .unwrap()
+        .into_iter()
+        .map(|r| r.content)
+        .collect()
 }
 
 #[test]
@@ -823,7 +937,9 @@ fn paired_shortcodes_in_macros_2261_1749() {
     assert_eq!(results[0].trim(), "<div>HelloHello Manuel</div>");
 }
 
-fn crossover_config(template: &'static str) -> impl Fn(&mut UserConfig) -> Result<()> + Send + Sync + 'static {
+fn crossover_config(
+    template: &'static str,
+) -> impl Fn(&mut UserConfig) -> Result<()> + Send + Sync + 'static {
     move |cfg| {
         cfg.add_paired_shortcode("sync", |_, content, _| Ok(format!("abc{content}")));
         cfg.add_paired_async_shortcode("async", |_, content, _| {
@@ -863,7 +979,9 @@ fn sync_to_pseudo_async_crossover_shortcodes_4305_2261() {
     let results = build(
         "./test/stubs-virtual",
         "./test/stubs-virtual/_site",
-        crossover_config("{% sync %}before{% pseudoasync %}test{% endpseudoasync %}after{% endsync %}"),
+        crossover_config(
+            "{% sync %}before{% pseudoasync %}test{% endpseudoasync %}after{% endsync %}",
+        ),
     );
     assert_eq!(results.len(), 1);
     assert_eq!(results[0].trim(), "abcbeforeTESTxyzafter");

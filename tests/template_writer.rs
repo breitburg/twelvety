@@ -20,28 +20,59 @@ use twelvety::util::project_template_formats::ProjectTemplateFormats;
 use twelvety::util::template_path;
 
 const COLLECTION_TEMPLATES: &[(&str, &str)] = &[
-    ("test1.md", "---\ntitle: Test Title\ntags:\n  - post\n  - dog\n---\n\n# Test 1\n"),
+    (
+        "test1.md",
+        "---\ntitle: Test Title\ntags:\n  - post\n  - dog\n---\n\n# Test 1\n",
+    ),
     ("test2.md", "---\ntags: cat\n---\n\n# Test 2\n"),
-    ("test3.md", "---\ntags:\n  - post\n  - cat\n---\n\n# Test 3\n"),
+    (
+        "test3.md",
+        "---\ntags:\n  - post\n  - cat\n---\n\n# Test 3\n",
+    ),
     ("test4.md", "---\ndate: 1983-01-01\n---\n\n# Test 3\n"),
     ("test5.md", "---\ndate: 2038-01-01\n---\n\n# Test 3\n"),
-    ("test8.md", "---\ntitle: Test Title\ntags:\n  - post\n  - office\ntwelvetyExcludeFromCollections: true\n---\n\n# Test 1\n"),
-    ("test9.md", "---\ntitle: Test Title\ntags:\n  - post\n  - office\ntwelvetyExcludeFromCollections: post\n---\n\n# Test 1\n"),
-    ("test10.md", "---\ntitle: Test Title\ntags:\n  - post\n  - office\ntwelvetyExcludeFromCollections:\n  - post\n---\n\n# Test 1\n"),
+    (
+        "test8.md",
+        "---\ntitle: Test Title\ntags:\n  - post\n  - office\ntwelvetyExcludeFromCollections: true\n---\n\n# Test 1\n",
+    ),
+    (
+        "test9.md",
+        "---\ntitle: Test Title\ntags:\n  - post\n  - office\ntwelvetyExcludeFromCollections: post\n---\n\n# Test 1\n",
+    ),
+    (
+        "test10.md",
+        "---\ntitle: Test Title\ntags:\n  - post\n  - office\ntwelvetyExcludeFromCollections:\n  - post\n---\n\n# Test 1\n",
+    ),
 ];
 
 const COLLECTION2_TEMPLATES: &[(&str, &str)] = &[
-    ("test1.md", "---\ntitle: Test Title\ntags:\n  - post\n  - dog\ndate: 2009-01-01\n---\n\n# Test 1\n"),
-    ("test2.md", "---\ntags:\n  - post\n  - cat\ndate: 2010-01-01\n---\n\n# Test 2\n"),
+    (
+        "test1.md",
+        "---\ntitle: Test Title\ntags:\n  - post\n  - dog\ndate: 2009-01-01\n---\n\n# Test 1\n",
+    ),
+    (
+        "test2.md",
+        "---\ntags:\n  - post\n  - cat\ndate: 2010-01-01\n---\n\n# Test 2\n",
+    ),
 ];
 
-const PAGED_CONSUMER: &str = "{% for item in collections.pagingtag %}{{ item.templateContent | safe }}{% endfor %}\n";
+const PAGED_CONSUMER: &str =
+    "{% for item in collections.pagingtag %}{{ item.templateContent | safe }}{% endfor %}\n";
 
 // A shared date keeps the input path as the sort tiebreaker.
 const PAGED_TAG1_TEMPLATES: &[(&str, &str)] = &[
-    ("test1.njk", "---\ntitle: Testing 1\ndate: 2020-01-01\ntags:\n  - tag1\n---\n{{ title }}"),
-    ("test2.njk", "---\ntitle: Testing 2\ndate: 2020-01-01\ntags:\n  - tag1\n---\n{{ title }}"),
-    ("test3.njk", "---\ntitle: Testing 3\ndate: 2020-01-01\ntags:\n  - tag1\n---\n{{ title }}"),
+    (
+        "test1.njk",
+        "---\ntitle: Testing 1\ndate: 2020-01-01\ntags:\n  - tag1\n---\n{{ title }}",
+    ),
+    (
+        "test2.njk",
+        "---\ntitle: Testing 2\ndate: 2020-01-01\ntags:\n  - tag1\n---\n{{ title }}",
+    ),
+    (
+        "test3.njk",
+        "---\ntitle: Testing 3\ndate: 2020-01-01\ntags:\n  - tag1\n---\n{{ title }}",
+    ),
 ];
 
 /// `getTemplateConfigInstanceCustomCallback` + `getTemplateWriterInstance(formats, config)`
@@ -70,10 +101,22 @@ fn get_template_writer(
     let mut env = twelvety::value::Map::new();
     env.insert("source".into(), Value::str("script"));
     env.insert("runMode".into(), Value::str("build"));
-    let (ctx, search) = BuildContext::create(&tc, logger.clone(), "build", Value::from_map(env)).unwrap();
+    let (ctx, search) =
+        BuildContext::create(&tc, logger.clone(), "build", Value::from_map(env)).unwrap();
     let config = tc.get_config();
-    let files = Files::new(config.clone(), tc.directories.clone(), ctx.extension_map.clone(), search.clone());
-    let passthrough = TemplatePassthroughManager::new(config, tc.directories.clone(), search, tc.exists_cache.clone(), logger);
+    let files = Files::new(
+        config.clone(),
+        tc.directories.clone(),
+        ctx.extension_map.clone(),
+        search.clone(),
+    );
+    let passthrough = TemplatePassthroughManager::new(
+        config,
+        tc.directories.clone(),
+        search,
+        tc.exists_cache.clone(),
+        logger,
+    );
     TemplateWriter::new(ctx, files, Arc::new(passthrough))
 }
 
@@ -102,7 +145,11 @@ fn template_map(tw: &mut TemplateWriter) -> &TemplateMap {
 
 /// `templateMap._testGetCollectionsData()`
 fn collection(map: &TemplateMap, name: &str) -> Value {
-    map.collections.snapshot().get(name).cloned().unwrap_or_default()
+    map.collections
+        .snapshot()
+        .get(name)
+        .cloned()
+        .unwrap_or_default()
 }
 
 fn len(v: &Value) -> usize {
@@ -115,35 +162,60 @@ fn base(input_path: &Value) -> String {
 
 fn output_path_of(tmpl: &Template) -> String {
     let data = tmpl.get_data().unwrap();
-    tmpl.get_output_locations(&data, "").unwrap().path.to_output_string()
+    tmpl.get_output_locations(&data, "")
+        .unwrap()
+        .path
+        .to_output_string()
 }
 
 fn pages<'a>(map: &'a TemplateMap, input_path: &str) -> &'a [Arc<PageEntry>] {
-    let entry = map.get_map_entry_for_input_path(input_path).expect("map entry");
+    let entry = map
+        .get_map_entry_for_input_path(input_path)
+        .expect("map entry");
     assert_eq!(entry.input_path, input_path);
     &entry.pages
 }
 
 fn template_content(page: &PageEntry) -> String {
-    page.template_content().cloned().unwrap_or_default().trim().to_string()
+    page.template_content()
+        .cloned()
+        .unwrap_or_default()
+        .trim()
+        .to_string()
 }
 
 /// "Output is a subdir of input"
 #[test]
 fn output_is_a_subdir_of_input() {
-    let tw = get_template_writer("test/stubs/writeTest", "test/stubs/writeTest/_writeTestSite", &["liquid", "md"], |_| Ok(()));
+    let tw = get_template_writer(
+        "test/stubs/writeTest",
+        "test/stubs/writeTest/_writeTestSite",
+        &["liquid", "md"],
+        |_| Ok(()),
+    );
     let files = tw.files().get_files().unwrap();
-    assert_eq!(tw.files().get_file_globs(), ["./test/stubs/writeTest/**/*.{liquid,md}".to_string()]);
+    assert_eq!(
+        tw.files().get_file_globs(),
+        ["./test/stubs/writeTest/**/*.{liquid,md}".to_string()]
+    );
     assert!(!files.is_empty());
     let tmpl = Template::new(&files[0], tw.ctx().clone(), false);
     assert_eq!(tmpl.ctx().dirs.input(), "./test/stubs/writeTest/");
-    assert_eq!(output_path_of(&tmpl), "./test/stubs/writeTest/_writeTestSite/test/index.html");
+    assert_eq!(
+        output_path_of(&tmpl),
+        "./test/stubs/writeTest/_writeTestSite/test/index.html"
+    );
 }
 
 /// "createTemplateMap"
 #[test]
 fn create_template_map() {
-    let mut tw = get_template_writer("test/stubs/writeTest", "test/stubs/writeTest/_writeTestSite", &["liquid", "md"], |_| Ok(()));
+    let mut tw = get_template_writer(
+        "test/stubs/writeTest",
+        "test/stubs/writeTest/_writeTestSite",
+        &["liquid", "md"],
+        |_| Ok(()),
+    );
     let paths = tw.get_all_paths().unwrap();
     assert_eq!(paths[0], "./test/stubs/writeTest/test.md");
     tw.create_template_map(&paths).unwrap();
@@ -155,7 +227,12 @@ fn create_template_map() {
 /// "createTemplateMap (no leading dot slash)"
 #[test]
 fn create_template_map_no_leading_dot_slash() {
-    let tw = get_template_writer("test/stubs/writeTest", "test/stubs/_writeTestSite", &["liquid", "md"], |_| Ok(()));
+    let tw = get_template_writer(
+        "test/stubs/writeTest",
+        "test/stubs/_writeTestSite",
+        &["liquid", "md"],
+        |_| Ok(()),
+    );
     let paths = tw.get_all_paths().unwrap();
     assert_eq!(paths[0], "./test/stubs/writeTest/test.md");
 }
@@ -163,7 +240,12 @@ fn create_template_map_no_leading_dot_slash() {
 /// "_testGetCollectionsData"
 #[test]
 fn test_get_collections_data() {
-    let mut tw = virtual_writer("test/stubs/_site", &["md"], COLLECTION_TEMPLATES, |_| Ok(()));
+    let mut tw = virtual_writer(
+        "test/stubs/_site",
+        &["md"],
+        COLLECTION_TEMPLATES,
+        |_| Ok(()),
+    );
     let map = template_map(&mut tw);
     assert_eq!(len(&collection(map, "post")), 2);
     assert_eq!(len(&collection(map, "cat")), 2);
@@ -173,7 +255,12 @@ fn test_get_collections_data() {
 /// "_testGetAllTags"
 #[test]
 fn test_get_all_tags() {
-    let mut tw = virtual_writer("test/stubs/_site", &["md"], COLLECTION_TEMPLATES, |_| Ok(()));
+    let mut tw = virtual_writer(
+        "test/stubs/_site",
+        &["md"],
+        COLLECTION_TEMPLATES,
+        |_| Ok(()),
+    );
     let map = template_map(&mut tw);
     let mut tags = map.collection.get_tag_names();
     tags.sort();
@@ -190,7 +277,11 @@ fn collection_of_files_sorted_by_date() {
 
 fn sorted_posts(c: &TemplateCollection, descending: bool) -> anyhow::Result<Value> {
     let mut posts = c.get_filtered_by_tag("post").to_vec();
-    posts.sort_by(|a, b| a.get("date").to_number().total_cmp(&b.get("date").to_number()));
+    posts.sort_by(|a, b| {
+        a.get("date")
+            .to_number()
+            .total_cmp(&b.get("date").to_number())
+    });
     if descending {
         posts.reverse();
     }
@@ -248,7 +339,9 @@ const PAGED_MAIN: &str = "---\npagination:\n  data: collections.tag1\n  size: 2\
 
 const PAGED_MAIN_ALL: &str = "---\npagination:\n  data: collections.tag1\n  size: 2\n  addAllPagesToCollections: true\ntags:\n  - pagingtag\n---\n<ol>{% for item in pagination.items %}<li>{{ item.url }}</li>{% endfor %}</ol>";
 
-fn with_paged(extra: &'static [(&'static str, &'static str)]) -> &'static [(&'static str, &'static str)] {
+fn with_paged(
+    extra: &'static [(&'static str, &'static str)],
+) -> &'static [(&'static str, &'static str)] {
     let mut all: Vec<(&'static str, &'static str)> = PAGED_TAG1_TEMPLATES.to_vec();
     all.push(("consumer.njk", PAGED_CONSUMER));
     all.extend_from_slice(extra);
@@ -258,15 +351,29 @@ fn with_paged(extra: &'static [(&'static str, &'static str)]) -> &'static [(&'st
 /// "Pagination with a Collection"
 #[test]
 fn pagination_with_a_collection() {
-    let mut tw = virtual_writer("test/stubs/_site", &["njk"], with_paged(&[("main.njk", PAGED_MAIN)]), |_| Ok(()));
+    let mut tw = virtual_writer(
+        "test/stubs/_site",
+        &["njk"],
+        with_paged(&[("main.njk", PAGED_MAIN)]),
+        |_| Ok(()),
+    );
     let map = template_map(&mut tw);
     assert_eq!(len(&collection(map, "tag1")), 3);
     assert_eq!(len(&collection(map, "pagingtag")), 1);
     let pages = pages(map, "./test/stubs-virtual-nowrite/main.njk");
     assert_eq!(pages.len(), 2);
-    assert_eq!(pages[0].output_path(), Value::str("./test/stubs/_site/main/index.html"));
-    assert_eq!(pages[1].output_path(), Value::str("./test/stubs/_site/main/1/index.html"));
-    assert_eq!(template_content(&pages[0]), "<ol><li>/test1/</li><li>/test2/</li></ol>");
+    assert_eq!(
+        pages[0].output_path(),
+        Value::str("./test/stubs/_site/main/index.html")
+    );
+    assert_eq!(
+        pages[1].output_path(),
+        Value::str("./test/stubs/_site/main/1/index.html")
+    );
+    assert_eq!(
+        template_content(&pages[0]),
+        "<ol><li>/test1/</li><li>/test2/</li></ol>"
+    );
     assert_eq!(template_content(&pages[1]), "<ol><li>/test3/</li></ol>");
 }
 
@@ -289,17 +396,31 @@ fn pagination_with_a_collection_from_another_paged_template() {
     assert_eq!(len(&collection(map, "tag1")), 3);
     assert_eq!(len(&collection(map, "pagingtag")), 2);
     let main = pages(map, "./test/stubs-virtual-nowrite/paged-main.njk");
-    assert_eq!(template_content(&main[0]), "<ol><li>/test1/</li><li>/test2/</li></ol>");
+    assert_eq!(
+        template_content(&main[0]),
+        "<ol><li>/test1/</li><li>/test2/</li></ol>"
+    );
     assert_eq!(template_content(&main[1]), "<ol><li>/test3/</li></ol>");
     let downstream = pages(map, "./test/stubs-virtual-nowrite/paged-downstream.njk");
-    assert_eq!(template_content(&downstream[0]), "<ol><li>/paged-main/</li></ol>");
-    assert_eq!(template_content(&downstream[1]), "<ol><li>/paged-main/1/</li></ol>");
+    assert_eq!(
+        template_content(&downstream[0]),
+        "<ol><li>/paged-main/</li></ol>"
+    );
+    assert_eq!(
+        template_content(&downstream[1]),
+        "<ol><li>/paged-main/1/</li></ol>"
+    );
 }
 
 /// "Pagination with a Collection (apply all pages to collections)"
 #[test]
 fn pagination_with_a_collection_apply_all_pages_to_collections() {
-    let mut tw = virtual_writer("test/stubs/_site", &["njk"], with_paged(&[("main.njk", PAGED_MAIN_ALL)]), |_| Ok(()));
+    let mut tw = virtual_writer(
+        "test/stubs/_site",
+        &["njk"],
+        with_paged(&[("main.njk", PAGED_MAIN_ALL)]),
+        |_| Ok(()),
+    );
     let ctx = tw_ctx(&tw);
     let map = template_map(&mut tw);
     assert_eq!(len(&collection(map, "tag1")), 3);
@@ -308,9 +429,18 @@ fn pagination_with_a_collection_apply_all_pages_to_collections() {
     let main = Template::new("./test/stubs-virtual-nowrite/main.njk", ctx, false);
     assert_eq!(output_path_of(&main), "./test/stubs/_site/main/index.html");
     assert_eq!(pages.len(), 2);
-    assert_eq!(pages[0].output_path(), Value::str("./test/stubs/_site/main/index.html"));
-    assert_eq!(pages[1].output_path(), Value::str("./test/stubs/_site/main/1/index.html"));
-    assert_eq!(template_content(&pages[0]), "<ol><li>/test1/</li><li>/test2/</li></ol>");
+    assert_eq!(
+        pages[0].output_path(),
+        Value::str("./test/stubs/_site/main/index.html")
+    );
+    assert_eq!(
+        pages[1].output_path(),
+        Value::str("./test/stubs/_site/main/1/index.html")
+    );
+    assert_eq!(
+        template_content(&pages[0]),
+        "<ol><li>/test1/</li><li>/test2/</li></ol>"
+    );
     assert_eq!(template_content(&pages[1]), "<ol><li>/test3/</li></ol>");
 }
 
@@ -321,7 +451,11 @@ fn tw_ctx(tw: &TemplateWriter) -> Arc<BuildContext> {
 /// Renders a page with its layout (`getRenderedTemplates(...)[0].templateContent`)
 fn rendered(map: &TemplateMap, input_path: &str) -> String {
     let page = &pages(map, input_path)[0];
-    page.template.render_page_entry(page).unwrap().trim().replace("\r\n", "\n")
+    page.template
+        .render_page_entry(page)
+        .unwrap()
+        .trim()
+        .replace("\r\n", "\n")
 }
 
 /// "Use a collection inside of a template"
@@ -344,7 +478,10 @@ fn use_a_collection_inside_of_a_template() {
     let map = template_map(&mut tw);
     assert_eq!(len(&collection(map, "dog")), 1);
     let main = Template::new("./test/stubs-virtual-nowrite/template.liquid", ctx, false);
-    assert_eq!(output_path_of(&main), "./test/stubs/collection-template/_site/template/index.html");
+    assert_eq!(
+        output_path_of(&main),
+        "./test/stubs/collection-template/_site/template/index.html"
+    );
     assert_eq!(
         rendered(map, "./test/stubs-virtual-nowrite/template.liquid"),
         "Layout\n\nTemplate\n\nAll 2 templates\nTemplate 1 dog"
@@ -363,7 +500,10 @@ fn use_a_collection_inside_of_a_layout() {
                 "Layout\n\n{{ content }}\n\nAll {{ collections.all | size }} templates\nLayout {{ collections.dog | size }} dog",
             ),
             ("dog1.liquid", "---\ntags:\n  - dog\n---"),
-            ("template.liquid", "---\nlayout: layout.liquid\n---\nTemplate"),
+            (
+                "template.liquid",
+                "---\nlayout: layout.liquid\n---\nTemplate",
+            ),
         ],
         |_| Ok(()),
     );
@@ -371,7 +511,10 @@ fn use_a_collection_inside_of_a_layout() {
     let map = template_map(&mut tw);
     assert_eq!(len(&collection(map, "dog")), 1);
     let main = Template::new("./test/stubs-virtual-nowrite/template.liquid", ctx, false);
-    assert_eq!(output_path_of(&main), "./test/stubs/collection-layout/_site/template/index.html");
+    assert_eq!(
+        output_path_of(&main),
+        "./test/stubs/collection-layout/_site/template/index.html"
+    );
     assert_eq!(
         rendered(map, "./test/stubs-virtual-nowrite/template.liquid"),
         "Layout\n\nTemplate\n\nAll 2 templates\nLayout 1 dog"
@@ -381,8 +524,16 @@ fn use_a_collection_inside_of_a_layout() {
 /// "Glob Watcher Files with Passthroughs"
 #[test]
 fn glob_watcher_files_with_passthroughs() {
-    let tw = get_template_writer("test/stubs", "test/stubs/_site", &["njk", "png"], |_| Ok(()));
-    assert_eq!(tw.get_passthrough_globs(), ["./test/stubs/**/*.png".to_string()]);
+    let tw = get_template_writer(
+        "test/stubs",
+        "test/stubs/_site",
+        &["njk", "png"],
+        |_| Ok(()),
+    );
+    assert_eq!(
+        tw.get_passthrough_globs(),
+        ["./test/stubs/**/*.png".to_string()]
+    );
 }
 
 /// "Pagination and TemplateContent"
@@ -397,7 +548,9 @@ fn pagination_and_template_content() {
         |_| Ok(()),
     );
     tw.write().unwrap();
-    let content = std::fs::read_to_string("./test/stubs/pagination-templatecontent/_site/index.html").unwrap();
+    let content =
+        std::fs::read_to_string("./test/stubs/pagination-templatecontent/_site/index.html")
+            .unwrap();
     let _ = std::fs::remove_dir_all(site);
     assert_eq!(content.trim(), "<h1>Post 1</h1>\n<h1>Post 2</h1>");
 }
@@ -407,7 +560,13 @@ fn pagination_and_template_content() {
 fn custom_collection_returns_array() {
     let mut tw = virtual_writer("test/stubs/_site", &["md"], COLLECTION2_TEMPLATES, |cfg| {
         cfg.add_collection("returnAllInputPaths", |c| {
-            Ok(Value::array(c.get_all_sorted().to_vec().iter().map(|item| item.get("inputPath")).collect()))
+            Ok(Value::array(
+                c.get_all_sorted()
+                    .to_vec()
+                    .iter()
+                    .map(|item| item.get("inputPath"))
+                    .collect(),
+            ))
         })
     });
     let map = template_map(&mut tw);
@@ -431,10 +590,15 @@ fn custom_collection_returns_a_string() {
 #[test]
 fn custom_collection_returns_an_object() {
     let mut tw = virtual_writer("test/stubs/_site", &["md"], COLLECTION2_TEMPLATES, |cfg| {
-        cfg.add_collection("returnATestObject", |_| Ok(twelvety::testing::json(r#"{"test": "value"}"#)))
+        cfg.add_collection("returnATestObject", |_| {
+            Ok(twelvety::testing::json(r#"{"test": "value"}"#))
+        })
     });
     let map = template_map(&mut tw);
-    assert_eq!(collection(map, "returnATestObject"), twelvety::testing::json(r#"{"test": "value"}"#));
+    assert_eq!(
+        collection(map, "returnATestObject"),
+        twelvety::testing::json(r#"{"test": "value"}"#)
+    );
 }
 
 /// "fileSlug should exist in a collection"
@@ -445,13 +609,19 @@ fn file_slug_should_exist_in_a_collection() {
         &["njk"],
         &[
             ("dog1.njk", "---\ntags:\n  - dog\n---"),
-            ("template.njk", "fileSlug:{% for post in collections.dog %}{{ post.url }}:{{ post.fileSlug }}{% endfor %}"),
+            (
+                "template.njk",
+                "fileSlug:{% for post in collections.dog %}{{ post.url }}:{{ post.fileSlug }}{% endfor %}",
+            ),
         ],
         |_| Ok(()),
     );
     let map = template_map(&mut tw);
     assert_eq!(len(&collection(map, "dog")), 1);
-    assert_eq!(rendered(map, "./test/stubs-virtual-nowrite/template.njk"), "fileSlug:/dog1/:dog1");
+    assert_eq!(
+        rendered(map, "./test/stubs-virtual-nowrite/template.njk"),
+        "fileSlug:/dog1/:dog1"
+    );
 }
 
 // "Write Test 12ty.js": JavaScript templates (skipped). "Markdown with alias" and
@@ -469,8 +639,14 @@ fn passthrough_file_output() {
         |cfg| {
             cfg.add_passthrough_copy("./test/stubs/template-passthrough/static");
             cfg.add_passthrough_copy_mapping("./test/stubs/template-passthrough/static/", "./");
-            cfg.add_passthrough_copy_mapping("./test/stubs/template-passthrough/static/**/*", "./all/");
-            cfg.add_passthrough_copy_mapping("./test/stubs/template-passthrough/static/**/*.js", "./js/");
+            cfg.add_passthrough_copy_mapping(
+                "./test/stubs/template-passthrough/static/**/*",
+                "./all/",
+            );
+            cfg.add_passthrough_copy_mapping(
+                "./test/stubs/template-passthrough/static/**/*.js",
+                "./js/",
+            );
             Ok(())
         },
     );

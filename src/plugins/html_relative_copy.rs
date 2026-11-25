@@ -19,7 +19,10 @@ struct HtmlRelativeCopy {
 
 impl HtmlRelativeCopy {
     fn is_skippable_href(&self, raw: &str) -> bool {
-        self.matching_globs.is_empty() || raw.is_empty() || node_path::is_absolute(raw) || is_valid_url(raw)
+        self.matching_globs.is_empty()
+            || raw.is_empty()
+            || node_path::is_absolute(raw)
+            || is_valid_url(raw)
     }
 
     fn is_copyable_target(&self, target: &str) -> bool {
@@ -41,7 +44,13 @@ impl HtmlRelativeCopy {
         template_path::join(&[&dir, r])
     }
 
-    fn copy(&self, config_events: &crate::util::event_emitter::EventEmitter, file_ref: &str, input_path: &str, output_path: &str) -> Result<()> {
+    fn copy(
+        &self,
+        config_events: &crate::util::event_emitter::EventEmitter,
+        file_ref: &str,
+        input_path: &str,
+        output_path: &str,
+    ) -> Result<()> {
         // strip query/hash
         let file_ref = file_ref.split(['?', '#']).next().unwrap_or("");
         if self.is_skippable_href(file_ref) {
@@ -78,7 +87,11 @@ pub fn register(config: &mut UserConfig) -> Result<()> {
     let entries = config.passthrough_copies_html_relative.clone();
     for entry in entries {
         let options = &entry.options;
-        let extensions = options.get("extensions").as_str().unwrap_or("html").to_string();
+        let extensions = options
+            .get("extensions")
+            .as_str()
+            .unwrap_or("html")
+            .to_string();
         let paths: Vec<String> = options
             .get("paths")
             .to_vec()

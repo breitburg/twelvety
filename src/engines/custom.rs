@@ -17,7 +17,11 @@ pub struct CustomEngine {
 }
 
 impl CustomEngine {
-    pub fn new(name: &str, entry: ExtensionOptions, default_engine: Option<Arc<dyn TemplateEngine>>) -> Self {
+    pub fn new(
+        name: &str,
+        entry: ExtensionOptions,
+        default_engine: Option<Arc<dyn TemplateEngine>>,
+    ) -> Self {
         CustomEngine {
             name: name.to_string(),
             needs_init: Mutex::new(entry.init.is_some()),
@@ -43,7 +47,9 @@ impl CustomEngine {
         let engine = self.default_engine.clone()?;
         let src = src.to_string();
         let input_path = input_path.map(String::from);
-        Some(Arc::new(move |data| engine.compile(&src, input_path.as_deref())?(data)))
+        Some(Arc::new(move |data| {
+            engine.compile(&src, input_path.as_deref())?(data)
+        }))
     }
 }
 
@@ -59,7 +65,10 @@ impl TemplateEngine for CustomEngine {
         if self.needs_to_read_file_contents() {
             return true;
         }
-        self.default_engine.as_ref().map(|e| e.cacheable()).unwrap_or(false)
+        self.default_engine
+            .as_ref()
+            .map(|e| e.cacheable())
+            .unwrap_or(false)
     }
 
     fn needs_to_read_file_contents(&self) -> bool {

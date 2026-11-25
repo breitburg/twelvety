@@ -20,7 +20,10 @@ fn strings(v: &[&str]) -> Vec<String> {
 }
 
 fn input_dirs(input: &str) -> ConfigDirs {
-    ConfigDirs { input: s(input), ..Default::default() }
+    ConfigDirs {
+        input: s(input),
+        ..Default::default()
+    }
 }
 
 /// `getTemplateConfigInstance` (+ an optional configuration callback)
@@ -40,7 +43,12 @@ fn get_files(formats: &[&str], tc: &TemplateConfig) -> Files {
     let config = tc.get_config();
     let mut map = ExtensionMap::new(&config.extension_map);
     map.set_formats(&strings(formats));
-    Files::new(config, tc.directories.clone(), Arc::new(map), Arc::new(FileSystemSearch::new()))
+    Files::new(
+        config,
+        tc.directories.clone(),
+        Arc::new(map),
+        Arc::new(FileSystemSearch::new()),
+    )
 }
 
 fn files_for(input: &str, formats: &[&str]) -> Files {
@@ -50,7 +58,14 @@ fn files_for(input: &str, formats: &[&str]) -> Files {
 /// `glob(evf.getFileGlobs(), { ignore })`
 fn glob(globs: &[String], ignore: &[String]) -> Vec<String> {
     FileSystemSearch::new()
-        .search("test", globs, SearchOptions { ignore: ignore.to_vec(), git_ignore: vec![] })
+        .search(
+            "test",
+            globs,
+            SearchOptions {
+                ignore: ignore.to_vec(),
+                git_ignore: vec![],
+            },
+        )
         .unwrap()
 }
 
@@ -98,7 +113,10 @@ fn dirs_paths_relative() {
 #[test]
 fn get_files_test() {
     let evf = files_for("./test/stubs/writeTest", &["liquid", "md"]);
-    assert_eq!(evf.get_files().unwrap(), strings(&["./test/stubs/writeTest/test.md"]));
+    assert_eq!(
+        evf.get_files().unwrap(),
+        strings(&["./test/stubs/writeTest/test.md"])
+    );
 }
 
 /// "getFiles (without 12ty.js)"
@@ -116,7 +134,10 @@ fn get_files_without_12ty_js() {
 fn mutually_exclusive_input_and_output_dirs() {
     let evf = files_for("./test/stubs/writeTest", &["liquid", "md"]);
     let files = glob(evf.get_file_globs(), &[]);
-    assert_eq!(evf.get_file_globs(), strings(&["./test/stubs/writeTest/**/*.{liquid,md}"]));
+    assert_eq!(
+        evf.get_file_globs(),
+        strings(&["./test/stubs/writeTest/**/*.{liquid,md}"])
+    );
     assert!(!files.is_empty());
     assert_eq!(files[0], "./test/stubs/writeTest/test.md");
 }
@@ -137,7 +158,13 @@ fn single_file_input_deep_path() {
 fn glob_input() {
     let evf = files_for("./test/stubs/glob-pages/!(contact.md)", &["md"]);
     let files = glob(evf.get_file_globs(), &[]);
-    assert_eq!(files, strings(&["./test/stubs/glob-pages/about.md", "./test/stubs/glob-pages/home.md"]));
+    assert_eq!(
+        files,
+        strings(&[
+            "./test/stubs/glob-pages/about.md",
+            "./test/stubs/glob-pages/home.md"
+        ])
+    );
 }
 
 /// ".twelvetyignore parsing"
@@ -145,7 +172,13 @@ fn glob_input() {
 fn twelvetyignore_parsing() {
     let evf = files_for("./test/stubs/", &["md"]);
     let ignores = evf.get_file_ignores("./test/stubs/.twelvetyignore");
-    assert_eq!(ignores, strings(&["./test/stubs/ignoredFolder/**", "./test/stubs/ignoredFolder/ignored.md"]));
+    assert_eq!(
+        ignores,
+        strings(&[
+            "./test/stubs/ignoredFolder/**",
+            "./test/stubs/ignoredFolder/ignored.md"
+        ])
+    );
 }
 
 /// "Parse multiple .twelvetyignores"
@@ -174,7 +207,10 @@ fn parse_multiple_twelvetyignores() {
 #[test]
 fn passed_file_name_does_not_exist() {
     let evf = files_for("./", &["md"]);
-    assert_eq!(evf.get_file_ignores(".thisfiledoesnotexist"), Vec::<String>::new());
+    assert_eq!(
+        evf.get_file_ignores(".thisfiledoesnotexist"),
+        Vec::<String>::new()
+    );
 }
 
 /// ".twelvetyignore files"
@@ -185,7 +221,11 @@ fn twelvetyignore_files() {
     assert_eq!(ignored.len(), 1);
     let files = glob(evf.get_file_globs(), &evf.unique_ignores);
     assert!(!files.is_empty());
-    assert!(!files.iter().any(|f| f.contains("./test/stubs/ignoredFolder")));
+    assert!(
+        !files
+            .iter()
+            .any(|f| f.contains("./test/stubs/ignoredFolder"))
+    );
 }
 
 // "getTemplateData caching": template data is not owned by `Files` in the port (skipped).
@@ -199,7 +239,10 @@ fn get_data_dir() {
 /// "getDataDir subdir"
 #[test]
 fn get_data_dir_subdir() {
-    assert_eq!(files_for("test/stubs", &[]).dirs().data(), "./test/stubs/_data/");
+    assert_eq!(
+        files_for("test/stubs", &[]).dirs().data(),
+        "./test/stubs/_data/"
+    );
 }
 
 /// "Include and Data Dirs"
@@ -218,7 +261,10 @@ fn input_to_src_and_empty_includes_dir_issue_403() {
     let mut evf = files_for("src", &["md", "liquid", "html"]);
     evf.twelvety_ignore_content = s("!./src/_includes/**");
     evf.init(); // duplicate init
-    assert_eq!(evf.get_file_globs(), strings(&["./src/**/*.{md,liquid,html}"]));
+    assert_eq!(
+        evf.get_file_globs(),
+        strings(&["./src/**/*.{md,liquid,html}"])
+    );
 }
 
 /// "Glob Watcher Files"
@@ -227,7 +273,11 @@ fn glob_watcher_files() {
     let evf = files_for("test/stubs", &["njk"]);
     assert_eq!(
         evf.get_glob_watcher_files(),
-        strings(&["./test/stubs/**/*.njk", "./test/stubs/_includes/**", "./test/stubs/_data/**"])
+        strings(&[
+            "./test/stubs/**/*.njk",
+            "./test/stubs/_includes/**",
+            "./test/stubs/_data/**"
+        ])
     );
 }
 
@@ -254,7 +304,11 @@ fn glob_watcher_files_with_file_extension_passthroughs() {
 #[test]
 fn glob_watcher_files_with_config_passthroughs_one_template_format() {
     let tc = get_template_config(
-        ConfigDirs { input: s("test/stubs"), output: s("test/stubs/_site"), ..Default::default() },
+        ConfigDirs {
+            input: s("test/stubs"),
+            output: s("test/stubs/_site"),
+            ..Default::default()
+        },
         |cfg| {
             cfg.add_passthrough_copy("test/stubs/img/");
         },
@@ -262,7 +316,11 @@ fn glob_watcher_files_with_config_passthroughs_one_template_format() {
     let evf = get_files(&["njk"], &tc);
     assert_eq!(
         evf.get_glob_watcher_files(),
-        strings(&["./test/stubs/**/*.njk", "./test/stubs/_includes/**", "./test/stubs/_data/**"])
+        strings(&[
+            "./test/stubs/**/*.njk",
+            "./test/stubs/_includes/**",
+            "./test/stubs/_data/**"
+        ])
     );
     let mgr = TemplatePassthroughManager::new(
         tc.get_config(),
@@ -271,7 +329,10 @@ fn glob_watcher_files_with_config_passthroughs_one_template_format() {
         tc.exists_cache.clone(),
         quiet_logger(),
     );
-    assert_eq!(mgr.get_config_path_globs(), strings(&["./test/stubs/img/**"]));
+    assert_eq!(
+        mgr.get_config_path_globs(),
+        strings(&["./test/stubs/img/**"])
+    );
 }
 
 // "Glob Watcher Files with Config Passthroughs (no template formats)": the template data file glob
@@ -281,7 +342,10 @@ fn glob_watcher_files_with_config_passthroughs_one_template_format() {
 #[test]
 fn negations_are_skipped_in_ignore_content_without_the_experimental_flag() {
     let evf = files_for("test/stubs", &[]);
-    assert_eq!(evf.normalize_ignore_content("./", "hello\n!testing"), strings(&["./hello"]));
+    assert_eq!(
+        evf.normalize_ignore_content("./", "hello\n!testing"),
+        strings(&["./hello"])
+    );
 }
 
 /// "Negations are kept in ignore content with the experimental flag"
@@ -291,5 +355,8 @@ fn negations_are_kept_in_ignore_content_with_the_experimental_flag() {
         cfg.add_experimental_behavior(NEGATED_IGNORES_FLAG);
     });
     let evf = get_files(&[], &tc);
-    assert_eq!(evf.normalize_ignore_content("./", "hello\n!testing"), strings(&["./hello", "!./testing"]));
+    assert_eq!(
+        evf.normalize_ignore_content("./", "hello\n!testing"),
+        strings(&["./hello", "!./testing"])
+    );
 }

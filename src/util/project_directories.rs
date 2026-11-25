@@ -4,8 +4,8 @@ use std::path::Path;
 
 use anyhow::{Result, bail};
 
-use super::glob_matcher::is_dynamic_pattern;
 use super::exists_cache::ExistsCache;
+use super::glob_matcher::is_dynamic_pattern;
 use super::{dir_contains, node_path, template_path};
 use crate::value::{Map, Value};
 
@@ -92,39 +92,37 @@ impl ProjectDirectories {
 
     pub fn set_via_config_object(&mut self, config_dirs: &ConfigDirs) -> Result<()> {
         let mut input_changed = false;
-        if let Some(input) = &config_dirs.input {
-            if !input.is_empty() && Self::normalize_directory(input) != self.input() {
-                self.set_input_raw(Some(input), None)?;
-                input_changed = true;
-            }
+        if let Some(input) = &config_dirs.input
+            && !input.is_empty()
+            && Self::normalize_directory(input) != self.input()
+        {
+            self.set_input_raw(Some(input), None)?;
+            input_changed = true;
         }
-        if let Some(output) = &config_dirs.output {
-            if Self::normalize_directory(output) != self.output() {
-                self.set_output(Some(output));
-            }
+        if let Some(output) = &config_dirs.output
+            && Self::normalize_directory(output) != self.output()
+        {
+            self.set_output(Some(output));
         }
-        if let Some(data) = &config_dirs.data {
-            if input_changed
-                || self.normalize_directory_path_relative_to_input_directory(data) != self.data()
-            {
-                self.set_data(Some(data));
-            }
+        if let Some(data) = &config_dirs.data
+            && (input_changed
+                || self.normalize_directory_path_relative_to_input_directory(data) != self.data())
+        {
+            self.set_data(Some(data));
         }
-        if let Some(includes) = &config_dirs.includes {
-            if input_changed
+        if let Some(includes) = &config_dirs.includes
+            && (input_changed
                 || self.normalize_directory_path_relative_to_input_directory(includes)
-                    != self.includes()
-            {
-                self.set_includes(Some(includes));
-            }
+                    != self.includes())
+        {
+            self.set_includes(Some(includes));
         }
-        if let Some(layouts) = &config_dirs.layouts {
-            if input_changed
+        if let Some(layouts) = &config_dirs.layouts
+            && (input_changed
                 || Some(self.normalize_directory_path_relative_to_input_directory(layouts))
-                    != self.layouts()
-            {
-                self.set_layouts(Some(layouts));
-            }
+                    != self.layouts())
+        {
+            self.set_layouts(Some(layouts));
         }
         if input_changed {
             self.update_input_dependencies();
@@ -273,7 +271,10 @@ impl ProjectDirectories {
     /// Throws when a configured directory doesn’t match the casing on disk (#4224)
     pub fn check_case(&self, exists_cache: &ExistsCache) -> Result<()> {
         let paths = [
-            ("input", Some(self.input_file.clone().unwrap_or_else(|| self.input()))),
+            (
+                "input",
+                Some(self.input_file.clone().unwrap_or_else(|| self.input())),
+            ),
             ("data", Some(self.data())),
             ("includes", Some(self.includes())),
             ("layouts", self.layouts()),
@@ -283,12 +284,12 @@ impl ProjectDirectories {
             let Some(dir) = dir.filter(|d| !d.is_empty()) else {
                 continue;
             };
-            if let Some(resolved) = exists_cache.resolve(&dir) {
-                if resolved != dir {
-                    bail!(
-                        "The `{name}` path \"{dir}\" doesn’t match the casing on disk: \"{resolved}\""
-                    );
-                }
+            if let Some(resolved) = exists_cache.resolve(&dir)
+                && resolved != dir
+            {
+                bail!(
+                    "The `{name}` path \"{dir}\" doesn’t match the casing on disk: \"{resolved}\""
+                );
             }
         }
         Ok(())
@@ -393,7 +394,8 @@ impl ProjectDirectories {
                 file_path,
             ));
         }
-        let input_dir = template_path::add_leading_dot_slash(&template_path::join(&[&self.input()]));
+        let input_dir =
+            template_path::add_leading_dot_slash(&template_path::join(&[&self.input()]));
         template_path::strip_leading_sub_path(file_path, &input_dir)
     }
 

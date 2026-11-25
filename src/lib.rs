@@ -31,9 +31,9 @@ pub mod user_config;
 pub mod util;
 pub mod value;
 
-pub use crate::core::{Twelvety, Options};
+pub use crate::core::{Options, Twelvety};
 pub use crate::user_config::UserConfig;
 pub use crate::value::Value;
 pub mod serve;
-pub mod watch;
 pub mod testing;
+pub mod watch;

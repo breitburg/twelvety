@@ -122,7 +122,10 @@ impl TemplateData {
             let patterns: Vec<String> = if suffix.is_empty() {
                 vec!["{name}.{ext}".into()]
             } else {
-                vec![format!("{{name}}{suffix}.{{js}}"), format!("{{name}}{suffix}.{{ext}}")]
+                vec![
+                    format!("{{name}}{suffix}.{{js}}"),
+                    format!("{{name}}{suffix}.{{ext}}"),
+                ]
             };
             template.extend(patterns.clone());
             match &base_name {
@@ -155,7 +158,10 @@ impl TemplateData {
 
     fn pattern_extensions(&self, token: &str, is_user_pattern: bool) -> Vec<String> {
         if token == "js" {
-            return ELIGIBLE_JAVASCRIPT_EXTENSIONS.iter().map(|s| s.to_string()).collect();
+            return ELIGIBLE_JAVASCRIPT_EXTENSIONS
+                .iter()
+                .map(|s| s.to_string())
+                .collect();
         }
         let mut exts = vec!["json".to_string()];
         exts.extend(self.user_data_extensions());
@@ -167,7 +173,12 @@ impl TemplateData {
             .collect()
     }
 
-    fn expand_data_file_name(&self, pattern: &str, name: &str, is_user_pattern: bool) -> Vec<String> {
+    fn expand_data_file_name(
+        &self,
+        pattern: &str,
+        name: &str,
+        is_user_pattern: bool,
+    ) -> Vec<String> {
         let file_name = pattern.replace("{name}", name);
         let token = if file_name.contains("{ext}") {
             Some("ext")
@@ -183,12 +194,22 @@ impl TemplateData {
         self.pattern_extensions(token, is_user_pattern)
             .into_iter()
             .flat_map(|ext| {
-                self.expand_data_file_name(&file_name.replacen(&placeholder, &ext, 1), name, is_user_pattern)
+                self.expand_data_file_name(
+                    &file_name.replacen(&placeholder, &ext, 1),
+                    name,
+                    is_user_pattern,
+                )
             })
             .collect()
     }
 
-    fn push_data_file_paths(&self, paths: &mut Vec<String>, dir: &str, is_template: bool, name: &str) {
+    fn push_data_file_paths(
+        &self,
+        paths: &mut Vec<String>,
+        dir: &str,
+        is_template: bool,
+        name: &str,
+    ) {
         let (template, directory, user_t, user_d) = self.data_file_names();
         let (patterns, is_user) = if is_template {
             (template, user_t)
@@ -221,10 +242,9 @@ impl TemplateData {
 
     pub fn get_global_data_glob(&self) -> Vec<String> {
         let ext_glob = self.global_data_extension_priorities().join(",");
-        vec![template_path::add_leading_dot_slash(&template_path::join(&[
-            &self.data_dir(),
-            &format!("/**/*.{{{ext_glob}}}"),
-        ]))]
+        vec![template_path::add_leading_dot_slash(&template_path::join(
+            &[&self.data_dir(), &format!("/**/*.{{{ext_glob}}}")],
+        ))]
     }
 
     /// `getAllDataFileSuffixes`
@@ -274,14 +294,18 @@ impl TemplateData {
         } else {
             format!("{{{}}}", names.join(","))
         };
-        vec![template_path::add_leading_dot_slash(&format!("{input_dir}**/{glob}"))]
+        vec![template_path::add_leading_dot_slash(&format!(
+            "{input_dir}**/{glob}"
+        ))]
     }
 
     pub fn get_global_data_files(&self) -> Result<Vec<String>> {
         let priorities = self.global_data_extension_priorities();
-        let mut paths = self
-            .file_system_search
-            .search("global-data", &self.get_global_data_glob(), SearchOptions::default())?;
+        let mut paths = self.file_system_search.search(
+            "global-data",
+            &self.get_global_data_glob(),
+            SearchOptions::default(),
+        )?;
         paths.sort_by_key(|p| Self::calculate_extension_priority(p, &priorities));
         Ok(paths)
     }
@@ -414,7 +438,12 @@ impl TemplateData {
     }
 
     fn get_template_directory_entry(&self, template_path_str: &str) -> Result<DirectoryEntry> {
-        if let Some(e) = self.template_directory_data.lock().unwrap().get(template_path_str) {
+        if let Some(e) = self
+            .template_directory_data
+            .lock()
+            .unwrap()
+            .get(template_path_str)
+        {
             return Ok(e.clone());
         }
         let paths: Vec<String> = self
@@ -496,8 +525,8 @@ impl TemplateData {
             if content.is_empty() {
                 return Ok(Value::object());
             }
-            let parsed: serde_json::Value = serde_json::from_str(&content)
-                .with_context(|| parse_error(path))?;
+            let parsed: serde_json::Value =
+                serde_json::from_str(&content).with_context(|| parse_error(path))?;
             return Ok(Value::from_json(parsed));
         }
         bail!(
@@ -533,9 +562,10 @@ impl TemplateData {
         }
         if !input_dir.is_empty() {
             let segment = template_path::get_last_path_segment(&input_dir);
-            let root_dir = template_path::get_dir_from_file_path(&template_path::add_leading_dot_slash(
-                &template_path::join(&[&input_dir, &segment]),
-            ));
+            let root_dir =
+                template_path::get_dir_from_file_path(&template_path::add_leading_dot_slash(
+                    &template_path::join(&[&input_dir, &segment]),
+                ));
             self.push_data_file_paths(&mut paths, &root_dir, false, &segment);
         }
         paths
@@ -559,7 +589,12 @@ pub fn get_cleaned_tags(data: &Value, tags_key: Option<&str>, file: &str) -> Res
     get_cleaned_tags_with(data, tags_key, file, false)
 }
 
-fn get_cleaned_tags_with(data: &Value, tags_key: Option<&str>, file: &str, is_virtual: bool) -> Result<Vec<String>> {
+fn get_cleaned_tags_with(
+    data: &Value,
+    tags_key: Option<&str>,
+    file: &str,
+    is_virtual: bool,
+) -> Result<Vec<String>> {
     let Some(key) = tags_key else {
         return Ok(vec![]);
     };
@@ -578,7 +613,10 @@ fn get_cleaned_tags_with(data: &Value, tags_key: Option<&str>, file: &str, is_vi
             if file.is_empty() {
                 String::new()
             } else {
-                format!(" in {}template: {file}", if is_virtual { "virtual " } else { "" })
+                format!(
+                    " in {}template: {file}",
+                    if is_virtual { "virtual " } else { "" }
+                )
             },
             other.inspect()
         ),
@@ -596,12 +634,21 @@ pub fn cleanup_data(data: Value, tags_key: Option<&str>, file: &str) -> Result<V
 }
 
 /// `cleanupData` with the `isVirtualTemplate` option (used in error messages)
-pub fn cleanup_data_with(mut data: Value, tags_key: Option<&str>, file: &str, is_virtual: bool) -> Result<Value> {
-    if let Some(key) = tags_key {
-        if data.is_plain_object() && data.has(key) {
-            let tags = get_cleaned_tags_with(&data, Some(key), file, is_virtual)?;
-            data.set(key, Value::array(tags.into_iter().map(Value::from).collect()));
-        }
+pub fn cleanup_data_with(
+    mut data: Value,
+    tags_key: Option<&str>,
+    file: &str,
+    is_virtual: bool,
+) -> Result<Value> {
+    if let Some(key) = tags_key
+        && data.is_plain_object()
+        && data.has(key)
+    {
+        let tags = get_cleaned_tags_with(&data, Some(key), file, is_virtual)?;
+        data.set(
+            key,
+            Value::array(tags.into_iter().map(Value::from).collect()),
+        );
     }
     Ok(data)
 }

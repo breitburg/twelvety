@@ -71,11 +71,12 @@ impl LiquidEngine {
                 name.to_string()
             };
             let mut candidates = vec![];
-            if let Some(from) = from {
-                if (file.starts_with("./") || file.starts_with("../")) && !from.is_empty() {
-                    let dir = template_path::get_dir_from_file_path(from);
-                    candidates.push(template_path::join(&[&dir, &file]));
-                }
+            if let Some(from) = from
+                && (file.starts_with("./") || file.starts_with("../"))
+                && !from.is_empty()
+            {
+                let dir = template_path::get_dir_from_file_path(from);
+                candidates.push(template_path::join(&[&dir, &file]));
             }
             for root in &roots {
                 candidates.push(template_path::join(&[root, &file]));
@@ -88,17 +89,12 @@ impl LiquidEngine {
                     return Ok((template_path::add_leading_dot_slash(candidate), contents));
                 }
             }
-            bail!(
-                "Failed to lookup \"{name}\" in \"{}\"",
-                roots.join(",")
-            )
+            bail!("Failed to lookup \"{name}\" in \"{}\"", roots.join(","))
         }));
         let engine_name = name.to_string();
         lib.on_partial = Some(Arc::new(move |from, to| {
             let from = from.filter(|f| !f.is_empty()).unwrap_or(&engine_name);
-            uses.lock()
-                .unwrap()
-                .add_dependency(from, &[to.to_string()]);
+            uses.lock().unwrap().add_dependency(from, &[to.to_string()]);
         }));
 
         for (name, f) in &config.liquid.filters {

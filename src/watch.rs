@@ -25,14 +25,16 @@ fn relative(path: &Path) -> String {
 pub fn watch(twelvety: &mut Twelvety, server: Option<&DevServer>) -> Result<()> {
     let (tx, rx) = channel();
     let mut watcher = notify::recommended_watcher(move |res: notify::Result<notify::Event>| {
-        if let Ok(event) = res {
-            if matches!(
+        if let Ok(event) = res
+            && matches!(
                 event.kind,
-                notify::EventKind::Create(_) | notify::EventKind::Modify(_) | notify::EventKind::Remove(_)
-            ) {
-                for p in event.paths {
-                    let _ = tx.send(p);
-                }
+                notify::EventKind::Create(_)
+                    | notify::EventKind::Modify(_)
+                    | notify::EventKind::Remove(_)
+            )
+        {
+            for p in event.paths {
+                let _ = tx.send(p);
             }
         }
     })?;
@@ -62,7 +64,11 @@ pub fn watch(twelvety: &mut Twelvety, server: Option<&DevServer>) -> Result<()> 
             .watch_ignores
             .iter()
             .cloned()
-            .chain([output_glob, "./.git/**".to_string(), "**/node_modules/**".to_string()])
+            .chain([
+                output_glob,
+                "./.git/**".to_string(),
+                "**/node_modules/**".to_string(),
+            ])
             .collect();
         let ignore_set = build_glob_set(&ignores);
         let targets = twelvety.watch_targets.clone();

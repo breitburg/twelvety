@@ -26,7 +26,9 @@ impl InlineRule for Smiley {
 
     fn run(state: &mut InlineState) -> Option<(Node, usize)> {
         if state.src[state.pos..state.pos_max].starts_with(":)") {
-            let node = Node::new(Text { content: "😃".into() });
+            let node = Node::new(Text {
+                content: "😃".into(),
+            });
             return Some((node, 2));
         }
         None
@@ -42,7 +44,8 @@ fn enable_code(md: &mut MarkdownIt) {
 }
 
 fn disable_code(md: &mut MarkdownIt) {
-    md.block.remove_rule::<markdown_it::plugins::cmark::block::code::CodeScanner>();
+    md.block
+        .remove_rule::<markdown_it::plugins::cmark::block::code::CodeScanner>();
 }
 
 #[test]
@@ -52,12 +55,18 @@ fn markdown() {
 
 #[test]
 fn parses_base_markdown_no_data() {
-    assert_eq!(render(&md(), "# My Title", &Value::Undefined).trim(), "<h1>My Title</h1>");
+    assert_eq!(
+        render(&md(), "# My Title", &Value::Undefined).trim(),
+        "<h1>My Title</h1>"
+    );
 }
 
 #[test]
 fn markdown_should_work_with_html_too() {
-    assert_eq!(render(&md(), "<h1>My Title</h1>", &Value::Undefined).trim(), "<h1>My Title</h1>");
+    assert_eq!(
+        render(&md(), "<h1>My Title</h1>", &Value::Undefined).trim(),
+        "<h1>My Title</h1>"
+    );
 }
 
 #[test]
@@ -69,7 +78,10 @@ fn parses_markdown_using_liquid_engine_default_with_data() {
 #[test]
 fn ignore_markdown_use_only_preprocess_engine() {
     let f = md().get_compiled_template("{{title}}", true, None).unwrap();
-    assert_eq!(f(&json(r#"{"title": "My Title"}"#)).unwrap().trim(), "My Title");
+    assert_eq!(
+        f(&json(r#"{"title": "My Title"}"#)).unwrap().trim(),
+        "My Title"
+    );
 }
 
 #[test]
@@ -77,21 +89,30 @@ fn skip_markdown_and_preprocess_engine_466() {
     let mut tr = md();
     tr.set_preprocessing_engine(None).unwrap();
     let f = tr.get_compiled_template("404.html", true, None).unwrap();
-    assert_eq!(f(&json(r#"{"title": "My Title"}"#)).unwrap().trim(), "404.html");
+    assert_eq!(
+        f(&json(r#"{"title": "My Title"}"#)).unwrap().trim(),
+        "404.html"
+    );
 }
 
 #[test]
 fn set_markdown_engine_to_false_dont_parse() {
     let mut tr = md();
     tr.set_preprocessing_engine(None).unwrap();
-    assert_eq!(render(&tr, "# {{title}}", &Value::Undefined).trim(), "<h1>{{title}}</h1>");
+    assert_eq!(
+        render(&tr, "# {{title}}", &Value::Undefined).trim(),
+        "<h1>{{title}}</h1>"
+    );
 }
 
 #[test]
 fn set_markdown_engine_to_false_dont_parse_with_html_input() {
     let mut tr = md();
     tr.set_preprocessing_engine(None).unwrap();
-    assert_eq!(render(&tr, "<h1>{{title}}</h1>", &Value::Undefined).trim(), "<h1>{{title}}</h1>");
+    assert_eq!(
+        render(&tr, "<h1>{{title}}</h1>", &Value::Undefined).trim(),
+        "<h1>{{title}}</h1>"
+    );
 }
 
 #[test]
@@ -104,12 +125,18 @@ fn pass_in_an_override_liquid() {
 
 #[test]
 fn strikethrough() {
-    assert_eq!(render(&md(), "~~No~~", &Value::Undefined).trim(), "<p><s>No</s></p>");
+    assert_eq!(
+        render(&md(), "~~No~~", &Value::Undefined).trim(),
+        "<p><s>No</s></p>"
+    );
 }
 
 #[test]
 fn strikethrough_in_a_header() {
-    assert_eq!(render(&md(), "# ~~No~~", &Value::Undefined).trim(), "<h1><s>No</s></h1>");
+    assert_eq!(
+        render(&md(), "# ~~No~~", &Value::Undefined).trim(),
+        "<h1><s>No</s></h1>"
+    );
 }
 
 /// Upstream overrides the library with a plain `md()` instance; the port can’t swap in a JS
@@ -153,12 +180,17 @@ fn use_a_custom_highlighter() {
 fn shortcode_options(paired: bool, liquid: bool) -> TestOptions {
     TestOptions::default().with_config(move |cfg| {
         match (paired, liquid) {
-            (false, true) => cfg.add_liquid_shortcode("testShortcode", |_, _| Ok("## My Other Title".into())),
-            (false, false) => cfg.add_nunjucks_shortcode("testShortcode", |_, _| Ok("## My Other Title".into())),
-            (true, true) => cfg.add_paired_liquid_shortcode("testShortcode", |_, content, _| Ok(content.into())),
-            (true, false) => {
-                cfg.add_paired_nunjucks_shortcode("testShortcode", |_, content, _| Ok(content.into()))
+            (false, true) => {
+                cfg.add_liquid_shortcode("testShortcode", |_, _| Ok("## My Other Title".into()))
             }
+            (false, false) => {
+                cfg.add_nunjucks_shortcode("testShortcode", |_, _| Ok("## My Other Title".into()))
+            }
+            (true, true) => {
+                cfg.add_paired_liquid_shortcode("testShortcode", |_, content, _| Ok(content.into()))
+            }
+            (true, false) => cfg
+                .add_paired_nunjucks_shortcode("testShortcode", |_, content, _| Ok(content.into())),
         }
         Ok(())
     })
@@ -169,15 +201,23 @@ fn shortcode_options(paired: bool, liquid: bool) -> TestOptions {
 fn markdown_inside_of_a_shortcode(paired: bool, engine_name: &str) {
     let ctx = get_context(shortcode_options(paired, engine_name == "liquid")).unwrap();
     let mut tr = TemplateRender::new(ctx.clone(), "md").unwrap();
-    let engine = ctx.engine_manager.get_engine(engine_name, &ctx.extension_map).unwrap();
-    tr.set_preprocessing_engine(Some(PipelineStep::Engine(engine))).unwrap();
+    let engine = ctx
+        .engine_manager
+        .get_engine(engine_name, &ctx.extension_map)
+        .unwrap();
+    tr.set_preprocessing_engine(Some(PipelineStep::Engine(engine)))
+        .unwrap();
 
     let src = if paired {
         "# {{title}}\n{% testShortcode %}## My Other Title{% endtestShortcode %}"
     } else {
         "# {{title}}\n{% testShortcode %}"
     };
-    let out = render(&tr, src, &json(r#"{"title": "My Title", "otherTitle": "My Other Title"}"#));
+    let out = render(
+        &tr,
+        src,
+        &json(r#"{"title": "My Title", "otherTitle": "My Other Title"}"#),
+    );
     assert_eq!(out.trim(), "<h1>My Title</h1>\n<h2>My Other Title</h2>");
 }
 
@@ -203,7 +243,10 @@ fn use_markdown_inside_of_a_nunjucks_paired_shortcode_536() {
 
 #[test]
 fn disable_indented_code_blocks_by_default_2438() {
-    assert_eq!(render(&md(), "    This is a test", &Value::Undefined).trim(), "<p>This is a test</p>");
+    assert_eq!(
+        render(&md(), "    This is a test", &Value::Undefined).trim(),
+        "<p>This is a test</p>"
+    );
 }
 
 // Skipped: "setLibrary does not have disabled indented code blocks either" and

@@ -20,7 +20,12 @@ pub fn templates(list: &[(&str, &str)]) -> Templates {
 }
 
 /// `getVirtualConfig(dirs, templates, configCallback)`
-pub fn virtual_options<F>(input: &str, output: &str, templates: Templates, callback: F) -> TestOptions
+pub fn virtual_options<F>(
+    input: &str,
+    output: &str,
+    templates: Templates,
+    callback: F,
+) -> TestOptions
 where
     F: Fn(&mut UserConfig) -> Result<()> + Send + Sync + 'static,
 {
@@ -34,8 +39,17 @@ where
 }
 
 /// `getVirtualTemplate(path, inputDir, outputDir, templates)`
-pub fn virtual_template(path: &str, input: &str, output: &str, list: &[(&str, &str)]) -> Arc<Template> {
-    get_new_template(path, virtual_options(input, output, templates(list), |_| Ok(()))).unwrap()
+pub fn virtual_template(
+    path: &str,
+    input: &str,
+    output: &str,
+    list: &[(&str, &str)],
+) -> Arc<Template> {
+    get_new_template(
+        path,
+        virtual_options(input, output, templates(list), |_| Ok(())),
+    )
+    .unwrap()
 }
 
 /// `getRenderedData(tmpl, pageNumber)`
@@ -139,9 +153,17 @@ fn pathdiff(abs: &str) -> String {
     let target: Vec<_> = std::path::Path::new(abs).components().collect();
     let common = cwd.iter().zip(&target).take_while(|(a, b)| a == b).count();
     let mut parts: Vec<String> = vec!["..".into(); cwd.len() - common];
-    parts.extend(target[common..].iter().map(|c| c.as_os_str().to_string_lossy().into_owned()));
+    parts.extend(
+        target[common..]
+            .iter()
+            .map(|c| c.as_os_str().to_string_lossy().into_owned()),
+    );
     let rel = parts.join("/");
-    if rel.starts_with("..") { rel } else { format!("./{rel}") }
+    if rel.starts_with("..") {
+        rel
+    } else {
+        format!("./{rel}")
+    }
 }
 
 fn copy_dir(src: &std::path::Path, dest: &std::path::Path) {

@@ -31,7 +31,9 @@ fn get_locale_collection_item(
     if !lang_code.is_truthy() && !ctx.page().get("lang").is_truthy() {
         return filters::get_collection_item(collection, &page, modifier);
     }
-    crate::plugins::i18n::get_locale_collection_item(ctx, config, collection, &page, lang_code, modifier)
+    crate::plugins::i18n::get_locale_collection_item(
+        ctx, config, collection, &page, lang_code, modifier,
+    )
 }
 
 pub fn apply(config: &mut UserConfig, handle: ConfigHandle) -> Result<()> {
@@ -68,11 +70,11 @@ pub fn apply(config: &mut UserConfig, handle: ConfigHandle) -> Result<()> {
             }
             if let Some(reps) = options.get("customReplacements").as_array() {
                 for r in reps {
-                    if let Some(pair) = r.as_array() {
-                        if pair.len() == 2 {
-                            opts.custom_replacements
-                                .push((pair[0].to_js_string(), pair[1].to_js_string()));
-                        }
+                    if let Some(pair) = r.as_array()
+                        && pair.len() == 2
+                    {
+                        opts.custom_replacements
+                            .push((pair[0].to_js_string(), pair[1].to_js_string()));
                     }
                 }
             }
@@ -99,7 +101,12 @@ pub fn apply(config: &mut UserConfig, handle: ConfigHandle) -> Result<()> {
             _ => ctx.page(),
         };
         if page.get("lang").is_truthy() {
-            return Ok(crate::plugins::i18n::get_collection_item_index(ctx, &h, &collection, &page));
+            return Ok(crate::plugins::i18n::get_collection_item_index(
+                ctx,
+                &h,
+                &collection,
+                &page,
+            ));
         }
         Ok(filters::find_collection_item_index(&collection, &page)
             .map(Value::from)
@@ -131,7 +138,11 @@ pub fn apply(config: &mut UserConfig, handle: ConfigHandle) -> Result<()> {
             Some(Value::String(s)) if !s.is_empty() => s.to_string(),
             _ => h.path_prefix(),
         };
-        let url = if url.is_truthy() { url.to_js_string() } else { String::new() };
+        let url = if url.is_truthy() {
+            url.to_js_string()
+        } else {
+            String::new()
+        };
         Ok(Value::str(filters::url_filter(&url, &path_prefix)))
     });
 

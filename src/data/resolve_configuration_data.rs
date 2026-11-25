@@ -17,17 +17,20 @@ const TWELVETY_PREFIX: &str = "twelvety";
 
 pub fn get_alternate_property_name(prop: &str) -> Option<String> {
     if ELIGIBLE_PROPS.contains(&prop) {
-        return Some(format!("{TWELVETY_PREFIX}{}", &prop[BUILDAWESOME_PREFIX.len()..]));
+        return Some(format!(
+            "{TWELVETY_PREFIX}{}",
+            &prop[BUILDAWESOME_PREFIX.len()..]
+        ));
     }
     None
 }
 
 pub fn get_eligible_locations(original: &str) -> Vec<String> {
     let mut out = vec![original.to_string()];
-    if let Some(alt) = get_alternate_property_name(original) {
-        if alt != original {
-            out.push(alt);
-        }
+    if let Some(alt) = get_alternate_property_name(original)
+        && alt != original
+    {
+        out.push(alt);
     }
     out
 }
@@ -68,7 +71,10 @@ pub fn get_value(data: &Value, location: &str) -> Value {
         if v.is_plain_object() {
             merging = Some(deep_copy(merging.unwrap_or_else(Value::object), &[&v]));
         } else if v.is_array() {
-            merging = Some(deep_copy(merging.unwrap_or_else(|| Value::array(vec![])), &[&v]));
+            merging = Some(deep_copy(
+                merging.unwrap_or_else(|| Value::array(vec![])),
+                &[&v],
+            ));
         } else if merging.is_none() {
             return v;
         }

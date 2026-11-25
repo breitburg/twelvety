@@ -66,7 +66,12 @@ impl Files {
     }
 
     pub fn init(&mut self) {
-        if let Some(file) = self.dirs.input_file.clone().or_else(|| self.dirs.input_glob.clone()) {
+        if let Some(file) = self
+            .dirs
+            .input_file
+            .clone()
+            .or_else(|| self.dirs.input_glob.clone())
+        {
             self.template_globs = vec![template_glob_normalize(&file)];
         } else {
             self.template_globs = self.extension_map.get_globs(&self.dirs.input());
@@ -155,7 +160,10 @@ impl Files {
             let absolute_input = template_path::absolute_path(&[&self.dirs.input()]);
             files.insert(template_path::join(&[&root, ".twelvetyignore"]));
             if root != absolute_input {
-                files.insert(template_path::join(&[&self.dirs.input(), ".twelvetyignore"]));
+                files.insert(template_path::join(&[
+                    &self.dirs.input(),
+                    ".twelvetyignore",
+                ]));
             }
         }
         files.into_iter().collect()
@@ -185,7 +193,10 @@ impl Files {
 
     fn get_output_dir_ignore(&self) -> Option<String> {
         if !dir_contains(&self.dirs.output(), &self.dirs.input()) {
-            return Some(template_glob_normalize(&format!("{}/**", self.dirs.output())));
+            return Some(template_glob_normalize(&format!(
+                "{}/**",
+                self.dirs.output()
+            )));
         }
         None
     }
@@ -235,7 +246,10 @@ impl Files {
         } else {
             self.extension_map.get_valid_globs(&self.dirs.input())
         };
-        globs.extend(self.extension_map.get_passthrough_copy_globs(&self.dirs.input()));
+        globs.extend(
+            self.extension_map
+                .get_passthrough_copy_globs(&self.dirs.input()),
+        );
         globs.extend(self.get_includes_and_data_dirs());
         globs
     }

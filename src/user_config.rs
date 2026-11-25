@@ -416,14 +416,16 @@ impl UserConfig {
     where
         F: Fn(&Value) -> Result<()> + Send + Sync + 'static,
     {
-        self.events.on(event_name, Arc::new(callback) as EventListener);
+        self.events
+            .on(event_name, Arc::new(callback) as EventListener);
     }
 
     pub fn once<F>(&mut self, event_name: &str, callback: F)
     where
         F: Fn(&Value) -> Result<()> + Send + Sync + 'static,
     {
-        self.events.once(event_name, Arc::new(callback) as EventListener);
+        self.events
+            .once(event_name, Arc::new(callback) as EventListener);
     }
 
     pub fn emit(&self, event_name: &str, arg: &Value) -> Result<()> {
@@ -486,7 +488,9 @@ impl UserConfig {
 
     pub fn add_filter_fn(&mut self, name: &str, callback: FilterFn) {
         let name = self.get_namespaced_name(name);
-        self.universal.filters.insert(name.clone(), callback.clone());
+        self.universal
+            .filters
+            .insert(name.clone(), callback.clone());
         self.liquid.filters.insert(name.clone(), callback.clone());
         self.nunjucks.filters.insert(name.clone(), callback.clone());
         self.javascript.filters.insert(name, callback);
@@ -508,9 +512,15 @@ impl UserConfig {
     {
         let name = self.get_namespaced_name(name);
         let callback: ShortcodeFn = Arc::new(callback);
-        self.universal.shortcodes.insert(name.clone(), callback.clone());
-        self.liquid.shortcodes.insert(name.clone(), callback.clone());
-        self.nunjucks.shortcodes.insert(name.clone(), callback.clone());
+        self.universal
+            .shortcodes
+            .insert(name.clone(), callback.clone());
+        self.liquid
+            .shortcodes
+            .insert(name.clone(), callback.clone());
+        self.nunjucks
+            .shortcodes
+            .insert(name.clone(), callback.clone());
         self.javascript.shortcodes.insert(name, callback);
     }
 
@@ -551,9 +561,15 @@ impl UserConfig {
     {
         let name = self.get_namespaced_name(name);
         let callback: PairedShortcodeFn = Arc::new(callback);
-        self.universal.paired_shortcodes.insert(name.clone(), callback.clone());
-        self.liquid.paired_shortcodes.insert(name.clone(), callback.clone());
-        self.nunjucks.paired_shortcodes.insert(name.clone(), callback.clone());
+        self.universal
+            .paired_shortcodes
+            .insert(name.clone(), callback.clone());
+        self.liquid
+            .paired_shortcodes
+            .insert(name.clone(), callback.clone());
+        self.nunjucks
+            .paired_shortcodes
+            .insert(name.clone(), callback.clone());
         self.javascript.paired_shortcodes.insert(name, callback);
     }
 
@@ -569,7 +585,9 @@ impl UserConfig {
         F: Fn(&CallContext, &str, &[Value]) -> Result<String> + Send + Sync + 'static,
     {
         let name = self.get_namespaced_name(name);
-        self.liquid.paired_shortcodes.insert(name, Arc::new(callback));
+        self.liquid
+            .paired_shortcodes
+            .insert(name, Arc::new(callback));
     }
 
     pub fn add_paired_nunjucks_shortcode<F>(&mut self, name: &str, callback: F)
@@ -577,7 +595,9 @@ impl UserConfig {
         F: Fn(&CallContext, &str, &[Value]) -> Result<String> + Send + Sync + 'static,
     {
         let name = self.get_namespaced_name(name);
-        self.nunjucks.paired_shortcodes.insert(name, Arc::new(callback));
+        self.nunjucks
+            .paired_shortcodes
+            .insert(name, Arc::new(callback));
     }
 
     pub fn add_nunjucks_global(&mut self, name: &str, value: Value) {
@@ -722,10 +742,11 @@ impl UserConfig {
         copy_options: Value,
     ) -> &mut Self {
         if copy_options.get("mode").as_str() == Some("html-relative") {
-            self.passthrough_copies_html_relative.push(HtmlRelativePassthrough {
-                matches: vec![file_or_dir.to_string()],
-                options: copy_options,
-            });
+            self.passthrough_copies_html_relative
+                .push(HtmlRelativePassthrough {
+                    matches: vec![file_or_dir.to_string()],
+                    options: copy_options,
+                });
             return self;
         }
         self.passthrough_copies.insert(
@@ -779,7 +800,9 @@ impl UserConfig {
 
     pub fn set_passthrough_copy_options(&mut self, copy_options: Value) -> Result<&mut Self> {
         if copy_options.get("mode").is_truthy() {
-            bail!("`mode` is not supported in `setPassthroughCopyOptions`, use `addPassthroughCopy` instead.");
+            bail!(
+                "`mode` is not supported in `setPassthroughCopyOptions`, use `addPassthroughCopy` instead."
+            );
         }
         self.passthrough_copy_options = copy_options;
         Ok(self)
@@ -954,7 +977,12 @@ impl UserConfig {
     }
 
     /// Add a virtual template (a template that does not exist on the file system)
-    pub fn add_template(&mut self, virtual_input_path: &str, content: &str, data: Value) -> Result<()> {
+    pub fn add_template(
+        &mut self,
+        virtual_input_path: &str,
+        content: &str,
+        data: Value,
+    ) -> Result<()> {
         let virtual_input_path = template_path::strip_leading_dot_slash(
             &template_path::standardize_file_path(virtual_input_path),
         );
@@ -1019,7 +1047,9 @@ impl UserConfig {
 
     pub fn set_directories_relative_to(&mut self, dir: &str) -> Result<()> {
         if dir != "." {
-            bail!("Invalid `setDirectoriesRelativeTo` value: {dir:?}. Only \".\" (the project root) is supported.");
+            bail!(
+                "Invalid `setDirectoriesRelativeTo` value: {dir:?}. Only \".\" (the project root) is supported."
+            );
         }
         self.directories_relative_to = Some(dir.to_string());
         Ok(())
@@ -1048,12 +1078,13 @@ impl UserConfig {
     /// Add global data (a `Value::Function` is called once to resolve the data)
     pub fn add_global_data(&mut self, name: &str, data: Value) -> &mut Self {
         let name = self.get_namespaced_name(name);
-        if let Some(existing) = self.global_data.get(&name) {
-            if existing.is_plain_object() && data.is_plain_object() {
-                let merged = crate::util::merge::deep_copy(existing.clone(), &[&data]);
-                self.global_data.insert(name, merged);
-                return self;
-            }
+        if let Some(existing) = self.global_data.get(&name)
+            && existing.is_plain_object()
+            && data.is_plain_object()
+        {
+            let merged = crate::util::merge::deep_copy(existing.clone(), &[&data]);
+            self.global_data.insert(name, merged);
+            return self;
         }
         self.global_data.insert(name, data);
         self
@@ -1078,7 +1109,10 @@ impl UserConfig {
         self.preprocessors.insert(
             name,
             Preprocessor {
-                filter: file_extensions.split(',').map(|s| s.trim().to_string()).collect(),
+                filter: file_extensions
+                    .split(',')
+                    .map(|s| s.trim().to_string())
+                    .collect(),
                 callback: Arc::new(callback),
             },
         );
@@ -1105,17 +1139,25 @@ impl UserConfig {
         // `allowMissingExtensions: true|false` is the older spelling of `missingExtensions`
         if name == "allowMissingExtensions" {
             if !self.error_reporting.contains_key("missingExtensions") {
-                let mapped = if value == "true" || value == "allow" { "allow" } else { "error" };
+                let mapped = if value == "true" || value == "allow" {
+                    "allow"
+                } else {
+                    "error"
+                };
                 self.error_reporting
                     .insert("missingExtensions".to_string(), mapped.to_string());
             }
             return;
         }
-        self.error_reporting.insert(name.to_string(), value.to_string());
+        self.error_reporting
+            .insert(name.to_string(), value.to_string());
     }
 
     pub fn check_error_reporting(&self, name: &str, value: &str) -> bool {
-        self.error_reporting.get(name).map(|v| v == value).unwrap_or(false)
+        self.error_reporting
+            .get(name)
+            .map(|v| v == value)
+            .unwrap_or(false)
     }
 
     pub fn get_collections(&self) -> &IndexMap<String, CollectionFn> {
@@ -1123,7 +1165,10 @@ impl UserConfig {
     }
 
     pub fn get_collection_options(&self, name: &str) -> CollectionOptions {
-        self.collection_options.get(name).cloned().unwrap_or_default()
+        self.collection_options
+            .get(name)
+            .cloned()
+            .unwrap_or_default()
     }
 
     pub fn add_collection<F>(&mut self, name: &str, callback: F) -> Result<()>

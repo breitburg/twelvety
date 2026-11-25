@@ -14,7 +14,10 @@ fn create_ignore_matcher(patterns: &[&str]) -> IgnoreMatcher {
 #[test]
 fn bracket_negation() {
     assert!(is_glob_match("src/post.md", &strings(&["src/[!_]*.md"])));
-    assert!(is_glob_match("./src/post.md", &strings(&["./src/[!_]*.md"])));
+    assert!(is_glob_match(
+        "./src/post.md",
+        &strings(&["./src/[!_]*.md"])
+    ));
     assert!(!is_glob_match("src/_draft.md", &strings(&["src/[!_]*.md"])));
     assert!(!is_glob_match("src/_.md", &strings(&["src/[!_].md"])));
 }
@@ -52,13 +55,19 @@ fn create_ignore_matcher_get_prunable_ignores() {
         "!site/events/2018/**",
         "**/node_modules/**",
     ]);
-    assert_eq!(matcher.get_prunable_ignores(), strings(&["node_modules/**", "**/node_modules/**"]));
+    assert_eq!(
+        matcher.get_prunable_ignores(),
+        strings(&["node_modules/**", "**/node_modules/**"])
+    );
 }
 
 /// "createIgnoreMatcher: git patterns can’t re-include files in an excluded directory"
 #[test]
 fn create_ignore_matcher_git_patterns_cant_reinclude_files_in_an_excluded_directory() {
-    let matcher = IgnoreMatcher::new(&strings(&["site/**", "!site/events/2018/**"]), &strings(&["site/**"]));
+    let matcher = IgnoreMatcher::new(
+        &strings(&["site/**", "!site/events/2018/**"]),
+        &strings(&["site/**"]),
+    );
     assert!(matcher.is_ignored("site/events", true));
     assert!(matcher.is_ignored("site/events/2018/b.md", false));
     assert!(!matcher.is_ignored("index.md", false));
@@ -68,7 +77,12 @@ fn create_ignore_matcher_git_patterns_cant_reinclude_files_in_an_excluded_direct
 #[test]
 fn create_ignore_matcher_git_patterns_reinclude_directory_by_directory() {
     let matcher = IgnoreMatcher::new(
-        &strings(&["site/*", "!site/events", "site/events/*", "!site/events/2018"]),
+        &strings(&[
+            "site/*",
+            "!site/events",
+            "site/events/*",
+            "!site/events/2018",
+        ]),
         &strings(&["site/*", "site/events/*"]),
     );
     assert!(matcher.is_ignored("site/a.md", false));
@@ -91,7 +105,10 @@ fn micromatch_assumptions_issue_127() {
     assert!(is_glob_match("./src/bookmarks/test.md", &globs));
     assert!(!is_glob_match("./src/bookmarks/index.md", &globs));
     assert!(!is_glob_match("./src/bookmarks/index2.md", &globs));
-    assert!(is_glob_match("./src/_content/bookmarks/2018-03-27-git-message.md", &globs));
+    assert!(is_glob_match(
+        "./src/_content/bookmarks/2018-03-27-git-message.md",
+        &globs
+    ));
 }
 
 /// Other extglob forms (picomatch semantics)

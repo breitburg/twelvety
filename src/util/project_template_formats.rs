@@ -46,7 +46,7 @@ impl ProjectTemplateFormats {
             return;
         };
         let list = vec![formats.to_string()];
-        self.use_all_cli = formats != "" && is_use_all(&list);
+        self.use_all_cli = !formats.is_empty() && is_use_all(&list);
         self.values_cli = normalize(&list);
         self.raw_cli = Some(list);
     }

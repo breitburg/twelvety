@@ -16,7 +16,9 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 
 use anyhow::Result;
 use twelvety::Value;
-use twelvety::data::computed_data::{ComputedData, ComputedDataBuilder, ComputedEvaluator, ComputedValue};
+use twelvety::data::computed_data::{
+    ComputedData, ComputedDataBuilder, ComputedEvaluator, ComputedValue,
+};
 use twelvety::testing::json;
 
 struct Evaluator;
@@ -24,8 +26,8 @@ struct Evaluator;
 impl ComputedEvaluator for Evaluator {
     fn evaluate(&self, _key: &str, value: &ComputedValue, data: &Value) -> Result<Value> {
         match value {
-            ComputedValue::Template(t) => t.get("render").call(&[data.clone()]),
-            ComputedValue::Function(f) => f(&[data.clone()]),
+            ComputedValue::Template(t) => t.get("render").call(std::slice::from_ref(data)),
+            ComputedValue::Function(f) => f(std::slice::from_ref(data)),
             ComputedValue::Static(v) => Ok(v.clone()),
             _ => Ok(Value::Undefined),
         }
@@ -33,7 +35,12 @@ impl ComputedEvaluator for Evaluator {
 
     fn symbols(&self, value: &ComputedValue, _data: &Value) -> Vec<String> {
         match value {
-            ComputedValue::Template(t) => t.get("symbols").to_vec().iter().map(|v| v.to_js_string()).collect(),
+            ComputedValue::Template(t) => t
+                .get("symbols")
+                .to_vec()
+                .iter()
+                .map(|v| v.to_js_string())
+                .collect(),
             _ => vec![],
         }
     }
@@ -53,7 +60,10 @@ where
 {
     let mut t = Value::object();
     t.set("render", Value::function(move |args| Ok(func(&args[0]))));
-    t.set("symbols", Value::array(symbols.iter().map(|s| Value::str(*s)).collect()));
+    t.set(
+        "symbols",
+        Value::array(symbols.iter().map(|s| Value::str(*s)).collect()),
+    );
     ComputedValue::Template(t)
 }
 
@@ -92,22 +102,36 @@ fn setup(cd: &mut ComputedData, data: &mut Value) -> Result<()> {
 }
 
 fn setup_unavailable(cd: &mut ComputedData, data: &mut Value, paths: &[&str]) {
-    cd.setup_data(data, &unavailable(paths), None, &Evaluator).unwrap();
+    cd.setup_data(data, &unavailable(paths), None, &Evaluator)
+        .unwrap();
 }
 
 #[test]
 fn basic_get_set() {
     for reverse in [false, true] {
-        let key1 = f(|d| s(format!("this is a test {}{}", js(&d.get("key2")), js(&d.get("keystr")))));
+        let key1 = f(|d| {
+            s(format!(
+                "this is a test {}{}",
+                js(&d.get("key2")),
+                js(&d.get("keystr"))
+            ))
+        });
         let cd = if reverse {
-            Cd::new().add("key1", key1).add_str("keystr", "this is a str")
+            Cd::new()
+                .add("key1", key1)
+                .add_str("keystr", "this is a str")
         } else {
-            Cd::new().add_str("keystr", "this is a str").add("key1", key1)
+            Cd::new()
+                .add_str("keystr", "this is a str")
+                .add("key1", key1)
         };
         let mut cd = cd.build();
         let mut data = json(r#"{"key2": "inject me"}"#);
         setup(&mut cd, &mut data).unwrap();
-        assert_eq!(js(&data.get("key1")), "this is a test inject methis is a str");
+        assert_eq!(
+            js(&data.get("key1")),
+            "this is a test inject methis is a str"
+        );
         assert_eq!(js(&data.get("key2")), "inject me");
         assert_eq!(js(&data.get("keystr")), "this is a str");
     }
@@ -116,13 +140,28 @@ fn basic_get_set() {
 #[test]
 fn basic_get_set_reverse_order_nested_two_deep() {
     let mut cd = Cd::new()
-        .add("key1.key3", f(|d| s(format!("this is a test {}{}", js(&d.get("key2")), js(&d.get("keystr"))))))
-        .add("key1.key4", f(|d| s(format!("this is a test {}", js(&d.get_path("key1.key3"))))))
+        .add(
+            "key1.key3",
+            f(|d| {
+                s(format!(
+                    "this is a test {}{}",
+                    js(&d.get("key2")),
+                    js(&d.get("keystr"))
+                ))
+            }),
+        )
+        .add(
+            "key1.key4",
+            f(|d| s(format!("this is a test {}", js(&d.get_path("key1.key3"))))),
+        )
         .add_str("keystr", "this is a str")
         .build();
     let mut data = json(r#"{"key2": "inject me"}"#);
     setup(&mut cd, &mut data).unwrap();
-    assert_eq!(js(&data.get_path("key1.key3")), "this is a test inject methis is a str");
+    assert_eq!(
+        js(&data.get_path("key1.key3")),
+        "this is a test inject methis is a str"
+    );
     assert_eq!(
         js(&data.get_path("key1.key4")),
         "this is a test this is a test inject methis is a str"
@@ -137,14 +176,21 @@ fn use_a_computed_value_in_another_computed() {
         let computed = f(|d| s(format!("this is a test {}", js(&d.get("keyOriginal")))));
         let second = f(|d| s(format!("using computed {}", js(&d.get("keyComputed")))));
         let cd = if out_of_order {
-            Cd::new().add("keyComputed2nd", second).add("keyComputed", computed)
+            Cd::new()
+                .add("keyComputed2nd", second)
+                .add("keyComputed", computed)
         } else {
-            Cd::new().add("keyComputed", computed).add("keyComputed2nd", second)
+            Cd::new()
+                .add("keyComputed", computed)
+                .add("keyComputed2nd", second)
         };
         let mut cd = cd.build();
         let mut data = json(r#"{"keyOriginal": "inject me"}"#);
         setup(&mut cd, &mut data).unwrap();
-        assert_eq!(js(&data.get("keyComputed2nd")), "using computed this is a test inject me");
+        assert_eq!(
+            js(&data.get("keyComputed2nd")),
+            "using computed this is a test inject me"
+        );
     }
 }
 
@@ -172,7 +218,9 @@ fn basic_get_set_nested_deeper() {
     setup(&mut cd, &mut data).unwrap();
     assert_eq!(
         data.get("key1"),
-        json(r#"{"nonComputed": "hi", "nested": {"deeperA": "hi", "deeperB": "hi", "deeperC": {"wow": "hi"}}}"#)
+        json(
+            r#"{"nonComputed": "hi", "nested": {"deeperA": "hi", "deeperB": "hi", "deeperC": {"wow": "hi"}}}"#
+        )
     );
     assert_eq!(js(&data.get("key2")), "hi");
 }
@@ -185,7 +233,10 @@ fn template_string_versus_function_types() {
         .build();
     let mut data = json(r#"{"key1": {"nonComputed": "hi"}, "key2": "inject me"}"#);
     setup(&mut cd, &mut data).unwrap();
-    assert_eq!(data.get("key1"), json(r#"{"nonComputed": "hi", "nested": {"deeperA": "hi"}}"#));
+    assert_eq!(
+        data.get("key1"),
+        json(r#"{"nonComputed": "hi", "nested": {"deeperA": "hi"}}"#)
+    );
 }
 
 #[test]
@@ -195,14 +246,23 @@ fn basic_get_set_with_template_string() {
         .add(
             "key1",
             template_string(
-                |d| s(format!("this is a test {}{}", js(&d.get("key2")), js(&d.get("keystr")))),
+                |d| {
+                    s(format!(
+                        "this is a test {}{}",
+                        js(&d.get("key2")),
+                        js(&d.get("keystr"))
+                    ))
+                },
                 &["key2", "keystr"],
             ),
         )
         .build();
     let mut data = json(r#"{"key2": "inject me"}"#);
     setup(&mut cd, &mut data).unwrap();
-    assert_eq!(js(&data.get("key1")), "this is a test inject methis is a str");
+    assert_eq!(
+        js(&data.get("key1")),
+        "this is a test inject methis is a str"
+    );
     assert_eq!(js(&data.get("key2")), "inject me");
     assert_eq!(js(&data.get("keystr")), "this is a str");
 }
@@ -215,13 +275,20 @@ fn basic_get_set_using_array_data() {
             "key1",
             f(|d| {
                 assert!(d.get("arr").is_array());
-                s(format!("this is a test {}{}", js(&d.get("arr").get_index(0)), js(&d.get("keystr"))))
+                s(format!(
+                    "this is a test {}{}",
+                    js(&d.get("arr").get_index(0)),
+                    js(&d.get("keystr"))
+                ))
             }),
         )
         .build();
     let mut data = json(r#"{"arr": ["inject me"], "collections": {"first": [], "second": []}}"#);
     setup(&mut cd, &mut data).unwrap();
-    assert_eq!(js(&data.get("key1")), "this is a test inject methis is a str");
+    assert_eq!(
+        js(&data.get("key1")),
+        "this is a test inject methis is a str"
+    );
     assert_eq!(js(&data.get("arr").get_index(0)), "inject me");
     assert_eq!(js(&data.get("keystr")), "this is a str");
 }
@@ -229,7 +296,10 @@ fn basic_get_set_using_array_data() {
 #[test]
 fn computed_returns_deep_object() {
     let mut cd = Cd::new()
-        .add("returnobj", f(|_| json(r#"{"key1": "value1", "nest": {"key2": "value2"}}"#)))
+        .add(
+            "returnobj",
+            f(|_| json(r#"{"key1": "value1", "nest": {"key2": "value2"}}"#)),
+        )
         .build();
     let mut data = json(r#"{"returnobj": {"key1": "bad1", "nest": {"key2": "bad2"}}}"#);
     setup(&mut cd, &mut data).unwrap();
@@ -239,7 +309,9 @@ fn computed_returns_deep_object() {
 
 #[test]
 fn boolean_computed_value_issue_1114() {
-    let mut cd = Cd::new().add("bool1", ComputedValue::Static(Value::Bool(true))).build();
+    let mut cd = Cd::new()
+        .add("bool1", ComputedValue::Static(Value::Bool(true)))
+        .build();
     let mut data = json(r#"{"key2": "inject me"}"#);
     setup(&mut cd, &mut data).unwrap();
     assert_eq!(data.get("bool1"), Value::Bool(true));
@@ -288,20 +360,31 @@ fn swallowed_reads_of_an_unavailable_path_still_defer() {
 
 #[test]
 fn enumerating_a_parent_object_reads_its_unavailable_children() {
-    let mut cd = Cd::new().add("key1", f(|d| s(d.get("page").to_json_string()))).build();
+    let mut cd = Cd::new()
+        .add("key1", f(|d| s(d.get("page").to_json_string())))
+        .build();
     let mut data = json(r#"{"page": {"inputPath": "./in.md"}}"#);
     setup_unavailable(&mut cd, &mut data, &["page.rawInput"]);
     assert!(!data.has("key1"));
 
     data.set_path("page.rawInput", s("raw"));
     cd.process_remaining_data(&mut data, &Evaluator).unwrap();
-    assert_eq!(js(&data.get("key1")), r#"{"inputPath":"./in.md","rawInput":"raw"}"#);
+    assert_eq!(
+        js(&data.get("key1")),
+        r#"{"inputPath":"./in.md","rawInput":"raw"}"#
+    );
 }
 
 #[test]
 fn template_strings_that_use_an_unavailable_path_are_deferred() {
     let mut cd = Cd::new()
-        .add("key1", template_string(|d| s(js(&d.get_path("collections.posts"))), &["collections.posts"]))
+        .add(
+            "key1",
+            template_string(
+                |d| s(js(&d.get_path("collections.posts"))),
+                &["collections.posts"],
+            ),
+        )
         .build();
     let mut data = Value::object();
     setup_unavailable(&mut cd, &mut data, &["collections"]);
@@ -311,8 +394,14 @@ fn template_strings_that_use_an_unavailable_path_are_deferred() {
 #[test]
 fn template_strings_that_use_an_unavailable_path_are_deferred_symbol_parsing() {
     let mut cd = Cd::new()
-        .add("key1", template_string(|d| s(js(&d.get_path("page.rawInput"))), &["page.rawInput"]))
-        .add("key2", template_string(|d| s(format!("{}!", js(&d.get("key1")))), &["key1"]))
+        .add(
+            "key1",
+            template_string(|d| s(js(&d.get_path("page.rawInput"))), &["page.rawInput"]),
+        )
+        .add(
+            "key2",
+            template_string(|d| s(format!("{}!", js(&d.get("key1")))), &["key1"]),
+        )
         .build();
     let mut data = json(r#"{"page": {}}"#);
     setup_unavailable(&mut cd, &mut data, &["page.rawInput"]);
@@ -330,10 +419,19 @@ fn inherits_resolved_signals_from_another_data_object() {
     let runs_b = Arc::new(AtomicUsize::new(0));
     let (a, b) = (runs_a.clone(), runs_b.clone());
     let mut parent = Cd::new()
-        .add("a", f(move |_| Value::from(a.fetch_add(1, Ordering::SeqCst) + 1)))
+        .add(
+            "a",
+            f(move |_| Value::from(a.fetch_add(1, Ordering::SeqCst) + 1)),
+        )
         .add(
             "b",
-            f(move |d| s(format!("{}:{}", js(&d.get("item")), b.fetch_add(1, Ordering::SeqCst) + 1))),
+            f(move |d| {
+                s(format!(
+                    "{}:{}",
+                    js(&d.get("item")),
+                    b.fetch_add(1, Ordering::SeqCst) + 1
+                ))
+            }),
         )
         .build();
     let mut parent_data = Value::object();
@@ -378,7 +476,10 @@ fn expect_collections_to_be_arrays_in_data_callback_1114() {
 fn tracks_dependencies() {
     let mut cd = Cd::new()
         .add("key1", f(|d| d.get_path("collections.all")))
-        .add("key2", f(|d| s(format!("{}{}", js(&d.get("key1")), js(&d.get("key3"))))))
+        .add(
+            "key2",
+            f(|d| s(format!("{}{}", js(&d.get("key1")), js(&d.get("key3"))))),
+        )
         .add("key3", f(|_| s("")))
         .build();
     let mut data = json(r#"{"collections": {"all": [1]}}"#);
@@ -402,24 +503,36 @@ fn process_in_two_stages_deferring_collections() {
     setup_unavailable(&mut cd, &mut data, &["collections"]);
     assert_eq!(
         data,
-        json(r#"{"collections": {"dog": [2]}, "key0": "hi", "key2": "/my-path/", "page": {"url": "/my-path/", "outputPath": "/my-path/"}}"#)
+        json(
+            r#"{"collections": {"dog": [2]}, "key0": "hi", "key2": "/my-path/", "page": {"url": "/my-path/", "outputPath": "/my-path/"}}"#
+        )
     );
 
     cd.process_remaining_data(&mut data, &Evaluator).unwrap();
     assert_eq!(
         data,
-        json(r#"{"collections": {"dog": [2], "processed": "hi"}, "key0": "hi", "key1": 2, "key2": "/my-path/", "key3": 3, "page": {"url": "/my-path/", "outputPath": "/my-path/"}}"#)
+        json(
+            r#"{"collections": {"dog": [2], "processed": "hi"}, "key0": "hi", "key1": 2, "key2": "/my-path/", "key3": 3, "page": {"url": "/my-path/", "outputPath": "/my-path/"}}"#
+        )
     );
 }
 
 fn assert_circular(mut cd: ComputedData) {
     let err = setup(&mut cd, &mut Value::object()).unwrap_err();
-    assert_eq!(err.to_string(), "Circular computed data dependency: a -> b -> a");
+    assert_eq!(
+        err.to_string(),
+        "Circular computed data dependency: a -> b -> a"
+    );
 }
 
 #[test]
 fn circular_dependencies_throw() {
-    assert_circular(Cd::new().add("a", f(|d| d.get("b"))).add("b", f(|d| d.get("a"))).build());
+    assert_circular(
+        Cd::new()
+            .add("a", f(|d| d.get("b")))
+            .add("b", f(|d| d.get("a")))
+            .build(),
+    );
 }
 
 #[test]
@@ -445,7 +558,10 @@ fn circular_dependencies_throw_function_and_template_string() {
 #[test]
 fn template_string_reads_its_own_upstream_value() {
     let mut cd = Cd::new()
-        .add("title", template_string(|d| s(format!("({})", js(&d.get("title")))), &["title"]))
+        .add(
+            "title",
+            template_string(|d| s(format!("({})", js(&d.get("title")))), &["title"]),
+        )
         .build();
     let mut data = json(r#"{"title": "hi"}"#);
     setup(&mut cd, &mut data).unwrap();
@@ -454,7 +570,9 @@ fn template_string_reads_its_own_upstream_value() {
 
 #[test]
 fn reads_its_own_upstream_value() {
-    let mut cd = Cd::new().add("title", f(|d| s(format!("({})", js(&d.get("title")))))).build();
+    let mut cd = Cd::new()
+        .add("title", f(|d| s(format!("({})", js(&d.get("title"))))))
+        .build();
     let mut data = json(r#"{"title": "hi"}"#);
     setup(&mut cd, &mut data).unwrap();
     assert_eq!(js(&data.get("title")), "(hi)");
@@ -485,7 +603,10 @@ fn reads_nested_computed_data_through_a_parent_object() {
         .build();
     let mut data = json(r#"{"page": {"inputPath": "./in.md"}}"#);
     setup(&mut cd, &mut data).unwrap();
-    assert_eq!(js(&data.get("summary")), r#"{"inputPath":"./in.md","url":"/url/"}"#);
+    assert_eq!(
+        js(&data.get("summary")),
+        r#"{"inputPath":"./in.md","url":"/url/"}"#
+    );
 }
 
 #[test]

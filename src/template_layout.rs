@@ -82,7 +82,9 @@ impl TemplateLayoutPathResolver {
     }
 
     fn resolve(layout_path: &str, ctx: &BuildContext) -> Option<String> {
-        let rel = ctx.dirs.get_layout_path_relative_to_input_directory(layout_path);
+        let rel = ctx
+            .dirs
+            .get_layout_path_relative_to_input_directory(layout_path);
         if ctx.config.virtual_templates.contains_key(&rel) {
             return Some(layout_path.to_string());
         }
@@ -97,14 +99,18 @@ impl TemplateLayoutPathResolver {
         let mut length = 0;
         while length < lp.len()
             && length < fp.len()
-            && lp[lp.len() - 1 - length].to_lowercase().eq(fp[fp.len() - 1 - length].to_lowercase())
+            && lp[lp.len() - 1 - length]
+                .to_lowercase()
+                .eq(fp[fp.len() - 1 - length].to_lowercase())
         {
             length += 1;
         }
         let rp: Vec<char> = resolved.chars().collect();
         Some(
             lp[..lp.len() - length].iter().collect::<String>()
-                + &rp[rp.len().saturating_sub(length)..].iter().collect::<String>(),
+                + &rp[rp.len().saturating_sub(length)..]
+                    .iter()
+                    .collect::<String>(),
         )
     }
 
@@ -118,7 +124,9 @@ impl TemplateLayoutPathResolver {
 
     /// `getFileName`: the layout path relative to the layouts directory
     pub fn get_file_name(&self) -> Result<String> {
-        self.filename.clone().ok_or_else(|| self.does_not_exist_error())
+        self.filename
+            .clone()
+            .ok_or_else(|| self.does_not_exist_error())
     }
 
     pub fn get_full_path(&self) -> Result<String> {
@@ -172,10 +180,10 @@ impl TemplateLayout {
     /// `TemplateLayout.getTemplate` (via the layout cache)
     pub fn get_template(key: &str, ctx: &Arc<BuildContext>) -> Result<Arc<TemplateLayout>> {
         let full_key = Self::resolve_full_key(key, &ctx.dirs.input());
-        if ctx.config.use_template_cache {
-            if let Some(l) = ctx.layout_cache.lock().unwrap().get(&full_key) {
-                return Ok(l.clone());
-            }
+        if ctx.config.use_template_cache
+            && let Some(l) = ctx.layout_cache.lock().unwrap().get(&full_key)
+        {
+            return Ok(l.clone());
         }
         let layout = Arc::new(Self::new(key, ctx.clone())?);
         if ctx.config.use_template_cache {
@@ -237,7 +245,11 @@ impl TemplateLayout {
             return Ok(d.clone());
         }
         let map = self.get_template_layout_map()?;
-        let sources: Vec<Value> = map.iter().rev().map(|e| e.front_matter_data.clone()).collect();
+        let sources: Vec<Value> = map
+            .iter()
+            .rev()
+            .map(|e| e.front_matter_data.clone())
+            .collect();
         let refs: Vec<&Value> = sources.iter().collect();
         let mut data = merge(Value::object(), &refs);
         let keys = &self.ctx().config.keys;
@@ -254,15 +266,19 @@ impl TemplateLayout {
         }
         let raw = self.content.get_pre_render()?;
         let data = self.content.get_front_matter_data()?;
-        let f = self
-            .content
-            .compile(&raw, false, self.content.get_engine_override(&data).as_deref())?;
+        let f = self.content.compile(
+            &raw,
+            false,
+            self.content.get_engine_override(&data).as_deref(),
+        )?;
         *self.compiled.lock().unwrap() = Some(f.clone());
         Ok(f)
     }
 
     /// This layout followed by its parent layouts
-    fn get_compiled_layout_functions(self: &Arc<Self>) -> Result<Vec<(Arc<TemplateLayout>, RenderFn)>> {
+    fn get_compiled_layout_functions(
+        self: &Arc<Self>,
+    ) -> Result<Vec<(Arc<TemplateLayout>, RenderFn)>> {
         let map = self.get_template_layout_map()?;
         let mut fns = vec![(self.clone(), self.get_compiled_layout_function()?)];
         if map.len() > 1 {
@@ -272,12 +288,18 @@ impl TemplateLayout {
         Ok(fns)
     }
 
-    pub fn render_layout_page_entry(self: &Arc<Self>, page: &PageEntry, template_content: String) -> Result<String> {
+    pub fn render_layout_page_entry(
+        self: &Arc<Self>,
+        page: &PageEntry,
+        template_content: String,
+    ) -> Result<String> {
         let page_data = page.data();
-        let page_syntax = page
-            .template
-            .content
-            .get_engine_names(page.template.content.get_engine_override(&page_data).as_deref());
+        let page_syntax = page.template.content.get_engine_names(
+            page.template
+                .content
+                .get_engine_override(&page_data)
+                .as_deref(),
+        );
         let mut content = template_content;
         for (layout, render) in self.get_compiled_layout_functions()? {
             let layout_fm = layout.content.get_front_matter_data()?;
@@ -290,12 +312,18 @@ impl TemplateLayout {
             crate::page_entry::clear_premature_use();
             let rendered = render(&data);
             if let Some(m) = crate::page_entry::take_premature_use() {
-                return Err(anyhow::Error::new(crate::errors::TemplateContentPrematureUseError(m)));
+                return Err(anyhow::Error::new(
+                    crate::errors::TemplateContentPrematureUseError(m),
+                ));
             }
             content = cdata.unwrap(rendered.with_context(|| {
                 format!(
                     "Having trouble rendering {} layout {}",
-                    layout.content.render().map(|r| r.get_readable_engines_list()).unwrap_or_default(),
+                    layout
+                        .content
+                        .render()
+                        .map(|r| r.get_readable_engines_list())
+                        .unwrap_or_default(),
                     layout.input_path
                 )
             })?);

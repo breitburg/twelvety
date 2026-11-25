@@ -29,7 +29,10 @@ fn virtual_config(templates: Vec<(&'static str, &'static str, Value)>) -> Arc<Bu
 /// `twelvetyComputed` with `test: "hello"` and `dogCollection` from `f(collections.dog)`
 fn computed_collections_data(f: fn(Value) -> Value) -> Value {
     let mut computed = json(r#"{"test": "hello"}"#);
-    computed.set("dogCollection", Value::function(move |args| Ok(f(args[0].get_path("collections.dog")))));
+    computed.set(
+        "dogCollection",
+        Value::function(move |args| Ok(f(args[0].get_path("collections.dog")))),
+    );
     let mut data = Value::object();
     data.set("twelvetyComputed", computed);
     data
@@ -38,7 +41,8 @@ fn computed_collections_data(f: fn(Value) -> Value) -> Value {
 fn build(ctx: &Arc<BuildContext>, paths: &[&str]) -> TemplateMap {
     let mut tm = TemplateMap::new(ctx.clone());
     for path in paths {
-        tm.add(template_with_context(&format!("{INPUT}{path}"), ctx)).unwrap();
+        tm.add(template_with_context(&format!("{INPUT}{path}"), ctx))
+            .unwrap();
     }
     tm.cache().unwrap();
     tm
@@ -58,7 +62,11 @@ fn check_collections_entry(tm: &TemplateMap) -> (Value, Value) {
 #[test]
 fn computed_data_can_see_tag_generated_collections() {
     let ctx = virtual_config(vec![
-        ("collections.njk", "Issue #1114", computed_collections_data(|dog| dog)),
+        (
+            "collections.njk",
+            "Issue #1114",
+            computed_collections_data(|dog| dog),
+        ),
         ("dog.njk", DOG_TEMPLATE, Value::object()),
     ]);
     let tm = build(&ctx, &["collections.njk", "dog.njk"]);
@@ -70,7 +78,10 @@ fn computed_data_can_see_tag_generated_collections() {
 #[test]
 fn computed_data_can_see_paginated_data_issue_1138() {
     let mut child_computed = Value::object();
-    child_computed.set("venues", Value::function(|args| Ok(args[0].get_path("collections.venue"))));
+    child_computed.set(
+        "venues",
+        Value::function(|args| Ok(args[0].get_path("collections.venue"))),
+    );
     let mut child_data = Value::object();
     child_data.set("twelvetyComputed", child_computed);
 
@@ -113,7 +124,9 @@ fn computed_data_can_filter_collections() {
         (
             "collections.njk",
             "Issue #1114",
-            computed_collections_data(|dog| Value::array(dog.to_vec().into_iter().filter(|_| true).collect())),
+            computed_collections_data(|dog| {
+                Value::array(dog.to_vec().into_iter().filter(|_| true).collect())
+            }),
         ),
         ("dog.njk", DOG_TEMPLATE, Value::object()),
     ]);

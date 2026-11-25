@@ -84,7 +84,11 @@ pub fn format_number(n: f64) -> String {
         return "NaN".into();
     }
     if n.is_infinite() {
-        return if n > 0.0 { "Infinity".into() } else { "-Infinity".into() };
+        return if n > 0.0 {
+            "Infinity".into()
+        } else {
+            "-Infinity".into()
+        };
     }
     if n == 0.0 {
         return "0".into();
@@ -280,7 +284,9 @@ impl Value {
         match self {
             Value::Object(o) => o.contains_key(key),
             Value::Dynamic(d) => d.keys().iter().any(|k| k == key),
-            Value::Array(a) => key == "length" || key.parse::<usize>().map(|i| i < a.len()).unwrap_or(false),
+            Value::Array(a) => {
+                key == "length" || key.parse::<usize>().map(|i| i < a.len()).unwrap_or(false)
+            }
             _ => false,
         }
     }
@@ -398,7 +404,13 @@ impl Value {
             Value::String(s) => s.to_string(),
             Value::Array(a) => a
                 .iter()
-                .map(|v| if v.is_nullish() { String::new() } else { v.to_js_string() })
+                .map(|v| {
+                    if v.is_nullish() {
+                        String::new()
+                    } else {
+                        v.to_js_string()
+                    }
+                })
                 .collect::<Vec<_>>()
                 .join(","),
             Value::Object(_) | Value::Dynamic(_) => "[object Object]".into(),
@@ -433,7 +445,9 @@ impl Value {
                 if t.is_empty() {
                     0.0
                 } else if let Some(hex) = t.strip_prefix("0x").or_else(|| t.strip_prefix("0X")) {
-                    i64::from_str_radix(hex, 16).map(|n| n as f64).unwrap_or(f64::NAN)
+                    i64::from_str_radix(hex, 16)
+                        .map(|n| n as f64)
+                        .unwrap_or(f64::NAN)
                 } else if t == "Infinity" || t == "+Infinity" {
                     f64::INFINITY
                 } else if t == "-Infinity" {
@@ -499,11 +513,9 @@ impl Value {
     pub fn deep_copy(&self) -> Value {
         match self {
             Value::Array(a) => Value::array(a.iter().map(|v| v.deep_copy()).collect()),
-            Value::Object(o) => Value::from_map(
-                o.iter()
-                    .map(|(k, v)| (k.clone(), v.deep_copy()))
-                    .collect(),
-            ),
+            Value::Object(o) => {
+                Value::from_map(o.iter().map(|(k, v)| (k.clone(), v.deep_copy())).collect())
+            }
             other => other.clone(),
         }
     }
@@ -527,10 +539,14 @@ impl Value {
             serde_json::Value::Bool(b) => Value::Bool(b),
             serde_json::Value::Number(n) => Value::Number(n.as_f64().unwrap_or(0.0)),
             serde_json::Value::String(s) => Value::str(s),
-            serde_json::Value::Array(a) => Value::array(a.into_iter().map(Value::from_json).collect()),
-            serde_json::Value::Object(o) => {
-                Value::from_map(o.into_iter().map(|(k, v)| (k, Value::from_json(v))).collect())
+            serde_json::Value::Array(a) => {
+                Value::array(a.into_iter().map(Value::from_json).collect())
             }
+            serde_json::Value::Object(o) => Value::from_map(
+                o.into_iter()
+                    .map(|(k, v)| (k, Value::from_json(v)))
+                    .collect(),
+            ),
         }
     }
 
@@ -575,9 +591,11 @@ impl Value {
                 .map(Value::Date)
                 .unwrap_or_else(|| Value::str(d.to_string())),
             toml::Value::Array(a) => Value::array(a.into_iter().map(Value::from_toml).collect()),
-            toml::Value::Table(t) => {
-                Value::from_map(t.into_iter().map(|(k, v)| (k, Value::from_toml(v))).collect())
-            }
+            toml::Value::Table(t) => Value::from_map(
+                t.into_iter()
+                    .map(|(k, v)| (k, Value::from_toml(v)))
+                    .collect(),
+            ),
         }
     }
 
@@ -586,8 +604,13 @@ impl Value {
         fn key(k: &str) -> String {
             let ident = !k.is_empty()
                 && !k.chars().next().unwrap().is_ascii_digit()
-                && k.chars().all(|c| c.is_alphanumeric() || c == '_' || c == '$');
-            if ident { k.to_string() } else { format!("'{k}'") }
+                && k.chars()
+                    .all(|c| c.is_alphanumeric() || c == '_' || c == '$');
+            if ident {
+                k.to_string()
+            } else {
+                format!("'{k}'")
+            }
         }
         match self {
             Value::String(s) => format!("'{}'", s.replace('\'', "\\'")),
@@ -832,7 +855,10 @@ mod tests {
     #[test]
     fn path_parsing() {
         assert_eq!(parse_path("a.b[0].c"), vec!["a", "b", "0", "c"]);
-        assert_eq!(parse_path("collections['my-tag']"), vec!["collections", "my-tag"]);
+        assert_eq!(
+            parse_path("collections['my-tag']"),
+            vec!["collections", "my-tag"]
+        );
     }
 
     #[test]

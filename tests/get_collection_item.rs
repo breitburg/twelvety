@@ -15,11 +15,17 @@ fn get_collection_item_test() {
     assert_eq!(get_collection_item(&collections, &second, 0), second);
     assert_eq!(get_collection_item(&collections, &third, 0), third);
 
-    assert_eq!(get_collection_item(&collections, &first, -1), Value::Undefined);
+    assert_eq!(
+        get_collection_item(&collections, &first, -1),
+        Value::Undefined
+    );
     assert_eq!(get_collection_item(&collections, &second, -1), first);
     assert_eq!(get_collection_item(&collections, &third, -1), second);
 
     assert_eq!(get_collection_item(&collections, &first, 1), second);
     assert_eq!(get_collection_item(&collections, &second, 1), third);
-    assert_eq!(get_collection_item(&collections, &third, 1), Value::Undefined);
+    assert_eq!(
+        get_collection_item(&collections, &third, 1),
+        Value::Undefined
+    );
 }

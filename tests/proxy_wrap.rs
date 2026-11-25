@@ -61,8 +61,15 @@ fn fails_for_invalid_fallback() {
 #[test]
 fn frozen_object() {
     // `Object.freeze` has no equivalent; the lookup through the fallback must still work
-    let test = try_proxy_wrap(&Value::object(), &json(r#"{"twelvety": {"generator": "Twelvety v3.0.0"}}"#)).unwrap();
-    assert_eq!(test.get_path("twelvety.generator"), Value::str("Twelvety v3.0.0"));
+    let test = try_proxy_wrap(
+        &Value::object(),
+        &json(r#"{"twelvety": {"generator": "Twelvety v3.0.0"}}"#),
+    )
+    .unwrap();
+    assert_eq!(
+        test.get_path("twelvety.generator"),
+        Value::str("Twelvety v3.0.0")
+    );
 }
 
 #[test]
@@ -72,5 +79,8 @@ fn frozen_nested_object() {
         &json(r#"{"twelvety": {"generator": "Twelvety v3.0.0"}}"#),
     )
     .unwrap();
-    assert_eq!(test.get_path("twelvety.generator"), Value::str("Twelvety v3.0.0"));
+    assert_eq!(
+        test.get_path("twelvety.generator"),
+        Value::str("Twelvety v3.0.0")
+    );
 }

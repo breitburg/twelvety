@@ -99,7 +99,11 @@ impl ExistsCache {
     /// Returns `None` if the path does not exist.
     pub fn resolve(&self, file_path: &str) -> Option<String> {
         let is_abs = file_path.starts_with('/');
-        let mut dir = if is_abs { "/".to_string() } else { ".".to_string() };
+        let mut dir = if is_abs {
+            "/".to_string()
+        } else {
+            ".".to_string()
+        };
         let mut out: Vec<String> = vec![];
         let had_dot = file_path.starts_with("./");
         for name in file_path.split('/') {
@@ -116,8 +120,10 @@ impl ExistsCache {
                 name.to_string()
             } else {
                 let lower = name.to_lowercase();
-                let matches: Vec<&String> =
-                    listing.iter().filter(|e| e.to_lowercase() == lower).collect();
+                let matches: Vec<&String> = listing
+                    .iter()
+                    .filter(|e| e.to_lowercase() == lower)
+                    .collect();
                 matches.first()?.to_string()
             };
             dir = if dir == "/" {

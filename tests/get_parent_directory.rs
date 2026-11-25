@@ -75,8 +75,14 @@ fn full_urls_keep_their_origin() {
     assert_eq!(p("https://example.com"), some("https://example.com/"));
     assert_eq!(p("https://example.com/"), some("https://example.com/"));
     assert_eq!(p("https://example.com/a/"), some("https://example.com/"));
-    assert_eq!(p("https://example.com/a/b.html"), some("https://example.com/a/"));
-    assert_eq!(p("https://example.com/a/b/?x=1#y"), some("https://example.com/a/"));
+    assert_eq!(
+        p("https://example.com/a/b.html"),
+        some("https://example.com/a/")
+    );
+    assert_eq!(
+        p("https://example.com/a/b/?x=1#y"),
+        some("https://example.com/a/")
+    );
 }
 
 /// "page.inputPath values"

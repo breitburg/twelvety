@@ -16,43 +16,188 @@ const WITHDRAWN_LANGUAGES: &[&str] = &["bh", "in", "iw", "ji", "jw", "mo", "sh"]
 
 /// ISO 639-1 codes with their native names
 const LANGUAGES: &[(&str, &str)] = &[
-    ("aa", "Afar"), ("ab", "Аҧсшәа"), ("af", "Afrikaans"), ("ak", "Akan"), ("am", "አማርኛ"),
-    ("an", "Aragonés"), ("ar", "العربية"), ("as", "অসমীয়া"), ("av", "Авар"), ("ay", "Aymar"),
-    ("az", "Azərbaycan"), ("ba", "Башҡорт"), ("be", "Беларуская"), ("bg", "Български"),
-    ("bi", "Bislama"), ("bm", "Bamanakan"), ("bn", "বাংলা"), ("bo", "བོད་སྐད་"), ("br", "Brezhoneg"),
-    ("bs", "Bosanski"), ("ca", "Català"), ("ce", "Нохчийн"), ("ch", "Chamoru"), ("co", "Corsu"),
-    ("cr", "Cree"), ("cs", "Čeština"), ("cu", "Church Slavic"), ("cv", "Чӑваш"), ("cy", "Cymraeg"),
-    ("da", "Dansk"), ("de", "Deutsch"), ("dv", "Dhivehi"), ("dz", "རྫོང་ཁ"), ("ee", "Eʋegbe"),
-    ("el", "Ελληνικά"), ("en", "English"), ("eo", "Esperanto"), ("es", "Español"), ("et", "Eesti"),
-    ("eu", "Euskara"), ("fa", "فارسی"), ("ff", "Pulaar"), ("fi", "Suomi"), ("fj", "Fijian"),
-    ("fo", "Føroyskt"), ("fr", "Français"), ("fy", "Frysk"), ("ga", "Gaeilge"), ("gd", "Gàidhlig"),
-    ("gl", "Galego"), ("gn", "Guarani"), ("gu", "ગુજરાતી"), ("gv", "Gaelg"), ("ha", "Hausa"),
-    ("he", "עברית"), ("hi", "हिन्दी"), ("ho", "Hiri Motu"), ("hr", "Hrvatski"), ("ht", "Kreyòl ayisyen"),
-    ("hu", "Magyar"), ("hy", "Հայերեն"), ("hz", "Herero"), ("ia", "Interlingua"), ("id", "Indonesia"),
-    ("ie", "Interlingue"), ("ig", "Igbo"), ("ii", "ꆈꌠꉙ"), ("ik", "Inupiaq"), ("io", "Ido"),
-    ("is", "Íslenska"), ("it", "Italiano"), ("iu", "Inuktitut"), ("ja", "日本語"), ("jv", "Jawa"),
-    ("ka", "ქართული"), ("kg", "Kongo"), ("ki", "Gikuyu"), ("kj", "Kuanyama"), ("kk", "Қазақ тілі"),
-    ("kl", "Kalaallisut"), ("km", "ខ្មែរ"), ("kn", "ಕನ್ನಡ"), ("ko", "한국어"), ("kr", "Kanuri"),
-    ("ks", "کٲشُر"), ("ku", "Kurdî"), ("kv", "Komi"), ("kw", "Kernewek"), ("ky", "Кыргызча"),
-    ("la", "Latina"), ("lb", "Lëtzebuergesch"), ("lg", "Luganda"), ("li", "Limburgs"), ("ln", "Lingála"),
-    ("lo", "ລາວ"), ("lt", "Lietuvių"), ("lu", "Tshiluba"), ("lv", "Latviešu"), ("mg", "Malagasy"),
-    ("mh", "Marshallese"), ("mi", "Māori"), ("mk", "Македонски"), ("ml", "മലയാളം"), ("mn", "Монгол"),
-    ("mr", "मराठी"), ("ms", "Melayu"), ("mt", "Malti"), ("my", "မြန်မာ"), ("na", "Nauru"),
-    ("nb", "Norsk bokmål"), ("nd", "isiNdebele"), ("ne", "नेपाली"), ("ng", "Ndonga"), ("nl", "Nederlands"),
-    ("nn", "Norsk nynorsk"), ("no", "Norsk"), ("nr", "South Ndebele"), ("nv", "Navajo"), ("ny", "Nyanja"),
-    ("oc", "Occitan"), ("oj", "Ojibwa"), ("om", "Oromoo"), ("or", "ଓଡ଼ିଆ"), ("os", "Ирон"),
-    ("pa", "ਪੰਜਾਬੀ"), ("pi", "Pali"), ("pl", "Polski"), ("ps", "پښتو"), ("pt", "Português"),
-    ("qu", "Runasimi"), ("rm", "Rumantsch"), ("rn", "Ikirundi"), ("ro", "Română"), ("ru", "Русский"),
-    ("rw", "Kinyarwanda"), ("sa", "संस्कृत भाषा"), ("sc", "Sardu"), ("sd", "سنڌي"), ("se", "Davvisámegiella"),
-    ("sg", "Sängö"), ("si", "සිංහල"), ("sk", "Slovenčina"), ("sl", "Slovenščina"), ("sm", "Samoan"),
-    ("sn", "chiShona"), ("so", "Soomaali"), ("sq", "Shqip"), ("sr", "Српски"), ("ss", "Swati"),
-    ("st", "Sesotho"), ("su", "Basa Sunda"), ("sv", "Svenska"), ("sw", "Kiswahili"), ("ta", "தமிழ்"),
-    ("te", "తెలుగు"), ("tg", "Тоҷикӣ"), ("th", "ไทย"), ("ti", "ትግርኛ"), ("tk", "Türkmen dili"),
-    ("tl", "Filipino"), ("tn", "Setswana"), ("to", "Lea fakatonga"), ("tr", "Türkçe"), ("ts", "Tsonga"),
-    ("tt", "Татар"), ("tw", "Twi"), ("ty", "Tahitian"), ("ug", "ئۇيغۇرچە"), ("uk", "Українська"),
-    ("ur", "اردو"), ("uz", "Oʻzbek"), ("ve", "Venda"), ("vi", "Tiếng Việt"), ("vo", "Volapük"),
-    ("wa", "Walon"), ("wo", "Wolof"), ("xh", "IsiXhosa"), ("yi", "ייִדיש"), ("yo", "Èdè Yorùbá"),
-    ("za", "Zhuang"), ("zh", "中文"), ("zu", "isiZulu"),
+    ("aa", "Afar"),
+    ("ab", "Аҧсшәа"),
+    ("af", "Afrikaans"),
+    ("ak", "Akan"),
+    ("am", "አማርኛ"),
+    ("an", "Aragonés"),
+    ("ar", "العربية"),
+    ("as", "অসমীয়া"),
+    ("av", "Авар"),
+    ("ay", "Aymar"),
+    ("az", "Azərbaycan"),
+    ("ba", "Башҡорт"),
+    ("be", "Беларуская"),
+    ("bg", "Български"),
+    ("bi", "Bislama"),
+    ("bm", "Bamanakan"),
+    ("bn", "বাংলা"),
+    ("bo", "བོད་སྐད་"),
+    ("br", "Brezhoneg"),
+    ("bs", "Bosanski"),
+    ("ca", "Català"),
+    ("ce", "Нохчийн"),
+    ("ch", "Chamoru"),
+    ("co", "Corsu"),
+    ("cr", "Cree"),
+    ("cs", "Čeština"),
+    ("cu", "Church Slavic"),
+    ("cv", "Чӑваш"),
+    ("cy", "Cymraeg"),
+    ("da", "Dansk"),
+    ("de", "Deutsch"),
+    ("dv", "Dhivehi"),
+    ("dz", "རྫོང་ཁ"),
+    ("ee", "Eʋegbe"),
+    ("el", "Ελληνικά"),
+    ("en", "English"),
+    ("eo", "Esperanto"),
+    ("es", "Español"),
+    ("et", "Eesti"),
+    ("eu", "Euskara"),
+    ("fa", "فارسی"),
+    ("ff", "Pulaar"),
+    ("fi", "Suomi"),
+    ("fj", "Fijian"),
+    ("fo", "Føroyskt"),
+    ("fr", "Français"),
+    ("fy", "Frysk"),
+    ("ga", "Gaeilge"),
+    ("gd", "Gàidhlig"),
+    ("gl", "Galego"),
+    ("gn", "Guarani"),
+    ("gu", "ગુજરાતી"),
+    ("gv", "Gaelg"),
+    ("ha", "Hausa"),
+    ("he", "עברית"),
+    ("hi", "हिन्दी"),
+    ("ho", "Hiri Motu"),
+    ("hr", "Hrvatski"),
+    ("ht", "Kreyòl ayisyen"),
+    ("hu", "Magyar"),
+    ("hy", "Հայերեն"),
+    ("hz", "Herero"),
+    ("ia", "Interlingua"),
+    ("id", "Indonesia"),
+    ("ie", "Interlingue"),
+    ("ig", "Igbo"),
+    ("ii", "ꆈꌠꉙ"),
+    ("ik", "Inupiaq"),
+    ("io", "Ido"),
+    ("is", "Íslenska"),
+    ("it", "Italiano"),
+    ("iu", "Inuktitut"),
+    ("ja", "日本語"),
+    ("jv", "Jawa"),
+    ("ka", "ქართული"),
+    ("kg", "Kongo"),
+    ("ki", "Gikuyu"),
+    ("kj", "Kuanyama"),
+    ("kk", "Қазақ тілі"),
+    ("kl", "Kalaallisut"),
+    ("km", "ខ្មែរ"),
+    ("kn", "ಕನ್ನಡ"),
+    ("ko", "한국어"),
+    ("kr", "Kanuri"),
+    ("ks", "کٲشُر"),
+    ("ku", "Kurdî"),
+    ("kv", "Komi"),
+    ("kw", "Kernewek"),
+    ("ky", "Кыргызча"),
+    ("la", "Latina"),
+    ("lb", "Lëtzebuergesch"),
+    ("lg", "Luganda"),
+    ("li", "Limburgs"),
+    ("ln", "Lingála"),
+    ("lo", "ລາວ"),
+    ("lt", "Lietuvių"),
+    ("lu", "Tshiluba"),
+    ("lv", "Latviešu"),
+    ("mg", "Malagasy"),
+    ("mh", "Marshallese"),
+    ("mi", "Māori"),
+    ("mk", "Македонски"),
+    ("ml", "മലയാളം"),
+    ("mn", "Монгол"),
+    ("mr", "मराठी"),
+    ("ms", "Melayu"),
+    ("mt", "Malti"),
+    ("my", "မြန်မာ"),
+    ("na", "Nauru"),
+    ("nb", "Norsk bokmål"),
+    ("nd", "isiNdebele"),
+    ("ne", "नेपाली"),
+    ("ng", "Ndonga"),
+    ("nl", "Nederlands"),
+    ("nn", "Norsk nynorsk"),
+    ("no", "Norsk"),
+    ("nr", "South Ndebele"),
+    ("nv", "Navajo"),
+    ("ny", "Nyanja"),
+    ("oc", "Occitan"),
+    ("oj", "Ojibwa"),
+    ("om", "Oromoo"),
+    ("or", "ଓଡ଼ିଆ"),
+    ("os", "Ирон"),
+    ("pa", "ਪੰਜਾਬੀ"),
+    ("pi", "Pali"),
+    ("pl", "Polski"),
+    ("ps", "پښتو"),
+    ("pt", "Português"),
+    ("qu", "Runasimi"),
+    ("rm", "Rumantsch"),
+    ("rn", "Ikirundi"),
+    ("ro", "Română"),
+    ("ru", "Русский"),
+    ("rw", "Kinyarwanda"),
+    ("sa", "संस्कृत भाषा"),
+    ("sc", "Sardu"),
+    ("sd", "سنڌي"),
+    ("se", "Davvisámegiella"),
+    ("sg", "Sängö"),
+    ("si", "සිංහල"),
+    ("sk", "Slovenčina"),
+    ("sl", "Slovenščina"),
+    ("sm", "Samoan"),
+    ("sn", "chiShona"),
+    ("so", "Soomaali"),
+    ("sq", "Shqip"),
+    ("sr", "Српски"),
+    ("ss", "Swati"),
+    ("st", "Sesotho"),
+    ("su", "Basa Sunda"),
+    ("sv", "Svenska"),
+    ("sw", "Kiswahili"),
+    ("ta", "தமிழ்"),
+    ("te", "తెలుగు"),
+    ("tg", "Тоҷикӣ"),
+    ("th", "ไทย"),
+    ("ti", "ትግርኛ"),
+    ("tk", "Türkmen dili"),
+    ("tl", "Filipino"),
+    ("tn", "Setswana"),
+    ("to", "Lea fakatonga"),
+    ("tr", "Türkçe"),
+    ("ts", "Tsonga"),
+    ("tt", "Татар"),
+    ("tw", "Twi"),
+    ("ty", "Tahitian"),
+    ("ug", "ئۇيغۇرچە"),
+    ("uk", "Українська"),
+    ("ur", "اردو"),
+    ("uz", "Oʻzbek"),
+    ("ve", "Venda"),
+    ("vi", "Tiếng Việt"),
+    ("vo", "Volapük"),
+    ("wa", "Walon"),
+    ("wo", "Wolof"),
+    ("xh", "IsiXhosa"),
+    ("yi", "ייִדיש"),
+    ("yo", "Èdè Yorùbá"),
+    ("za", "Zhuang"),
+    ("zh", "中文"),
+    ("zu", "isiZulu"),
 ];
 
 #[derive(Clone, Debug, Default)]
@@ -83,9 +228,9 @@ const REGIONS: &[&str] = &[
     "SR", "SS", "ST", "SU", "SV", "SX", "SY", "SZ", "TA", "TC", "TD", "TF", "TG", "TH", "TJ", "TK",
     "TL", "TM", "TN", "TO", "TP", "TR", "TT", "TV", "TW", "TZ", "UA", "UG", "UK", "UM", "UN", "US",
     "UY", "UZ", "VA", "VC", "VD", "VE", "VG", "VI", "VN", "VU", "WF", "WS", "XA", "XB", "XK", "YD",
-    "YE", "YT", "YU", "ZA", "ZM", "ZR", "ZW", "ZZ", "001", "002", "003", "005", "009", "011", "013",
-    "014", "015", "017", "018", "019", "021", "029", "030", "034", "035", "039", "053", "054",
-    "057", "061", "142", "143", "145", "150", "151", "154", "155", "202", "419"
+    "YE", "YT", "YU", "ZA", "ZM", "ZR", "ZW", "ZZ", "001", "002", "003", "005", "009", "011",
+    "013", "014", "015", "017", "018", "019", "021", "029", "030", "034", "035", "039", "053",
+    "054", "057", "061", "142", "143", "145", "150", "151", "154", "155", "202", "419",
 ];
 
 /// Script subtags with a display name (`Intl.DisplayNames` type `script`)
@@ -107,7 +252,7 @@ const SCRIPTS: &[&str] = &[
     "Sylo", "Syrc", "Syre", "Syrj", "Syrn", "Tagb", "Takr", "Tale", "Talu", "Taml", "Tang", "Tavt",
     "Tayo", "Telu", "Teng", "Tfng", "Tglg", "Thaa", "Thai", "Tibt", "Tirh", "Tnsa", "Todr", "Tols",
     "Toto", "Tutg", "Ugar", "Vaii", "Visp", "Vith", "Wara", "Wcho", "Wole", "Xpeo", "Xsux", "Yezi",
-    "Yiii", "Zanb", "Zinh", "Zmth", "Zsye", "Zsym", "Zxxx", "Zyyy", "Zzzz"
+    "Yiii", "Zanb", "Zinh", "Zmth", "Zsye", "Zsym", "Zxxx", "Zyyy", "Zzzz",
 ];
 
 /// `Comparator.isLangCode`
@@ -126,8 +271,15 @@ pub fn is_lang_code(code: &str, languages: Option<&[String]>) -> bool {
     // Only a real script (4 letters) and/or region (2 letters or 3 digits), so names like
     // `sv-feed` or `en-sitemap` don’t match. Subtags are case-insensitive (`Intl.Locale`).
     let mut rest = &parts[1..];
-    if let Some(script) = rest.first().filter(|s| s.len() == 4 && s.chars().all(|c| c.is_ascii_alphabetic())) {
-        let titlecase = format!("{}{}", script[..1].to_ascii_uppercase(), script[1..].to_ascii_lowercase());
+    if let Some(script) = rest
+        .first()
+        .filter(|s| s.len() == 4 && s.chars().all(|c| c.is_ascii_alphabetic()))
+    {
+        let titlecase = format!(
+            "{}{}",
+            script[..1].to_ascii_uppercase(),
+            script[1..].to_ascii_lowercase()
+        );
         if !SCRIPTS.contains(&titlecase.as_str()) {
             return false;
         }
@@ -151,7 +303,10 @@ fn url_has_lang_code(url: &str, code: &str, languages: Option<&[String]>) -> boo
     url.split('/').any(|e| e == code)
 }
 
-pub fn get_language_code_from_input_path(filepath: &str, languages: Option<&[String]>) -> Option<String> {
+pub fn get_language_code_from_input_path(
+    filepath: &str,
+    languages: Option<&[String]>,
+) -> Option<String> {
     filepath
         .split('/')
         .find(|e| is_lang_code(e, languages))
@@ -198,7 +353,11 @@ fn get_native_language_name(lang_code: &str) -> String {
         .unwrap_or_else(|| code.to_string())
 }
 
-fn get_locale_urls_map(url_to_input_path: &Value, remove_ext: &dyn Fn(&str) -> String, options: &I18nOptions) -> IndexMap<String, Vec<Value>> {
+fn get_locale_urls_map(
+    url_to_input_path: &Value,
+    remove_ext: &dyn Fn(&str) -> String,
+    options: &I18nOptions,
+) -> IndexMap<String, Vec<Value>> {
     let langs = options.languages.as_deref();
     let mut filemap: IndexMap<String, Vec<Value>> = IndexMap::new();
     if let Value::Object(map) = url_to_input_path {
@@ -209,7 +368,11 @@ fn get_locale_urls_map(url_to_input_path: &Value, remove_ext: &dyn Fn(&str) -> S
             let mut replaced = swap_language_code_no_check(&filepath, "__12ty_i18n", langs);
             if group.is_nullish() {
                 let url_lang = get_language_code_from_url(url, langs);
-                let rest = if url_lang.is_empty() { url.clone() } else { url[url_lang.len() + 1..].to_string() };
+                let rest = if url_lang.is_empty() {
+                    url.clone()
+                } else {
+                    url[url_lang.len() + 1..].to_string()
+                };
                 replaced.push_str(&format!("_url:{rest}"));
             } else {
                 replaced.push_str(&format!("_group:{}", group.to_js_string()));
@@ -227,11 +390,18 @@ fn get_locale_urls_map(url_to_input_path: &Value, remove_ext: &dyn Fn(&str) -> S
                 m.insert("lang".into(), Value::str(&lang));
                 m.insert("label".into(), Value::str(get_native_language_name(&lang)));
             }
-            filemap.entry(replaced).or_default().push(Value::from_map(m));
+            filemap
+                .entry(replaced)
+                .or_default()
+                .push(Value::from_map(m));
         }
     }
     for entries in filemap.values_mut() {
-        entries.sort_by(|a, b| a.get("lang").to_output_string().cmp(&b.get("lang").to_output_string()));
+        entries.sort_by(|a, b| {
+            a.get("lang")
+                .to_output_string()
+                .cmp(&b.get("lang").to_output_string())
+        });
     }
     let mut url_map: IndexMap<String, Vec<Value>> = IndexMap::new();
     for entries in filemap.values() {
@@ -257,14 +427,19 @@ struct ContentMaps {
 }
 
 /// State shared with `get*CollectionItem` filters (via the `locale_page` filter)
-pub fn resolve_root_page(ctx: &CallContext, handle: &ConfigHandle, page: &Value, lang: &Value) -> Value {
+pub fn resolve_root_page(
+    ctx: &CallContext,
+    handle: &ConfigHandle,
+    page: &Value,
+    lang: &Value,
+) -> Value {
     let Some(cfg) = handle.get() else {
         return page.clone();
     };
     let Some(filter) = cfg.get_filter("locale_page") else {
         return page.clone();
     };
-    filter(ctx, page.clone(), &[lang.clone()]).unwrap_or_else(|_| page.clone())
+    filter(ctx, page.clone(), std::slice::from_ref(lang)).unwrap_or_else(|_| page.clone())
 }
 
 fn get_root_collection(ctx: &CallContext, handle: &ConfigHandle, collection: &Value) -> Value {
@@ -282,7 +457,12 @@ fn get_root_collection(ctx: &CallContext, handle: &ConfigHandle, collection: &Va
     Value::array(filtered)
 }
 
-pub fn get_collection_item_index(ctx: &CallContext, handle: &ConfigHandle, collection: &Value, page: &Value) -> Value {
+pub fn get_collection_item_index(
+    ctx: &CallContext,
+    handle: &ConfigHandle,
+    collection: &Value,
+    page: &Value,
+) -> Value {
     let root = get_root_collection(ctx, handle, collection);
     let root_page = resolve_root_page(ctx, handle, page, &Value::Undefined);
     find_collection_item_index(&root, &root_page)
@@ -310,8 +490,12 @@ pub fn get_locale_collection_item(
     if !modified_root_item.is_truthy() {
         return Value::Undefined;
     }
-    let modified_locale_page =
-        resolve_root_page(ctx, handle, &modified_root_item.get("data").get("page"), &lang_code);
+    let modified_locale_page = resolve_root_page(
+        ctx,
+        handle,
+        &modified_root_item.get("data").get("page"),
+        &lang_code,
+    );
     if !modified_locale_page.has("__locale_page_resolved") {
         return modified_root_item;
     }
@@ -321,18 +505,38 @@ pub fn get_locale_collection_item(
 
 pub fn plugin(config: &mut UserConfig, opts: &Value) -> Result<()> {
     let mut options = I18nOptions {
-        default_language: opts.get("defaultLanguage").as_str().unwrap_or("").to_string(),
+        default_language: opts
+            .get("defaultLanguage")
+            .as_str()
+            .unwrap_or("")
+            .to_string(),
         languages: None,
-        url_filter: opts.get("filters").get("url").as_str().unwrap_or("locale_url").to_string(),
-        links_filter: opts.get("filters").get("links").as_str().unwrap_or("locale_links").to_string(),
-        error_mode: opts.get("errorMode").as_str().unwrap_or("strict").to_string(),
+        url_filter: opts
+            .get("filters")
+            .get("url")
+            .as_str()
+            .unwrap_or("locale_url")
+            .to_string(),
+        links_filter: opts
+            .get("filters")
+            .get("links")
+            .as_str()
+            .unwrap_or("locale_links")
+            .to_string(),
+        error_mode: opts
+            .get("errorMode")
+            .as_str()
+            .unwrap_or("strict")
+            .to_string(),
     };
     match opts.get("languages") {
         Value::Undefined => {}
         Value::Array(a) => {
             options.languages = Some(a.iter().map(|v| v.to_output_string()).collect());
         }
-        _ => bail!("The `languages` option in Twelvety’s Internationalization (I18N) plugin must be an array of language codes."),
+        _ => bail!(
+            "The `languages` option in Twelvety’s Internationalization (I18N) plugin must be an array of language codes."
+        ),
     }
     if options.default_language.is_empty() {
         options.default_language = options
@@ -342,7 +546,9 @@ pub fn plugin(config: &mut UserConfig, opts: &Value) -> Result<()> {
             .unwrap_or_default();
     }
     if options.default_language.is_empty() {
-        bail!("You must specify a `defaultLanguage` (or `languages`) in Twelvety’s Internationalization (I18N) plugin.");
+        bail!(
+            "You must specify a `defaultLanguage` (or `languages`) in Twelvety’s Internationalization (I18N) plugin."
+        );
     }
     if let Some(langs) = &options.languages {
         let mut all = vec![options.default_language.clone()];
@@ -362,7 +568,9 @@ pub fn plugin(config: &mut UserConfig, opts: &Value) -> Result<()> {
         if let Value::Function(f) = arg.get("removeTemplateExtension") {
             let f = f.clone();
             *er.write().unwrap() = Some(Arc::new(move |p: &str| {
-                f(&[Value::str(p)]).map(|v| v.to_output_string()).unwrap_or_else(|_| p.to_string())
+                f(&[Value::str(p)])
+                    .map(|v| v.to_output_string())
+                    .unwrap_or_else(|_| p.to_string())
             }));
         }
         Ok(())
@@ -396,7 +604,11 @@ pub fn plugin(config: &mut UserConfig, opts: &Value) -> Result<()> {
                 let data = args.first().cloned().unwrap_or_default();
                 let url = data.get("page").get("url").to_output_string();
                 let code = get_language_code_from_url(&url, o.languages.as_deref());
-                Ok(Value::str(if code.is_empty() { o.default_language.clone() } else { code }))
+                Ok(Value::str(if code.is_empty() {
+                    o.default_language.clone()
+                } else {
+                    code
+                }))
             }))
         }),
     );
@@ -407,8 +619,8 @@ pub fn plugin(config: &mut UserConfig, opts: &Value) -> Result<()> {
         let original = original_url.to_output_string();
         let mut url = original.clone();
         let mut suffix = String::new();
-        if url.starts_with('/') && !url.starts_with("//") {
-            if let Ok(parsed) = url::Url::parse("http://localhost/").and_then(|b| b.join(&url)) {
+        if url.starts_with('/') && !url.starts_with("//")
+            && let Ok(parsed) = url::Url::parse("http://localhost/").and_then(|b| b.join(&url)) {
                 url = percent_encoding::percent_decode_str(parsed.path()).decode_utf8_lossy().to_string();
                 suffix = format!(
                     "{}{}",
@@ -417,7 +629,6 @@ pub fn plugin(config: &mut UserConfig, opts: &Value) -> Result<()> {
                     parsed.fragment().filter(|f| !f.is_empty()).map(|f| format!("#{f}")).unwrap_or_default()
                 );
             }
-        }
         let langs = o.languages.as_deref();
         let lang_code = match args.first() {
             Some(Value::String(s)) if !s.is_empty() => s.to_string(),
@@ -458,25 +669,31 @@ pub fn plugin(config: &mut UserConfig, opts: &Value) -> Result<()> {
     });
 
     let m = maps.clone();
-    config.add_filter(&options.links_filter.clone(), move |ctx, url_override, args| {
-        let url = if url_override.is_truthy() {
-            url_override.to_output_string()
-        } else {
-            ctx.page().get("url").to_output_string()
-        };
-        let include_current = args.first().map(|o| o.get("includeCurrent").is_truthy()).unwrap_or(false);
-        let maps = m.read().unwrap();
-        let entries = maps.locale_urls_map.get(&url).cloned().unwrap_or_default();
-        if include_current {
-            return Ok(Value::array(entries));
-        }
-        Ok(Value::array(
-            entries
-                .into_iter()
-                .filter(|e| e.get("url").to_output_string() != url)
-                .collect(),
-        ))
-    });
+    config.add_filter(
+        &options.links_filter.clone(),
+        move |ctx, url_override, args| {
+            let url = if url_override.is_truthy() {
+                url_override.to_output_string()
+            } else {
+                ctx.page().get("url").to_output_string()
+            };
+            let include_current = args
+                .first()
+                .map(|o| o.get("includeCurrent").is_truthy())
+                .unwrap_or(false);
+            let maps = m.read().unwrap();
+            let entries = maps.locale_urls_map.get(&url).cloned().unwrap_or_default();
+            if include_current {
+                return Ok(Value::array(entries));
+            }
+            Ok(Value::array(
+                entries
+                    .into_iter()
+                    .filter(|e| e.get("url").to_output_string() != url)
+                    .collect(),
+            ))
+        },
+    );
 
     let (m, o) = (maps.clone(), options.clone());
     config.add_filter("locale_page", move |ctx, page_override, args| {
@@ -484,7 +701,11 @@ pub fn plugin(config: &mut UserConfig, opts: &Value) -> Result<()> {
             Some(Value::String(s)) if !s.is_empty() => s.to_string(),
             _ => o.default_language.clone(),
         };
-        let page = if page_override.is_truthy() { page_override } else { ctx.page() };
+        let page = if page_override.is_truthy() {
+            page_override
+        } else {
+            ctx.page()
+        };
         let maps = m.read().unwrap();
         let page_url = page.get("url").to_output_string();
         let mut url = None;
@@ -496,12 +717,13 @@ pub fn plugin(config: &mut UserConfig, opts: &Value) -> Result<()> {
             }
         }
         let langs = o.languages.as_deref();
-        let input_path = swap_language_code(&page.get("inputPath").to_output_string(), &lang, langs);
+        let input_path =
+            swap_language_code(&page.get("inputPath").to_output_string(), &lang, langs);
         let urls = maps.input_path_to_url.get(&input_path);
         let Some(url) = url else {
             return Ok(page);
         };
-        if !urls.is_array() || urls.len() == 0 {
+        if !urls.is_array() || urls.is_empty() {
             return Ok(page);
         }
         let mut result = Map::new();
@@ -509,7 +731,11 @@ pub fn plugin(config: &mut UserConfig, opts: &Value) -> Result<()> {
         result.insert("inputPath".into(), Value::str(input_path));
         result.insert(
             "filePathStem".into(),
-            Value::str(swap_language_code(&page.get("filePathStem").to_output_string(), &lang, langs)),
+            Value::str(swap_language_code(
+                &page.get("filePathStem").to_output_string(),
+                &lang,
+                langs,
+            )),
         );
         result.insert("__locale_page_resolved".into(), Value::Bool(true));
         Ok(Value::from_map(result))

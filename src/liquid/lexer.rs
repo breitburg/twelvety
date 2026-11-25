@@ -157,11 +157,19 @@ fn split_tag(content: &str) -> (String, String) {
     let end = content
         .find(|c: char| c.is_whitespace())
         .unwrap_or(content.len());
-    (content[..end].to_string(), content[end..].trim().to_string())
+    (
+        content[..end].to_string(),
+        content[end..].trim().to_string(),
+    )
 }
 
 /// Find `{% endraw %}` starting at `start`; returns (raw text, index after endraw, trim flags)
-fn find_end_raw(src: &str, start: usize, line: usize, end_name: &str) -> Result<(String, usize, bool, bool)> {
+fn find_end_raw(
+    src: &str,
+    start: usize,
+    line: usize,
+    end_name: &str,
+) -> Result<(String, usize, bool, bool)> {
     let mut search = start;
     while let Some(pos) = src[search..].find("{%") {
         let abs = search + pos;

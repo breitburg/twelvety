@@ -164,7 +164,10 @@ impl Twelvety {
         env.insert("source".into(), Value::str(&self.source));
         env.insert("runMode".into(), Value::str(&self.run_mode));
         if let Some(c) = &self.active_config_path {
-            env.insert("config".into(), Value::str(template_path::absolute_path(&[c])));
+            env.insert(
+                "config".into(),
+                Value::str(template_path::absolute_path(&[c])),
+            );
         }
         env.insert("root".into(), Value::str(template_path::get_working_dir()));
         Value::from_map(env)
@@ -218,7 +221,9 @@ impl Twelvety {
         let config = tc.get_config();
         self.logger
             .set_verbose(self.verbose_override.unwrap_or(!config.quiet_mode));
-        config.events.emit("buildawesome.config", &Value::Undefined)?;
+        config
+            .events
+            .emit("buildawesome.config", &Value::Undefined)?;
         config.events.emit("buildawesome.env", &env)?;
 
         let dirs = tc.directories.clone();
@@ -226,12 +231,19 @@ impl Twelvety {
         self.output_dir = dirs.output();
         self.server_options = config.server_options.clone();
 
-        let (ctx, search) = BuildContext::create(&tc, self.logger.clone(), &self.run_mode, env.clone())?;
+        let (ctx, search) =
+            BuildContext::create(&tc, self.logger.clone(), &self.run_mode, env.clone())?;
         let extension_map = ctx.extension_map.clone();
 
-        let files = Files::new(config.clone(), dirs.clone(), extension_map.clone(), search.clone());
+        let files = Files::new(
+            config.clone(),
+            dirs.clone(),
+            extension_map.clone(),
+            search.clone(),
+        );
         self.watch_targets = files.get_glob_watcher_files();
-        self.watch_targets.extend(config.additional_watch_targets.iter().cloned());
+        self.watch_targets
+            .extend(config.additional_watch_targets.iter().cloned());
         if let Some(c) = &self.active_config_path {
             self.watch_targets.push(c.clone());
         }
@@ -244,7 +256,8 @@ impl Twelvety {
             self.logger.clone(),
         );
         passthrough.is_dry_run = self.is_dry_run;
-        self.watch_targets.extend(passthrough.get_config_path_globs());
+        self.watch_targets
+            .extend(passthrough.get_config_path_globs());
         let mut writer = TemplateWriter::new(ctx, files, Arc::new(passthrough));
         writer.is_dry_run = self.is_dry_run;
         writer.is_run_initial_build = self.is_run_initial_build;
@@ -346,19 +359,28 @@ impl Twelvety {
     }
 
     pub fn to_json_value(&mut self) -> Result<Value> {
-        Ok(Value::array(self.to_json()?.iter().map(|r| r.to_value()).collect()))
+        Ok(Value::array(
+            self.to_json()?.iter().map(|r| r.to_value()).collect(),
+        ))
     }
 
     pub fn log_finished(&self) -> String {
         let meta = self.last_metadata.clone().unwrap_or_default();
         let mut slash = vec![];
         if meta.copy_count > 0 {
-            slash.push(format!("Copied {}", chalk::bold(&meta.copy_count.to_string())));
+            slash.push(format!(
+                "Copied {}",
+                chalk::bold(&meta.copy_count.to_string())
+            ));
         }
         slash.push(format!(
             "Wrote {} {}{}",
             chalk::bold(&meta.write_count.to_string()),
-            if meta.write_count == 1 { "file" } else { "files" },
+            if meta.write_count == 1 {
+                "file"
+            } else {
+                "files"
+            },
             if meta.skip_count > 0 {
                 format!(" (skipped {})", meta.skip_count)
             } else {
@@ -371,7 +393,11 @@ impl Twelvety {
         ret.push(format!(
             "in {} {}",
             chalk::bold(&time_str),
-            if time_str == "1.00" { "second" } else { "seconds" }
+            if time_str == "1.00" {
+                "second"
+            } else {
+                "seconds"
+            }
         ));
         let cfg = match &self.active_config_path {
             Some(p) => format!(", {}", template_path::strip_leading_dot_slash(p)),
@@ -407,7 +433,14 @@ fn random_uuid() -> String {
     bytes[6] = (bytes[6] & 0x0f) | 0x40;
     bytes[8] = (bytes[8] & 0x3f) | 0x80;
     let hex: String = bytes.iter().map(|b| format!("{b:02x}")).collect();
-    format!("{}-{}-{}-{}-{}", &hex[..8], &hex[8..12], &hex[12..16], &hex[16..20], &hex[20..])
+    format!(
+        "{}-{}-{}-{}-{}",
+        &hex[..8],
+        &hex[8..12],
+        &hex[12..16],
+        &hex[16..20],
+        &hex[20..]
+    )
 }
 
 /// The `error` passed to `buildawesome.aftererror` listeners (like a JavaScript `Error`)

@@ -3,7 +3,7 @@
 use std::sync::{Arc, Mutex};
 
 use indexmap::IndexMap;
-use twelvety::core::{Twelvety, Options};
+use twelvety::core::{Options, Twelvety};
 use twelvety::template::PageResult;
 use twelvety::testing::json;
 use twelvety::user_config::{CompiledFn, ExtensionOptions, UserConfig};
@@ -26,7 +26,11 @@ where
 {
     let mut elev = Twelvety::new(Some("./test/stubs-virtual/"), None, options(config));
     elev.disable_logger();
-    elev.to_json().unwrap().into_iter().next().expect("no results")
+    elev.to_json()
+        .unwrap()
+        .into_iter()
+        .next()
+        .expect("no results")
 }
 
 #[test]
@@ -85,8 +89,18 @@ fn template_syntax_reflects_the_pipeline() {
             cfg.add_template("e.njk", "", json("{}"))?;
             let collected = collected.clone();
             cfg.add_transform("syntax", move |ctx, content| {
-                let slug = ctx.page.get("fileSlug").as_str().unwrap_or_default().to_string();
-                let syntax = ctx.page.get("templateSyntax").as_str().unwrap_or_default().to_string();
+                let slug = ctx
+                    .page
+                    .get("fileSlug")
+                    .as_str()
+                    .unwrap_or_default()
+                    .to_string();
+                let syntax = ctx
+                    .page
+                    .get("templateSyntax")
+                    .as_str()
+                    .unwrap_or_default()
+                    .to_string();
                 collected.lock().unwrap().insert(slug, syntax);
                 Ok(content)
             });
@@ -98,10 +112,16 @@ fn template_syntax_reflects_the_pipeline() {
 
     let mut syntaxes = syntaxes.lock().unwrap().clone();
     syntaxes.sort_keys();
-    let expected: IndexMap<String, String> = [("a", "liquid,md"), ("b", "njk,md"), ("c", "md"), ("d", "liquid"), ("e", "njk")]
-        .into_iter()
-        .map(|(k, v)| (k.to_string(), v.to_string()))
-        .collect();
+    let expected: IndexMap<String, String> = [
+        ("a", "liquid,md"),
+        ("b", "njk,md"),
+        ("c", "md"),
+        ("d", "liquid"),
+        ("e", "njk"),
+    ]
+    .into_iter()
+    .map(|(k, v)| (k.to_string(), v.to_string()))
+    .collect();
     assert_eq!(syntaxes, expected);
 }
 
@@ -113,7 +133,10 @@ fn a_custom_md_engine_receives_preprocessed_content() {
             ExtensionOptions {
                 compile: Some(Arc::new(|s: &str, _: &str| {
                     let s = s.to_string();
-                    Ok(Arc::new(move |_: &twelvety::Value| Ok(format!("<custom>{s}</custom>"))) as CompiledFn)
+                    Ok(
+                        Arc::new(move |_: &twelvety::Value| Ok(format!("<custom>{s}</custom>")))
+                            as CompiledFn,
+                    )
                 })),
                 ..Default::default()
             },

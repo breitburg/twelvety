@@ -16,7 +16,11 @@ fn plaintext(content: &str) -> CompiledFn {
 #[test]
 fn unsupported_engine() {
     let ctx = get_context(TestOptions::default()).unwrap();
-    assert!(ctx.engine_manager.get_engine("doesnotexist", &ctx.extension_map).is_err());
+    assert!(
+        ctx.engine_manager
+            .get_engine("doesnotexist", &ctx.extension_map)
+            .is_err()
+    );
 }
 
 #[test]
@@ -42,7 +46,10 @@ fn supported_custom_engine() {
     assert!(tem.has_engine("txt"));
     let engine = tem.get_engine("txt", &ctx.extension_map).unwrap();
     let f = engine.compile("<p>This is plaintext</p>", None).unwrap();
-    assert_eq!(f(&twelvety::testing::json(r#"{"author": "zach"}"#)).unwrap(), "<p>This is plaintext</p>");
+    assert_eq!(
+        f(&twelvety::testing::json(r#"{"author": "zach"}"#)).unwrap(),
+        "<p>This is plaintext</p>"
+    );
 }
 
 #[test]
@@ -82,8 +89,16 @@ fn custom_engine_with_custom_init() {
     let f2 = engine2.compile("<p>This is plaintext</p>", None).unwrap();
     assert_eq!(f2(&Value::object()).unwrap(), "<p>This is plaintext</p>");
 
-    assert_eq!(init_count.load(Ordering::SeqCst), 1, "Should have only run the init callback once");
-    assert_eq!(compile_count.load(Ordering::SeqCst), 2, "Should have only run the compile callback twice");
+    assert_eq!(
+        init_count.load(Ordering::SeqCst),
+        1,
+        "Should have only run the init callback once"
+    );
+    assert_eq!(
+        compile_count.load(Ordering::SeqCst),
+        2,
+        "Should have only run the compile callback twice"
+    );
 }
 
 // Skipped (JS-only):

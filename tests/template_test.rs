@@ -21,16 +21,16 @@
 
 mod template_support;
 
-use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
+use std::sync::atomic::{AtomicUsize, Ordering};
 
 use template_support::*;
+use twelvety::Value;
 use twelvety::errors::is_premature_template_content_error;
 use twelvety::page_entry::take_premature_use;
 use twelvety::template_content::RenderOptions;
 use twelvety::testing::{TestOptions, get_context, get_new_template, json, template_with_context};
 use twelvety::value::to_js_date_string;
-use twelvety::Value;
 
 const TEMPLATE_FRONT_MATTER: &str = "---
 key1: value1
@@ -84,10 +84,16 @@ testdata:
 
 fn custom_front_matter(name: &str) -> &'static str {
     match name {
-        "template-excerpt-comment.njk" => "---\nfront: hello\n---\nThis is an excerpt.\n<!-- excerpt -->\nThis is content.",
-        "template-newline1.njk" => "---\nfront: hello\n---\nThis is an excerpt.---\nThis is content.",
+        "template-excerpt-comment.njk" => {
+            "---\nfront: hello\n---\nThis is an excerpt.\n<!-- excerpt -->\nThis is content."
+        }
+        "template-newline1.njk" => {
+            "---\nfront: hello\n---\nThis is an excerpt.---\nThis is content."
+        }
         "template-newline2.njk" => "---\nfront: hello\n---\nThis is an excerpt.---This is content.",
-        "template-newline3.njk" => "---\nfront: hello\n---\nThis is an excerpt.\n---This is content.",
+        "template-newline3.njk" => {
+            "---\nfront: hello\n---\nThis is an excerpt.\n---This is content."
+        }
         "template-toml.njk" => "---toml\nfront = \"hello\"\n---\nThis is content.",
         "template.njk" => "---\nfront: hello\n---\nThis is an excerpt.\n---\nThis is content.",
         _ => unreachable!(),
@@ -96,7 +102,12 @@ fn custom_front_matter(name: &str) -> &'static str {
 
 #[test]
 fn get_template_sub_folder() {
-    let tmpl = virtual_template("./test/stubs/template.liquid", "./test/stubs/", "./dist", &[("template.liquid", "")]);
+    let tmpl = virtual_template(
+        "./test/stubs/template.liquid",
+        "./test/stubs/",
+        "./dist",
+        &[("template.liquid", "")],
+    );
     assert_eq!(tmpl.get_template_subfolder(), "");
 }
 
@@ -113,12 +124,20 @@ fn get_template_sub_folder_output_is_a_subdir_of_input() {
 
 #[test]
 fn output_path_maps_to_an_html_file() {
-    let tmpl = virtual_template("./test/stubs/template.liquid", "./test/stubs/", "./dist", &[("template.liquid", "")]);
+    let tmpl = virtual_template(
+        "./test/stubs/template.liquid",
+        "./test/stubs/",
+        "./dist",
+        &[("template.liquid", "")],
+    );
     assert_eq!(tmpl.content.input_dir(), "./test/stubs/");
     assert_eq!(tmpl.content.output_dir(), "./dist/");
     assert_eq!(tmpl.get_template_subfolder(), "");
     let data = tmpl.get_data().unwrap();
-    assert_eq!(output_path(&tmpl, &data).as_str(), Some("./dist/template/index.html"));
+    assert_eq!(
+        output_path(&tmpl, &data).as_str(),
+        Some("./dist/template/index.html")
+    );
 }
 
 #[test]
@@ -132,7 +151,10 @@ fn subfolder_outputs_to_a_subfolder() {
     let data = tmpl.get_data().unwrap();
     assert_eq!(tmpl.parsed.dir, "./test/stubs/subfolder");
     assert_eq!(tmpl.get_template_subfolder(), "subfolder");
-    assert_eq!(output_path(&tmpl, &data).as_str(), Some("./dist/subfolder/subfolder/index.html"));
+    assert_eq!(
+        output_path(&tmpl, &data).as_str(),
+        Some("./dist/subfolder/subfolder/index.html")
+    );
 }
 
 #[test]
@@ -154,16 +176,32 @@ fn subfolder_outputs_to_double_subfolder() {
 
 #[test]
 fn html_output_to_input_dir_not_index() {
-    let tmpl = virtual_template("./test/stubs/testing.html", "./test/stubs", "./test/stubs", &[("testing.html", HTML_TEMPLATE)]);
+    let tmpl = virtual_template(
+        "./test/stubs/testing.html",
+        "./test/stubs",
+        "./test/stubs",
+        &[("testing.html", HTML_TEMPLATE)],
+    );
     let data = tmpl.get_data().unwrap();
-    assert_eq!(output_path(&tmpl, &data).as_str(), Some("./test/stubs/testing/index.html"));
+    assert_eq!(
+        output_path(&tmpl, &data).as_str(),
+        Some("./test/stubs/testing/index.html")
+    );
 }
 
 #[test]
 fn html_output_to_input_dir_is_index() {
-    let tmpl = virtual_template("./test/stubs/index.html", "./test/stubs", "./test/stubs", &[("index.html", HTML_TEMPLATE)]);
+    let tmpl = virtual_template(
+        "./test/stubs/index.html",
+        "./test/stubs",
+        "./test/stubs",
+        &[("index.html", HTML_TEMPLATE)],
+    );
     let data = tmpl.get_data().unwrap();
-    assert_eq!(output_path(&tmpl, &data).as_str(), Some("./test/stubs/index.html"));
+    assert_eq!(
+        output_path(&tmpl, &data).as_str(),
+        Some("./test/stubs/index.html")
+    );
 }
 
 #[test]
@@ -175,7 +213,10 @@ fn html_output_to_input_dir_is_index_subfolder() {
         &[("subfolder/index.html", "")],
     );
     let data = tmpl.get_data().unwrap();
-    assert_eq!(output_path(&tmpl, &data).as_str(), Some("./test/stubs/subfolder/index.html"));
+    assert_eq!(
+        output_path(&tmpl, &data).as_str(),
+        Some("./test/stubs/subfolder/index.html")
+    );
 }
 
 #[test]
@@ -196,7 +237,10 @@ fn raw_front_matter_yaml() {
     assert_eq!(data.get("key3").as_str(), Some("value3"));
 
     let pages = rendered_templates(&tmpl).unwrap();
-    assert_eq!(pages[0].template_content().unwrap().trim(), "c:value1:value2:value3");
+    assert_eq!(
+        pages[0].template_content().unwrap().trim(),
+        "c:value1:value2:value3"
+    );
 }
 
 #[test]
@@ -219,7 +263,10 @@ fn raw_front_matter_json() {
     assert_eq!(data.get("key3").as_str(), Some("value3"));
 
     let pages = rendered_templates(&tmpl).unwrap();
-    assert_eq!(pages[0].template_content().unwrap().trim(), "c:value1:value2:value3");
+    assert_eq!(
+        pages[0].template_content().unwrap().trim(),
+        "c:value1:value2:value3"
+    );
 }
 
 #[test]
@@ -237,10 +284,16 @@ fn get_data_works() {
 
 fn check_one_layout(path: &str, layout_name: &str, list: &[(&str, &str)]) {
     let tmpl = virtual_template(path, "./test/stubs/", "dist", list);
-    assert_eq!(tmpl.content.read().unwrap().data.get("layout").as_str(), Some(layout_name));
+    assert_eq!(
+        tmpl.content.read().unwrap().data.get("layout").as_str(),
+        Some(layout_name)
+    );
     let data = tmpl.get_data().unwrap();
     assert_eq!(data.get("layout").as_str(), Some(layout_name));
-    assert_eq!(squash(&render(&tmpl).unwrap()), "<div id=\"layout\"> <p>Hello.</p> </div>");
+    assert_eq!(
+        squash(&render(&tmpl).unwrap()),
+        "<div id=\"layout\"> <p>Hello.</p> </div>"
+    );
     assert_eq!(data.get("keymain").as_str(), Some("valuemain"));
     assert_eq!(data.get("keylayout").as_str(), Some("valuelayout"));
 }
@@ -267,7 +320,10 @@ fn one_layout_using_content() {
         "./test/stubs/templateWithLayoutContent.liquid",
         "defaultLayoutLayoutContent",
         &[
-            ("templateWithLayoutContent.liquid", TEMPLATE_WITH_LAYOUT_CONTENT),
+            (
+                "templateWithLayoutContent.liquid",
+                TEMPLATE_WITH_LAYOUT_CONTENT,
+            ),
             ("_includes/defaultLayoutLayoutContent.liquid", LAYOUT_DATA),
         ],
     );
@@ -280,14 +336,25 @@ fn one_layout_layouts_disabled() {
         "./test/stubs/",
         "dist",
         &[
-            ("templateWithLayoutContent.liquid", TEMPLATE_WITH_LAYOUT_CONTENT),
+            (
+                "templateWithLayoutContent.liquid",
+                TEMPLATE_WITH_LAYOUT_CONTENT,
+            ),
             ("_includes/defaultLayoutLayoutContent.liquid", LAYOUT_DATA),
         ],
     );
     let mut data = tmpl.get_data().unwrap();
-    assert_eq!(data.get("layout").as_str(), Some("defaultLayoutLayoutContent"));
+    assert_eq!(
+        data.get("layout").as_str(),
+        Some("defaultLayoutLayoutContent")
+    );
     let pages = tmpl.get_templates(&mut data).unwrap();
-    assert_eq!(tmpl.render_page_entry_without_layout(&pages[0]).unwrap().trim(), "<p>Hello.</p>");
+    assert_eq!(
+        tmpl.render_page_entry_without_layout(&pages[0])
+            .unwrap()
+            .trim(),
+        "<p>Hello.</p>"
+    );
     assert_eq!(data.get("keymain").as_str(), Some("valuemain"));
     assert_eq!(data.get("keylayout").as_str(), Some("valuelayout"));
 }
@@ -331,7 +398,10 @@ fn two_layouts() {
             ),
         ],
     );
-    assert_eq!(tmpl.content.read().unwrap().data.get("layout").as_str(), Some("layout-a"));
+    assert_eq!(
+        tmpl.content.read().unwrap().data.get("layout").as_str(),
+        Some("layout-a")
+    );
     let data = tmpl.get_data().unwrap();
     assert_eq!(data.get("layout").as_str(), Some("layout-a"));
     assert_eq!(data.get("key1").as_str(), Some("value1"));
@@ -348,14 +418,21 @@ fn liquid_template() {
         "./test/stubs/formatTest.liquid",
         "./test/stubs/",
         "dist",
-        &[("formatTest.liquid", "---\nname: zach\n---\n<p>{{name | capitalize}}</p>")],
+        &[(
+            "formatTest.liquid",
+            "---\nname: zach\n---\n<p>{{name | capitalize}}</p>",
+        )],
     );
     assert_eq!(render(&tmpl).unwrap(), "<p>Zach</p>");
 }
 
 #[test]
 fn liquid_template_with_include() {
-    let tmpl = get_new_template("./test/stubs/includer.liquid", TestOptions::new("./test/stubs/", "dist")).unwrap();
+    let tmpl = get_new_template(
+        "./test/stubs/includer.liquid",
+        TestOptions::new("./test/stubs/", "dist"),
+    )
+    .unwrap();
     assert_eq!(render(&tmpl).unwrap().trim(), "<p>This is an include.</p>");
 }
 
@@ -365,10 +442,16 @@ fn permalink_output_directory() {
         "./test/stubs/permalinked.liquid",
         "./test/stubs/",
         "./dist",
-        &[("permalinked.liquid", "---\npermalink: permalinksubfolder/index.html\n---\nCurrent url: {{ permalink }}")],
+        &[(
+            "permalinked.liquid",
+            "---\npermalink: permalinksubfolder/index.html\n---\nCurrent url: {{ permalink }}",
+        )],
     );
     let data = tmpl.get_data().unwrap();
-    assert_eq!(output_path(&tmpl, &data).as_str(), Some("./dist/permalinksubfolder/index.html"));
+    assert_eq!(
+        output_path(&tmpl, &data).as_str(),
+        Some("./dist/permalinksubfolder/index.html")
+    );
 }
 
 #[test]
@@ -378,12 +461,21 @@ fn permalink_output_directory_from_layout() {
         "./test/stubs/",
         "./dist",
         &[
-            ("permalink-in-layout.liquid", "---\nlayout: permalink-in-layout/layout.liquid\n---\nCurrent url: {{ permalink }}"),
-            ("_includes/permalink-in-layout/layout.liquid", "---\npermalink: hello/index.html\n---\n{{ content }}"),
+            (
+                "permalink-in-layout.liquid",
+                "---\nlayout: permalink-in-layout/layout.liquid\n---\nCurrent url: {{ permalink }}",
+            ),
+            (
+                "_includes/permalink-in-layout/layout.liquid",
+                "---\npermalink: hello/index.html\n---\n{{ content }}",
+            ),
         ],
     );
     let data = tmpl.get_data().unwrap();
-    assert_eq!(output_path(&tmpl, &data).as_str(), Some("./dist/hello/index.html"));
+    assert_eq!(
+        output_path(&tmpl, &data).as_str(),
+        Some("./dist/hello/index.html")
+    );
 }
 
 #[test]
@@ -420,7 +512,10 @@ fn layout_from_template_data_file_that_has_a_permalink_issue_121() {
     let data = tmpl.get_data().unwrap();
     let pages = rendered_templates(&tmpl).unwrap();
     assert_eq!(pages[0].template_content().unwrap(), "Wrapper:Test 1:test");
-    assert_eq!(output_path(&tmpl, &data).as_str(), Some("./dist/test/index.html"));
+    assert_eq!(
+        output_path(&tmpl, &data).as_str(),
+        Some("./dist/test/index.html")
+    );
 }
 
 /// The JS/TS data file paths upstream lists are not searched by the port.
@@ -445,11 +540,18 @@ fn local_data_paths(tmpl: &twelvety::template::Template) -> Vec<String> {
 
 #[test]
 fn local_template_data_file_import_without_a_global_data_json() {
-    let tmpl = get_new_template("./test/stubs/component/component.njk", TestOptions::new("test/stubs", "dist")).unwrap();
+    let tmpl = get_new_template(
+        "./test/stubs/component/component.njk",
+        TestOptions::new("test/stubs", "dist"),
+    )
+    .unwrap();
     let data = tmpl.get_data().unwrap();
     assert_eq!(
         local_data_paths(&tmpl),
-        json_data_paths(&[("./test/stubs", "stubs"), ("./test/stubs/component", "component")])
+        json_data_paths(&[
+            ("./test/stubs", "stubs"),
+            ("./test/stubs/component", "component")
+        ])
     );
     assert_eq!(data.get("localdatakey1").as_str(), Some("localdatavalue1"));
     assert_eq!(render(&tmpl).unwrap(), "localdatavalue1");
@@ -475,7 +577,11 @@ fn local_template_data_file_import_two_subdirectories_deep() {
 
 #[test]
 fn posts_inherits_local_json_layouts() {
-    let tmpl = get_new_template("./test/stubs/posts/post1.njk", TestOptions::new("test/stubs", "dist")).unwrap();
+    let tmpl = get_new_template(
+        "./test/stubs/posts/post1.njk",
+        TestOptions::new("test/stubs", "dist"),
+    )
+    .unwrap();
     assert_eq!(
         local_data_paths(&tmpl),
         json_data_paths(&[
@@ -488,12 +594,19 @@ fn posts_inherits_local_json_layouts() {
     let local = td.get_template_directory_data(&tmpl.input_path).unwrap();
     assert_eq!(local.get("layout").as_str(), Some("mylocallayout.njk"));
     assert!(td.get_global_data().unwrap().get("pkg").is_truthy());
-    assert_eq!(render(&tmpl).unwrap().trim(), "<div id=\"locallayout\">Post1\n</div>");
+    assert_eq!(
+        render(&tmpl).unwrap().trim(),
+        "<div id=\"locallayout\">Post1\n</div>"
+    );
 }
 
 #[test]
 fn template_and_folder_name_are_the_same() {
-    let tmpl = get_new_template("./test/stubs/posts/posts.njk", TestOptions::new("test/stubs", "dist")).unwrap();
+    let tmpl = get_new_template(
+        "./test/stubs/posts/posts.njk",
+        TestOptions::new("test/stubs", "dist"),
+    )
+    .unwrap();
     assert_eq!(
         local_data_paths(&tmpl),
         json_data_paths(&[("./test/stubs", "stubs"), ("./test/stubs/posts", "posts")])
@@ -502,7 +615,10 @@ fn template_and_folder_name_are_the_same() {
     let local = td.get_template_directory_data(&tmpl.input_path).unwrap();
     assert_eq!(local.get("layout").as_str(), Some("mylocallayout.njk"));
     assert!(td.get_global_data().unwrap().get("pkg").is_truthy());
-    assert_eq!(render(&tmpl).unwrap().trim(), "<div id=\"locallayout\">Posts\n</div>");
+    assert_eq!(
+        render(&tmpl).unwrap().trim(),
+        "<div id=\"locallayout\">Posts\n</div>"
+    );
 }
 
 #[test]
@@ -516,23 +632,46 @@ fn clone_the_template() {
     let data = tmpl.get_data().unwrap();
     let cloned = template_with_context(&tmpl.input_path, tmpl.ctx());
     let cloned_data = cloned.get_data().unwrap();
-    assert_eq!(output_path(&tmpl, &data).as_str(), Some("./dist/default/index.html"));
-    assert_eq!(output_path(&cloned, &cloned_data).as_str(), Some("./dist/default/index.html"));
-    assert!(Arc::ptr_eq(&cloned.ctx().extension_map, &tmpl.ctx().extension_map));
+    assert_eq!(
+        output_path(&tmpl, &data).as_str(),
+        Some("./dist/default/index.html")
+    );
+    assert_eq!(
+        output_path(&cloned, &cloned_data).as_str(),
+        Some("./dist/default/index.html")
+    );
+    assert!(Arc::ptr_eq(
+        &cloned.ctx().extension_map,
+        &tmpl.ctx().extension_map
+    ));
 }
 
 #[test]
 fn get_rendered_data_has_all_the_page_variables() {
-    let tmpl = virtual_template("./test/stubs/template.liquid", "./test/stubs/", "./dist", &[("template.liquid", "")]);
+    let tmpl = virtual_template(
+        "./test/stubs/template.liquid",
+        "./test/stubs/",
+        "./dist",
+        &[("template.liquid", "")],
+    );
     let data = rendered_data(&tmpl, 0);
     let page = data.get("page");
     assert_eq!(page.get("url").as_str(), Some("/template/"));
     assert_eq!(page.get("fileSlug").as_str(), Some("template"));
     assert_eq!(page.get("filePathStem").as_str(), Some("/template"));
-    assert_eq!(page.get("relativeInputPath").as_str(), Some("template.liquid"));
+    assert_eq!(
+        page.get("relativeInputPath").as_str(),
+        Some("template.liquid")
+    );
     assert!(matches!(page.get("date"), Value::Date(_)));
-    assert_eq!(page.get("inputPath").as_str(), Some("./test/stubs/template.liquid"));
-    assert_eq!(page.get("outputPath").as_str(), Some("./dist/template/index.html"));
+    assert_eq!(
+        page.get("inputPath").as_str(),
+        Some("./test/stubs/template.liquid")
+    );
+    assert_eq!(
+        page.get("outputPath").as_str(),
+        Some("./dist/template/index.html")
+    );
 }
 
 fn page_date_string(path: &str) -> (String, chrono::DateTime<chrono::Utc>) {
@@ -542,7 +681,10 @@ fn page_date_string(path: &str) -> (String, chrono::DateTime<chrono::Utc>) {
         panic!("page.date is not a Date");
     };
     let pages = rendered_templates(&tmpl).unwrap();
-    (pages[0].template_content().unwrap().trim().to_string(), date)
+    (
+        pages[0].template_content().unwrap().trim().to_string(),
+        date,
+    )
 }
 
 #[test]
@@ -560,12 +702,20 @@ fn issue_603_page_date_nunjucks() {
 #[test]
 fn issue_603_page_date_to_utc_string_nunjucks() {
     let (content, date) = page_date_string("./test/stubs/pagedateutc.njk");
-    assert_eq!(content, date.format("%a, %d %b %Y %H:%M:%S GMT").to_string());
+    assert_eq!(
+        content,
+        date.format("%a, %d %b %Y %H:%M:%S GMT").to_string()
+    );
 }
 
 #[test]
 fn get_templates_data_has_all_the_root_and_page_variables() {
-    let tmpl = virtual_template("./test/stubs/template.liquid", "./test/stubs/", "./dist", &[("template.liquid", "")]);
+    let tmpl = virtual_template(
+        "./test/stubs/template.liquid",
+        "./test/stubs/",
+        "./dist",
+        &[("template.liquid", "")],
+    );
     let mut data = tmpl.get_data().unwrap();
     let templates = tmpl.get_templates(&mut data).unwrap();
     let t = &templates[0];
@@ -580,29 +730,54 @@ fn get_templates_data_has_all_the_root_and_page_variables() {
     assert_eq!(page.get("url").as_str(), Some("/template/"));
     assert_eq!(page.get("fileSlug").as_str(), Some("template"));
     assert!(matches!(page.get("date"), Value::Date(_)));
-    assert_eq!(page.get("inputPath").as_str(), Some("./test/stubs/template.liquid"));
-    assert_eq!(page.get("outputPath").as_str(), Some("./dist/template/index.html"));
+    assert_eq!(
+        page.get("inputPath").as_str(),
+        Some("./test/stubs/template.liquid")
+    );
+    assert_eq!(
+        page.get("outputPath").as_str(),
+        Some("./dist/template/index.html")
+    );
 }
 
 #[test]
 fn get_rendered_templates_data_has_all_the_page_variables() {
-    let tmpl = virtual_template("./test/stubs/template.liquid", "./test/stubs/", "./dist", &[("template.liquid", "")]);
+    let tmpl = virtual_template(
+        "./test/stubs/template.liquid",
+        "./test/stubs/",
+        "./dist",
+        &[("template.liquid", "")],
+    );
     let templates = rendered_templates(&tmpl).unwrap();
     let page = templates[0].data().get("page");
     assert_eq!(page.get("url").as_str(), Some("/template/"));
     assert_eq!(page.get("fileSlug").as_str(), Some("template"));
     assert_eq!(templates[0].file_path_stem, "/template");
     assert!(matches!(page.get("date"), Value::Date(_)));
-    assert_eq!(page.get("inputPath").as_str(), Some("./test/stubs/template.liquid"));
-    assert_eq!(page.get("outputPath").as_str(), Some("./dist/template/index.html"));
+    assert_eq!(
+        page.get("inputPath").as_str(),
+        Some("./test/stubs/template.liquid")
+    );
+    assert_eq!(
+        page.get("outputPath").as_str(),
+        Some("./dist/template/index.html")
+    );
 }
 
 #[test]
 fn get_rendered_data_has_good_slug_empty_index() {
-    let tmpl = virtual_template("./test/stubs/index.liquid", "./test/stubs/", "./dist", &[("index.liquid", "")]);
+    let tmpl = virtual_template(
+        "./test/stubs/index.liquid",
+        "./test/stubs/",
+        "./dist",
+        &[("index.liquid", "")],
+    );
     let data = rendered_data(&tmpl, 0);
     assert_eq!(data.get("page").get("fileSlug").as_str(), Some(""));
-    assert_eq!(data.get("page").get("filePathStem").as_str(), Some("/index"));
+    assert_eq!(
+        data.get("page").get("filePathStem").as_str(),
+        Some("/index")
+    );
 }
 
 #[test]
@@ -615,7 +790,10 @@ fn get_rendered_data_has_good_slug() {
     );
     let data = rendered_data(&tmpl, 0);
     assert_eq!(data.get("page").get("fileSlug").as_str(), Some("includer"));
-    assert_eq!(data.get("page").get("filePathStem").as_str(), Some("/includer"));
+    assert_eq!(
+        data.get("page").get("filePathStem").as_str(),
+        Some("/includer")
+    );
 }
 
 fn render_override(path: &str, key: &str, content: &str) -> anyhow::Result<String> {
@@ -739,7 +917,8 @@ fn override_to_nothing() {
     );
 }
 
-const ENGINE_OVERRIDES_LAYOUT: &str = "---\nlayoutkey: layoutvalue\n---\n<div id=\"{{layoutkey}}\">{{ content | safe }}</div>\n";
+const ENGINE_OVERRIDES_LAYOUT: &str =
+    "---\nlayoutkey: layoutvalue\n---\n<div id=\"{{layoutkey}}\">{{ content | safe }}</div>\n";
 
 #[test]
 fn override_njk_to_liquid_with_njk_layout() {
@@ -752,10 +931,16 @@ fn override_njk_to_liquid_with_njk_layout() {
                 "overrides/layout.njk",
                 "---\ntemplateEngineOverride: liquid\ntitle: My Title\nlayout: layouts/engineOverrides.njk\n---\n<h2>{{ title | size }}</h2>",
             ),
-            ("_includes/layouts/engineOverrides.njk", ENGINE_OVERRIDES_LAYOUT),
+            (
+                "_includes/layouts/engineOverrides.njk",
+                ENGINE_OVERRIDES_LAYOUT,
+            ),
         ],
     );
-    assert_eq!(render(&tmpl).unwrap().trim(), "<div id=\"layoutvalue\"><h2>8</h2></div>");
+    assert_eq!(
+        render(&tmpl).unwrap().trim(),
+        "<div id=\"layoutvalue\"><h2>8</h2></div>"
+    );
 }
 
 #[test]
@@ -769,10 +954,16 @@ fn override_njk_to_nothing_with_njk_layout() {
                 "overrides/layoutfalse.njk",
                 "---\ntemplateEngineOverride: false\ntitle: My Title\nlayout: layouts/engineOverrides.njk\n---\n<h2><%= title %></h2>",
             ),
-            ("_includes/layouts/engineOverrides.njk", ENGINE_OVERRIDES_LAYOUT),
+            (
+                "_includes/layouts/engineOverrides.njk",
+                ENGINE_OVERRIDES_LAYOUT,
+            ),
         ],
     );
-    assert_eq!(render(&tmpl).unwrap().trim(), "<div id=\"layoutvalue\"><h2><%= title %></h2></div>");
+    assert_eq!(
+        render(&tmpl).unwrap().trim(),
+        "<div id=\"layoutvalue\"><h2><%= title %></h2></div>"
+    );
 }
 
 #[test]
@@ -782,7 +973,10 @@ fn markdown_source_with_njk_layout_does_not_render_markdown_in_layout() {
         "./test/stubs/",
         "./dist",
         &[
-            ("overrides/test.md", "---\ntitle: My Title\nlayout: layouts/engineOverridesMd.njk\n---\n\n# {{ title }}\n"),
+            (
+                "overrides/test.md",
+                "---\ntitle: My Title\nlayout: layouts/engineOverridesMd.njk\n---\n\n# {{ title }}\n",
+            ),
             (
                 "_includes/layouts/engineOverridesMd.njk",
                 "---\nlayoutkey: layoutvalue\n---\n# Layout header\n\n<div id=\"{{layoutkey}}\">{{ content | safe }}</div>",
@@ -825,7 +1019,10 @@ fn render_direct_on_markdown_permalink_should_not_render_markdown() {
         render_direct(&tmpl, "/news/my-test-file/index.html", &Value::object()),
         "/news/my-test-file/index.html"
     );
-    assert_eq!(raw_output_path(&tmpl, &data).as_deref(), Some("/news/my-test-file/index.html"));
+    assert_eq!(
+        raw_output_path(&tmpl, &data).as_deref(),
+        Some("/news/my-test-file/index.html")
+    );
 }
 
 #[test]
@@ -841,10 +1038,17 @@ fn render_direct_on_markdown_permalink_with_variable() {
     );
     let data = tmpl.get_data().unwrap();
     assert_eq!(
-        render_direct(&tmpl, "/news/{{ slug }}/index.html", &json(r#"{"slug":"my-title"}"#)),
+        render_direct(
+            &tmpl,
+            "/news/{{ slug }}/index.html",
+            &json(r#"{"slug":"my-title"}"#)
+        ),
         "/news/my-title/index.html"
     );
-    assert_eq!(raw_output_path(&tmpl, &data).as_deref(), Some("/news/my-title/index.html"));
+    assert_eq!(
+        raw_output_path(&tmpl, &data).as_deref(),
+        Some("/news/my-title/index.html")
+    );
 }
 
 #[test]
@@ -863,16 +1067,29 @@ fn render_direct_on_markdown_permalink_has_override() {
         render_direct(&tmpl, "/news/my-test-file/index.html", &Value::object()),
         "/news/my-test-file/index.html"
     );
-    assert_eq!(raw_output_path(&tmpl, &data).as_deref(), Some("/news/my-test-file/index.html"));
+    assert_eq!(
+        raw_output_path(&tmpl, &data).as_deref(),
+        Some("/news/my-test-file/index.html")
+    );
 }
 
 /* Transforms */
 
-fn transform_template<F>(path: &str, input: &str, output: &str, list: &[(&str, &str)], config: F) -> Arc<twelvety::template::Template>
+fn transform_template<F>(
+    path: &str,
+    input: &str,
+    output: &str,
+    list: &[(&str, &str)],
+    config: F,
+) -> Arc<twelvety::template::Template>
 where
     F: Fn(&mut twelvety::UserConfig) -> anyhow::Result<()> + Send + Sync + 'static,
 {
-    get_new_template(path, virtual_options(input, output, templates(list), config)).unwrap()
+    get_new_template(
+        path,
+        virtual_options(input, output, templates(list), config),
+    )
+    .unwrap()
 }
 
 #[test]
@@ -934,8 +1151,14 @@ fn test_a_transform_with_a_layout() {
         "./test/stubs-virtual-nowrite/",
         "./test/stubs-virtual-nowrite/_site",
         &[
-            ("transform-layout/transform-layout.njk", "---\nlayout: layout.njk\n---\nThis is content."),
-            ("_includes/layout.njk", "<html><body>{{ content | safe }}</body></html>"),
+            (
+                "transform-layout/transform-layout.njk",
+                "---\nlayout: layout.njk\n---\nThis is content.",
+            ),
+            (
+                "_includes/layout.njk",
+                "<html><body>{{ content | safe }}</body></html>",
+            ),
         ],
         move |cfg| {
             let c = c.clone();
@@ -962,11 +1185,19 @@ fn test_multiple_transforms() {
         &[("template.liquid", "")],
         |cfg| {
             cfg.add_transform("transformName1", |ctx, _| {
-                assert!(ctx.output_path.to_output_string().ends_with("template/index.html"));
+                assert!(
+                    ctx.output_path
+                        .to_output_string()
+                        .ends_with("template/index.html")
+                );
                 Ok("lowercase transform".into())
             });
             cfg.add_transform("transformName2", |ctx, s| {
-                assert!(ctx.output_path.to_output_string().ends_with("template/index.html"));
+                assert!(
+                    ctx.output_path
+                        .to_output_string()
+                        .ends_with("template/index.html")
+                );
                 Ok(s.to_uppercase())
             });
             Ok(())
@@ -1015,7 +1246,10 @@ fn front_matter_tags_single() {
     let data = tmpl.get_data().unwrap();
     assert_eq!(strs(&data.get("tags")), ["single-tag"]);
     let pages = rendered_templates(&tmpl).unwrap();
-    assert_eq!(pages[0].template_content().unwrap().trim(), "Has single-tag");
+    assert_eq!(
+        pages[0].template_content().unwrap().trim(),
+        "Has single-tag"
+    );
 }
 
 #[test]
@@ -1034,7 +1268,10 @@ fn front_matter_tags_multiple() {
     let data = tmpl.get_data().unwrap();
     assert_eq!(strs(&data.get("tags")), ["multi-tag", "multi-tag-2"]);
     let pages = rendered_templates(&tmpl).unwrap();
-    assert_eq!(pages[0].template_content().unwrap().trim(), "Has multi-tag-2");
+    assert_eq!(
+        pages[0].template_content().unwrap().trim(),
+        "Has multi-tag-2"
+    );
 }
 
 /// Port of "Front matter date with quotes (liquid), issue #258" (YAML timestamps are parsed by default)
@@ -1044,13 +1281,19 @@ fn front_matter_date_liquid_issue_258() {
         "./test/stubs-virtual-nowrite/test.liquid",
         "./test/stubs-virtual-nowrite/",
         "dist",
-        &[("test.liquid", "---\nmydate: 2009-04-15T12:34:34+01:00\n---\n{{ mydate | date: \"%Y-%m-%d\" }}")],
+        &[(
+            "test.liquid",
+            "---\nmydate: 2009-04-15T12:34:34+01:00\n---\n{{ mydate | date: \"%Y-%m-%d\" }}",
+        )],
     );
     let data = tmpl.get_data().unwrap();
     let Value::Date(d) = data.get("mydate") else {
         panic!("mydate is not a date: {:?}", data.get("mydate"));
     };
-    assert_eq!(twelvety::value::to_iso_string(&d), "2009-04-15T11:34:34.000Z");
+    assert_eq!(
+        twelvety::value::to_iso_string(&d),
+        "2009-04-15T11:34:34.000Z"
+    );
     let pages = rendered_templates(&tmpl).unwrap();
     assert_eq!(pages[0].template_content().unwrap().trim(), "2009-04-15");
 }
@@ -1058,9 +1301,18 @@ fn front_matter_date_liquid_issue_258() {
 #[test]
 fn throws_a_premature_template_content_error() {
     for (key, content) in [
-        ("prematureTemplateContent/test.njk", "{{ sample.templateContent }}"),
-        ("prematureTemplateContent/test.liquid", "{{ collections.all[0].templateContent }}"),
-        ("prematureTemplateContent/test.md", "{{ sample.templateContent }}\n"),
+        (
+            "prematureTemplateContent/test.njk",
+            "{{ sample.templateContent }}",
+        ),
+        (
+            "prematureTemplateContent/test.liquid",
+            "{{ collections.all[0].templateContent }}",
+        ),
+        (
+            "prematureTemplateContent/test.md",
+            "{{ sample.templateContent }}\n",
+        ),
     ] {
         let tmpl = virtual_template(
             &format!("./test/stubs/{key}"),
@@ -1082,7 +1334,12 @@ where
     F: Fn(&mut twelvety::UserConfig) -> anyhow::Result<()> + Send + Sync + 'static,
 {
     let key = input_path.trim_start_matches("./test/stubs/");
-    let options = virtual_options("./test/stubs/", "./test/stubs/_site", templates(&[(key, content), ("sample.njk", "")]), config);
+    let options = virtual_options(
+        "./test/stubs/",
+        "./test/stubs/_site",
+        templates(&[(key, content), ("sample.njk", "")]),
+        config,
+    );
     let ctx = get_context(options).unwrap();
     let sample_tmpl = template_with_context("./test/stubs/sample.njk", &ctx);
     let mut sample_data = sample_tmpl.get_data().unwrap();
@@ -1096,18 +1353,31 @@ where
     collections.set("all", Value::array(vec![sample]));
     data.set("collections", collections);
     let entries = tmpl.get_templates(&mut data).unwrap();
-    tmpl.render_page_entry_without_layout(&entries[0]).unwrap_err()
+    tmpl.render_page_entry_without_layout(&entries[0])
+        .unwrap_err()
 }
 
 #[test]
 fn throws_a_premature_template_content_error_from_rendering() {
     for (path, content) in [
-        ("./test/stubs/prematureTemplateContent/test.njk", "{{ sample.templateContent }}"),
-        ("./test/stubs/prematureTemplateContent/test.liquid", "{{ collections.all[0].templateContent }}"),
-        ("./test/stubs/prematureTemplateContent/test.md", "{{ sample.templateContent }}\n"),
+        (
+            "./test/stubs/prematureTemplateContent/test.njk",
+            "{{ sample.templateContent }}",
+        ),
+        (
+            "./test/stubs/prematureTemplateContent/test.liquid",
+            "{{ collections.all[0].templateContent }}",
+        ),
+        (
+            "./test/stubs/prematureTemplateContent/test.md",
+            "{{ sample.templateContent }}\n",
+        ),
     ] {
         let error = premature_error_from_rendering(path, content, |_| Ok(()));
-        assert!(is_premature_template_content_error(&error), "{path}: {error:?}");
+        assert!(
+            is_premature_template_content_error(&error),
+            "{path}: {error:?}"
+        );
     }
 }
 
@@ -1117,7 +1387,9 @@ fn recognizes_a_premature_template_content_error_wrapped_by_a_nunjucks_filter() 
         "./test/stubs/prematureTemplateContent/filter.njk",
         "{{ samples | renderedContent }}\n",
         |cfg| {
-            cfg.add_filter("renderedContent", |_ctx, items, _args| Ok(items.get_index(0).get("templateContent")));
+            cfg.add_filter("renderedContent", |_ctx, items, _args| {
+                Ok(items.get_index(0).get("templateContent"))
+            });
             Ok(())
         },
     );
@@ -1164,7 +1436,10 @@ fn issue_413_weird_date_format() {
     );
 }
 
-fn custom_front_matter_template(name: &str, options: &'static str) -> Arc<twelvety::template::Template> {
+fn custom_front_matter_template(
+    name: &str,
+    options: &'static str,
+) -> Arc<twelvety::template::Template> {
     let key = format!("custom-frontmatter/{name}");
     get_new_template(
         &format!("./test/stubs/{key}"),
@@ -1189,17 +1464,26 @@ fn custom_front_matter_parsing_options() {
     assert_eq!(fm.excerpt.as_deref().unwrap().trim(), "This is an excerpt.");
     assert_eq!(fm.content.trim(), "This is an excerpt.\nThis is content.");
     let data = tmpl.get_data().unwrap();
-    assert_eq!(data.get("page").get("excerpt").to_output_string().trim(), "This is an excerpt.");
+    assert_eq!(
+        data.get("page").get("excerpt").to_output_string().trim(),
+        "This is an excerpt."
+    );
 }
 
 #[test]
 fn custom_front_matter_parsing_options_using_alias() {
-    let tmpl = custom_front_matter_template("template.njk", r#"{"excerpt": true, "excerpt_alias": "my_excerpt"}"#);
+    let tmpl = custom_front_matter_template(
+        "template.njk",
+        r#"{"excerpt": true, "excerpt_alias": "my_excerpt"}"#,
+    );
     let fm = tmpl.content.read().unwrap();
     assert_eq!(fm.data.get("front").as_str(), Some("hello"));
     assert_eq!(fm.content.trim(), "This is an excerpt.\nThis is content.");
     let data = tmpl.get_data().unwrap();
-    assert_eq!(data.get("my_excerpt").to_output_string().trim(), "This is an excerpt.");
+    assert_eq!(
+        data.get("my_excerpt").to_output_string().trim(),
+        "This is an excerpt."
+    );
 }
 
 #[test]
@@ -1210,19 +1494,28 @@ fn custom_front_matter_parsing_options_no_newline_before_separator() {
     assert_eq!(fm.excerpt.as_deref().unwrap().trim(), "This is an excerpt.");
     assert_eq!(fm.content.trim(), "This is an excerpt.\nThis is content.");
     let data = tmpl.get_data().unwrap();
-    assert_eq!(data.get("page").get("excerpt").to_output_string().trim(), "This is an excerpt.");
+    assert_eq!(
+        data.get("page").get("excerpt").to_output_string().trim(),
+        "This is an excerpt."
+    );
 }
 
 #[test]
 fn custom_front_matter_parsing_options_no_newline_after_separator() {
     let tmpl = custom_front_matter_template("template-newline3.njk", r#"{"excerpt": true}"#);
-    assert_eq!(tmpl.content.read().unwrap().content.trim(), "This is an excerpt.\nThis is content.");
+    assert_eq!(
+        tmpl.content.read().unwrap().content.trim(),
+        "This is an excerpt.\nThis is content."
+    );
 }
 
 #[test]
 fn custom_front_matter_parsing_options_no_newlines_around_separator() {
     let tmpl = custom_front_matter_template("template-newline2.njk", r#"{"excerpt": true}"#);
-    assert_eq!(tmpl.content.read().unwrap().content.trim(), "This is an excerpt.This is content.");
+    assert_eq!(
+        tmpl.content.read().unwrap().content.trim(),
+        "This is an excerpt.This is content."
+    );
 }
 
 #[test]
@@ -1236,7 +1529,10 @@ fn custom_front_matter_parsing_options_html_comment_separator() {
     assert_eq!(fm.excerpt.as_deref().unwrap().trim(), "This is an excerpt.");
     assert_eq!(fm.content.trim(), "This is an excerpt.\nThis is content.");
     let data = tmpl.get_data().unwrap();
-    assert_eq!(data.get("page").get("excerpt").to_output_string().trim(), "This is an excerpt.");
+    assert_eq!(
+        data.get("page").get("excerpt").to_output_string().trim(),
+        "This is an excerpt."
+    );
 }
 
 #[test]
@@ -1245,7 +1541,10 @@ fn custom_front_matter_parsing_options_using_toml() {
     let fm = tmpl.content.read().unwrap();
     assert_eq!(fm.data, json(r#"{"front": "hello"}"#));
     assert_eq!(fm.content.trim(), "This is content.");
-    assert_eq!(tmpl.get_data().unwrap().get("front").as_str(), Some("hello"));
+    assert_eq!(
+        tmpl.get_data().unwrap().get("front").as_str(),
+        Some("hello")
+    );
 }
 
 #[test]
@@ -1254,7 +1553,10 @@ fn global_variable_with_dashes_issue_567_liquid() {
         "./test/stubs/global-dash-variable.liquid",
         "./test/stubs/",
         "./dist",
-        &[("global-dash-variable.liquid", "---\nis-it-tasty: Yes\n---\n{{ is-it-tasty }}")],
+        &[(
+            "global-dash-variable.liquid",
+            "---\nis-it-tasty: Yes\n---\n{{ is-it-tasty }}",
+        )],
     );
     let data = tmpl.get_data().unwrap();
     assert_eq!(data.get("is-it-tasty").as_str(), Some("Yes"));
@@ -1269,13 +1571,22 @@ fn issue_446_layout_has_a_permalink_with_a_different_template_language() {
         "./test/stubs-virtual-nowrite/",
         "dist",
         &[
-            ("test.md", "---\nlayout: test.njk\ntemplateEngineOverride: md\n---\n\n# Title\n"),
-            ("_includes/test.njk", "---\npermalink: \"/{{ page.fileSlug }}/\"\n---\n{{ content }}"),
+            (
+                "test.md",
+                "---\nlayout: test.njk\ntemplateEngineOverride: md\n---\n\n# Title\n",
+            ),
+            (
+                "_includes/test.njk",
+                "---\npermalink: \"/{{ page.fileSlug }}/\"\n---\n{{ content }}",
+            ),
         ],
     );
     let pages = rendered_templates(&tmpl).unwrap();
     let data = pages[0].data();
-    assert_eq!(data.get("permalink").as_str(), Some("/{{ page.fileSlug }}/"));
+    assert_eq!(
+        data.get("permalink").as_str(),
+        Some("/{{ page.fileSlug }}/")
+    );
     assert_eq!(data.get("page").get("url").as_str(), Some("/test/"));
 }
 
@@ -1292,7 +1603,9 @@ fn get_layout_chain() {
         ],
     );
     let data = tmpl.get_data().unwrap();
-    let layout = tmpl.get_layout(data.get("layout").as_str().unwrap()).unwrap();
+    let layout = tmpl
+        .get_layout(data.get("layout").as_str().unwrap())
+        .unwrap();
     assert_eq!(
         layout.get_layout_chain().unwrap(),
         [
@@ -1313,7 +1626,10 @@ fn engine_singletons() {
     .unwrap();
     let tmpl1 = template_with_context("./test/stubs-virtual-nowrite/first.njk", &ctx);
     let tmpl2 = template_with_context("./test/stubs-virtual-nowrite/second.njk", &ctx);
-    assert!(Arc::ptr_eq(&tmpl1.content.engine().unwrap(), &tmpl2.content.engine().unwrap()));
+    assert!(Arc::ptr_eq(
+        &tmpl1.content.engine().unwrap(),
+        &tmpl2.content.engine().unwrap()
+    ));
 }
 
 #[test]
@@ -1328,9 +1644,14 @@ fn permalink_object_with_build() {
         )],
     );
     let data = tmpl.get_data().unwrap();
-    assert_eq!(raw_output_path(&tmpl, &data).as_deref(), Some("/url/index.html"));
+    assert_eq!(
+        raw_output_path(&tmpl, &data).as_deref(),
+        Some("/url/index.html")
+    );
     assert_eq!(output_href(&tmpl, &data).as_str(), Some("/url/"));
-    let loc = tmpl.get_output_locations(&json(r#"{"permalink":{"build":false}}"#), "").unwrap();
+    let loc = tmpl
+        .get_output_locations(&json(r#"{"permalink":{"build":false}}"#), "")
+        .unwrap();
     assert_eq!(loc.raw_path, None);
 }
 
@@ -1343,7 +1664,10 @@ fn permalink_object_without_build_throws() {
         "./test/stubs/permalink-empty-object/empty-object.md",
         "./test/stubs/",
         "./test/stubs/_site",
-        &[("permalink-empty-object/empty-object.md", EMPTY_OBJECT_PERMALINK)],
+        &[(
+            "permalink-empty-object/empty-object.md",
+            EMPTY_OBJECT_PERMALINK,
+        )],
     );
     let err = tmpl
         .get_output_locations(&json(r#"{"permalink":{"someotherkey":"/build/"}}"#), "")
@@ -1358,12 +1682,21 @@ fn permalink_is_an_empty_object_inherit_default_behavior() {
         "./test/stubs/permalink-empty-object/empty-object.md",
         "./test/stubs/",
         "./test/stubs/_site",
-        &[("permalink-empty-object/empty-object.md", EMPTY_OBJECT_PERMALINK)],
+        &[(
+            "permalink-empty-object/empty-object.md",
+            EMPTY_OBJECT_PERMALINK,
+        )],
     );
     let data = tmpl.get_data().unwrap();
     let loc = tmpl.get_output_locations(&data, "").unwrap();
-    assert_eq!(loc.href.as_str(), Some("/permalink-empty-object/empty-object/"));
-    assert_eq!(loc.raw_path.as_deref(), Some("permalink-empty-object/empty-object/index.html"));
+    assert_eq!(
+        loc.href.as_str(),
+        Some("/permalink-empty-object/empty-object/")
+    );
+    assert_eq!(
+        loc.raw_path.as_deref(),
+        Some("permalink-empty-object/empty-object/index.html")
+    );
     assert_eq!(
         loc.path.as_str(),
         Some("./test/stubs/_site/permalink-empty-object/empty-object/index.html")
@@ -1397,7 +1730,12 @@ fn twelvety_computed_returns_permalink_object_issue_1898() {
     let mut permalink = Value::object();
     permalink.set(
         "build",
-        Value::function(|args| Ok(Value::str(format!("/i18n/{}/", args[0].get("lang").to_js_string())))),
+        Value::function(|args| {
+            Ok(Value::str(format!(
+                "/i18n/{}/",
+                args[0].get("lang").to_js_string()
+            )))
+        }),
     );
     let mut computed = Value::object();
     computed.set("permalink", permalink);
@@ -1413,7 +1751,10 @@ fn twelvety_computed_returns_nested_permalink_object_issue_1898() {
         "permalink",
         Value::function(|args| {
             let mut o = Value::object();
-            o.set("build", Value::str(format!("/i18n/{}/", args[0].get("lang").to_js_string())));
+            o.set(
+                "build",
+                Value::str(format!("/i18n/{}/", args[0].get("lang").to_js_string())),
+            );
             Ok(o)
         }),
     );
@@ -1431,7 +1772,12 @@ fn twelvety_computed_returns_permalink_object_using_permalink_string_issue_1898(
             let mut o = Value::object();
             o.set(
                 "build",
-                Value::str(args[0].get("permalink").to_js_string().replace("{{lang}}", "en")),
+                Value::str(
+                    args[0]
+                        .get("permalink")
+                        .to_js_string()
+                        .replace("{{lang}}", "en"),
+                ),
             );
             Ok(o)
         }),
@@ -1468,8 +1814,7 @@ fn error_messaging_returning_literals_from_custom_data_extension() {
     assert_eq!(data.get("str").as_str(), Some("Testing"));
 }
 
-const DATA_CASCADE_DATA_FILE: &str =
-    r#"{"parent": {"child": 2, "datafile": true}, "datafile": true, "tags": ["tagC", "tagD", "tagD"]}"#;
+const DATA_CASCADE_DATA_FILE: &str = r#"{"parent": {"child": 2, "datafile": true}, "datafile": true, "tags": ["tagC", "tagD", "tagD"]}"#;
 
 #[test]
 fn data_cascade_deep_merge() {
@@ -1479,15 +1824,30 @@ fn data_cascade_deep_merge() {
         &[("template.data.json", DATA_CASCADE_DATA_FILE)],
     );
     let input = dir.trim_end_matches("stubs/data-cascade");
-    let data = get_new_template(&format!("{dir}/template.njk"), TestOptions::new(input, "./dist"))
-        .unwrap()
-        .get_data()
-        .unwrap();
+    let data = get_new_template(
+        &format!("{dir}/template.njk"),
+        TestOptions::new(input, "./dist"),
+    )
+    .unwrap()
+    .get_data()
+    .unwrap();
     assert_eq!(
         sorted_keys(&data),
-        ["buildawesome", "datafile", "frontmatter", "page", "parent", "pkg", "tags", "twelvety"]
+        [
+            "buildawesome",
+            "datafile",
+            "frontmatter",
+            "page",
+            "parent",
+            "pkg",
+            "tags",
+            "twelvety"
+        ]
     );
-    assert_eq!(sorted_keys(&data.get("parent")), ["child", "datafile", "frontmatter"]);
+    assert_eq!(
+        sorted_keys(&data.get("parent")),
+        ["child", "datafile", "frontmatter"]
+    );
     assert_eq!(data.get("parent").get("child").as_f64(), Some(-2.0));
 }
 
@@ -1499,10 +1859,13 @@ fn data_cascade_tag_merge_deep_merge_with_deduplication() {
         &[("template.data.json", DATA_CASCADE_DATA_FILE)],
     );
     let input = dir.trim_end_matches("data-cascade");
-    let data = get_new_template(&format!("{dir}/template.njk"), TestOptions::new(input, "./dist"))
-        .unwrap()
-        .get_data()
-        .unwrap();
+    let data = get_new_template(
+        &format!("{dir}/template.njk"),
+        TestOptions::new(input, "./dist"),
+    )
+    .unwrap()
+    .get_data()
+    .unwrap();
     let mut tags = strs(&data.get("tags"));
     tags.sort();
     assert_eq!(tags, ["tagA", "tagB", "tagC", "tagD"]);
@@ -1516,10 +1879,13 @@ fn local_data_inherits_tags_string_deep_merge() {
         &[("component.data.json", r#"{"tags": "tag3"}"#)],
     );
     let input = dir.trim_end_matches("local-data-tags");
-    let data = get_new_template(&format!("{dir}/component.njk"), TestOptions::new(input, "./dist"))
-        .unwrap()
-        .get_data()
-        .unwrap();
+    let data = get_new_template(
+        &format!("{dir}/component.njk"),
+        TestOptions::new(input, "./dist"),
+    )
+    .unwrap()
+    .get_data()
+    .unwrap();
     let mut tags = strs(&data.get("tags"));
     tags.sort();
     assert_eq!(tags, ["tag1", "tag2", "tag3"]);

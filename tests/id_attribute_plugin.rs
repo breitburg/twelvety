@@ -9,12 +9,19 @@ use twelvety::user_config::UserConfig;
 
 use common::{options, to_json};
 
-fn build(templates: &'static [(&'static str, &'static str)], plugin_options: Value) -> anyhow::Result<Vec<PageResult>> {
+fn build(
+    templates: &'static [(&'static str, &'static str)],
+    plugin_options: Value,
+) -> anyhow::Result<Vec<PageResult>> {
     to_json(
         "./test/stubs-virtual/",
         Some("./test/stubs-virtual/_site"),
         options(move |cfg: &mut UserConfig| {
-            cfg.add_plugin("IdAttributePlugin", id_attribute::plugin, plugin_options.clone())?;
+            cfg.add_plugin(
+                "IdAttributePlugin",
+                id_attribute::plugin,
+                plugin_options.clone(),
+            )?;
             for (path, content) in templates {
                 cfg.add_template(path, content, Value::object())?;
             }
@@ -24,7 +31,10 @@ fn build(templates: &'static [(&'static str, &'static str)], plugin_options: Val
 }
 
 fn first_content(templates: &'static [(&'static str, &'static str)]) -> String {
-    build(templates, Value::object()).unwrap()[0].content.trim().to_string()
+    build(templates, Value::object()).unwrap()[0]
+        .content
+        .trim()
+        .to_string()
 }
 
 /// "Using the IdAttribute plugin #3356"
@@ -128,7 +138,10 @@ conflict_test!(
 #[test]
 fn id_attribute_conflicts_two_hard_coded() {
     let err = build(
-        &[("test.html", r#"<h1 id="testing">Testing</h1><h1 id="testing">Testing</h1>"#)],
+        &[(
+            "test.html",
+            r#"<h1 id="testing">Testing</h1><h1 id="testing">Testing</h1>"#,
+        )],
         Value::object(),
     )
     .unwrap_err();
@@ -152,8 +165,14 @@ fn filter_callback_skips() {
     );
     let results = build(
         &[
-            ("test.html", r#"<h1>Testing</h1><h1 id="testing">Testing</h1>"#),
-            ("test-skipped.html", r#"<h1 id="testing">Testing</h1><h1 id="testing">Testing</h1>"#),
+            (
+                "test.html",
+                r#"<h1>Testing</h1><h1 id="testing">Testing</h1>"#,
+            ),
+            (
+                "test-skipped.html",
+                r#"<h1 id="testing">Testing</h1><h1 id="testing">Testing</h1>"#,
+            ),
         ],
         plugin_options,
     )
@@ -167,8 +186,14 @@ fn filter_callback_skips() {
             .trim()
             .to_string()
     };
-    assert_eq!(content("/test.html"), r#"<h1 id="testing-2">Testing</h1><h1 id="testing">Testing</h1>"#);
-    assert_eq!(content("/test-skipped.html"), r#"<h1 id="testing">Testing</h1><h1 id="testing">Testing</h1>"#);
+    assert_eq!(
+        content("/test.html"),
+        r#"<h1 id="testing-2">Testing</h1><h1 id="testing">Testing</h1>"#
+    );
+    assert_eq!(
+        content("/test-skipped.html"),
+        r#"<h1 id="testing">Testing</h1><h1 id="testing">Testing</h1>"#
+    );
 }
 
 conflict_test!(

@@ -10,7 +10,8 @@ fn strings(v: &[&str]) -> Vec<String> {
 }
 
 fn search(fs: &FileSystemSearch, key: &str, glob: &str) -> Vec<String> {
-    fs.search(key, &strings(&[glob]), SearchOptions::default()).unwrap()
+    fs.search(key, &strings(&[glob]), SearchOptions::default())
+        .unwrap()
 }
 
 fn count(fs: &FileSystemSearch) -> usize {
@@ -25,13 +26,19 @@ fn base() {
     let fs = FileSystemSearch::new();
     assert_eq!(count(&fs), 0);
 
-    assert_eq!(search(&fs, "key", TXT), strings(&["./test/file-system-search/file.txt"]));
+    assert_eq!(
+        search(&fs, "key", TXT),
+        strings(&["./test/file-system-search/file.txt"])
+    );
     assert_eq!(count(&fs), 1);
 
     fs.add("./test/file-system-search/virtual-file.txt");
     assert_eq!(
         search(&fs, "key", TXT),
-        strings(&["./test/file-system-search/file.txt", "./test/file-system-search/virtual-file.txt"])
+        strings(&[
+            "./test/file-system-search/file.txt",
+            "./test/file-system-search/virtual-file.txt"
+        ])
     );
     assert_eq!(count(&fs), 1);
 
@@ -49,12 +56,18 @@ fn base() {
     fs.delete("./test/file-system-search/file.txt");
     assert_eq!(
         search(&fs, "key", TXT),
-        strings(&["./test/file-system-search/virtual-file.txt", "./test/file-system-search/another-file.txt"])
+        strings(&[
+            "./test/file-system-search/virtual-file.txt",
+            "./test/file-system-search/another-file.txt"
+        ])
     );
     assert_eq!(count(&fs), 1);
 
     fs.delete("./test/file-system-search/another-file.txt");
-    assert_eq!(search(&fs, "key", TXT), strings(&["./test/file-system-search/virtual-file.txt"]));
+    assert_eq!(
+        search(&fs, "key", TXT),
+        strings(&["./test/file-system-search/virtual-file.txt"])
+    );
     assert_eq!(count(&fs), 1);
 
     fs.delete("./test/file-system-search/virtual-file.txt");
@@ -73,11 +86,17 @@ fn added_paths_use_platform_separators() {
     fs.add("test/file-system-search/native-file.txt");
     assert_eq!(
         search(&fs, "key", TXT),
-        strings(&["./test/file-system-search/file.txt", "./test/file-system-search/native-file.txt"])
+        strings(&[
+            "./test/file-system-search/file.txt",
+            "./test/file-system-search/native-file.txt"
+        ])
     );
 
     fs.delete("./test/file-system-search/file.txt");
-    assert_eq!(search(&fs, "key", TXT), strings(&["./test/file-system-search/native-file.txt"]));
+    assert_eq!(
+        search(&fs, "key", TXT),
+        strings(&["./test/file-system-search/native-file.txt"])
+    );
 }
 
 // "Modifications during an in-flight search are applied": searches are synchronous in the port,
@@ -88,12 +107,18 @@ fn added_paths_use_platform_separators() {
 fn glob_search_seeds_exists_cache_directory_listings() {
     let cache = Arc::new(ExistsCache::new());
     let fs = FileSystemSearch::with_exists_cache(cache.clone());
-    fs.search("templates", &strings(&["./test/_issues/4224/**/*.vZome"]), SearchOptions::default())
-        .unwrap();
+    fs.search(
+        "templates",
+        &strings(&["./test/_issues/4224/**/*.vZome"]),
+        SearchOptions::default(),
+    )
+    .unwrap();
 
     assert!(cache.exists("./test/_issues/4224/sub/sub.JSON"));
     assert_eq!(
-        cache.resolve("./test/_issues/4224/child.12tydata.json").as_deref(),
+        cache
+            .resolve("./test/_issues/4224/child.12tydata.json")
+            .as_deref(),
         Some("./test/_issues/4224/child.12TYDATA.json")
     );
     // Only the folders above the glob’s starting folder are read
@@ -105,7 +130,11 @@ struct TempDir(std::path::PathBuf);
 
 impl TempDir {
     fn new(prefix: &str) -> Self {
-        let path = std::env::temp_dir().join(format!("{prefix}{}-{:?}", std::process::id(), std::thread::current().id()));
+        let path = std::env::temp_dir().join(format!(
+            "{prefix}{}-{:?}",
+            std::process::id(),
+            std::thread::current().id()
+        ));
         let _ = std::fs::remove_dir_all(&path);
         std::fs::create_dir_all(&path).unwrap();
         TempDir(path)
@@ -133,16 +162,22 @@ fn case_collision_dir() -> Option<TempDir> {
 /// "Glob search throws on file names that differ only by case #4224"
 #[test]
 fn glob_search_throws_on_file_names_that_differ_only_by_case_4224() {
-    let Some(dir) = case_collision_dir() else { return };
+    let Some(dir) = case_collision_dir() else {
+        return;
+    };
     let glob = format!("{}/*.md", dir.path().display());
-    let err = FileSystemSearch::new().search("x", &[glob], SearchOptions::default()).unwrap_err();
+    let err = FileSystemSearch::new()
+        .search("x", &[glob], SearchOptions::default())
+        .unwrap_err();
     assert!(err.to_string().contains("differ only by case"), "{err}");
 }
 
 /// "Glob search allows file names that differ only by case with allowCaseCollisions #4224"
 #[test]
 fn glob_search_allows_file_names_that_differ_only_by_case_with_allow_case_collisions_4224() {
-    let Some(dir) = case_collision_dir() else { return };
+    let Some(dir) = case_collision_dir() else {
+        return;
+    };
     let mut cache = ExistsCache::new();
     cache.allow_case_collisions = true;
     let glob = format!("{}/*.md", dir.path().display());
@@ -154,7 +189,10 @@ fn glob_search_allows_file_names_that_differ_only_by_case_with_allow_case_collis
 
 fn negated_options(git_ignore: &[&str]) -> SearchOptions {
     SearchOptions {
-        ignore: strings(&["./test/stubs-4439/site/**", "!./test/stubs-4439/site/events/2018/**"]),
+        ignore: strings(&[
+            "./test/stubs-4439/site/**",
+            "!./test/stubs-4439/site/events/2018/**",
+        ]),
         git_ignore: strings(git_ignore),
     }
 }
@@ -166,7 +204,13 @@ fn negated_ignores_reinclude_files() {
     let globs = strings(&["./test/stubs-4439/**/*.md"]);
     let mut results = fs.search("key", &globs, negated_options(&[])).unwrap();
     results.sort();
-    assert_eq!(results, strings(&["./test/stubs-4439/index.md", "./test/stubs-4439/site/events/2018/b.md"]));
+    assert_eq!(
+        results,
+        strings(&[
+            "./test/stubs-4439/index.md",
+            "./test/stubs-4439/site/events/2018/b.md"
+        ])
+    );
 
     fs.add("./test/stubs-4439/site/events/2018/virtual.md");
     fs.add("./test/stubs-4439/site/other/virtual.md");
@@ -187,7 +231,11 @@ fn negated_ignores_reinclude_files() {
 fn negated_ignores_cant_reinclude_files_in_a_directory_excluded_by_gitignore() {
     let fs = FileSystemSearch::new();
     let results = fs
-        .search("key", &strings(&["./test/stubs-4439/**/*.md"]), negated_options(&["./test/stubs-4439/site/**"]))
+        .search(
+            "key",
+            &strings(&["./test/stubs-4439/**/*.md"]),
+            negated_options(&["./test/stubs-4439/site/**"]),
+        )
         .unwrap();
     assert_eq!(results, strings(&["./test/stubs-4439/index.md"]));
 }

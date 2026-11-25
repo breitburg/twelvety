@@ -23,18 +23,31 @@ impl Pass {
     }
 
     fn files(&self, glob: &str) -> Vec<String> {
-        self.pass.get_files(&self.tc.directories, &self.search, glob).unwrap()
+        self.pass
+            .get_files(&self.tc.directories, &self.search, glob)
+            .unwrap()
     }
 
     fn file_map(&self) -> Vec<(String, String)> {
         let config = self.tc.get_config();
         self.pass
-            .get_file_map(&self.tc.directories, &self.search, &self.tc.exists_cache, &config, &quiet_logger())
+            .get_file_map(
+                &self.tc.directories,
+                &self.search,
+                &self.tc.exists_cache,
+                &config,
+                &quiet_logger(),
+            )
             .unwrap()
     }
 }
 
-fn get_template_passthrough_with(input_path: &str, output_path: Value, output_dir: &str, input_dir: &str) -> Pass {
+fn get_template_passthrough_with(
+    input_path: &str,
+    output_path: Value,
+    output_dir: &str,
+    input_dir: &str,
+) -> Pass {
     let mut tc = TemplateConfig::new(Some(""));
     tc.set_logger(quiet_logger());
     let mut dirs = ProjectDirectories::new();
@@ -165,7 +178,11 @@ fn full_input_file_path_and_deep_input_path() {
         ("./test/views/avatar.png", "_site", "test/views/"),
     ] {
         let tp = get_template_passthrough(input_path, output_dir, input_dir);
-        assert_eq!(tp.output_path(), "_site/avatar.png", "{input_path} {output_dir} {input_dir}");
+        assert_eq!(
+            tp.output_path(),
+            "_site/avatar.png",
+            "{input_path} {output_dir} {input_dir}"
+        );
     }
 }
 
@@ -201,14 +218,22 @@ fn get_files_where_not_glob_and_directory_does_not_exist() {
 /// "getFileMap returns [] for a missing non-glob source (no glob fall-through, no flatten)"
 #[test]
 fn get_file_map_returns_empty_for_a_missing_non_glob_source() {
-    let pass = get_template_passthrough("./test/stubs/template-passthrough/static/not-exists/", "_site", "test/stubs");
+    let pass = get_template_passthrough(
+        "./test/stubs/template-passthrough/static/not-exists/",
+        "_site",
+        "test/stubs",
+    );
     assert_eq!(pass.file_map(), vec![]);
 }
 
 /// "getFileMap returns [] when a glob source matches nothing"
 #[test]
 fn get_file_map_returns_empty_when_a_glob_source_matches_nothing() {
-    let pass = get_template_passthrough("./test/stubs/template-passthrough/static/not-exists/**", "_site", "test/stubs");
+    let pass = get_template_passthrough(
+        "./test/stubs/template-passthrough/static/not-exists/**",
+        "_site",
+        "test/stubs",
+    );
     assert_eq!(pass.file_map(), vec![]);
 }
 
@@ -228,8 +253,14 @@ fn get_files_with_glob() {
     assert_eq!(files, expected);
 
     let find = |suffix: &str| files.iter().find(|f| f.ends_with(suffix)).unwrap().clone();
-    assert_eq!(pass.output_path_for(&find("test.css")), "_site/test/stubs/template-passthrough/static/test.css");
-    assert_eq!(pass.output_path_for(&find("test.js")), "_site/test/stubs/template-passthrough/static/test.js");
+    assert_eq!(
+        pass.output_path_for(&find("test.css")),
+        "_site/test/stubs/template-passthrough/static/test.css"
+    );
+    assert_eq!(
+        pass.output_path_for(&find("test.js")),
+        "_site/test/stubs/template-passthrough/static/test.js"
+    );
     assert_eq!(
         pass.output_path_for(&find("test-nested.css")),
         "_site/test/stubs/template-passthrough/static/nested/test-nested.css"
@@ -242,8 +273,14 @@ fn get_files_with_glob_2() {
     let input_path = "./test/stubs/template-passthrough/static/**/*.js";
     let pass = get_template_passthrough(input_path, "_site", "test/views");
     let files = pass.files(input_path);
-    assert_eq!(files, vec!["./test/stubs/template-passthrough/static/test.js".to_string()]);
-    assert_eq!(pass.output_path_for(&files[0]), "_site/test/stubs/template-passthrough/static/test.js");
+    assert_eq!(
+        files,
+        vec!["./test/stubs/template-passthrough/static/test.js".to_string()]
+    );
+    assert_eq!(
+        pass.output_path_for(&files[0]),
+        "_site/test/stubs/template-passthrough/static/test.js"
+    );
 }
 
 /// "Directory where outputPath is true"
@@ -264,9 +301,17 @@ fn nested_directory_where_output_path_is_remapped() {
 /// "Glob pattern"
 #[test]
 fn glob_pattern() {
-    let pass = mapped("./test/stubs/template-passthrough/static/*.js", "./directory/", "_site", "test/stubs");
+    let pass = mapped(
+        "./test/stubs/template-passthrough/static/*.js",
+        "./directory/",
+        "_site",
+        "test/stubs",
+    );
     assert_eq!(pass.pass.output_path, Value::str("./directory/"));
-    assert_eq!(pass.output_path_for("./test/stubs/template-passthrough/static/test.js"), "_site/directory/test.js");
+    assert_eq!(
+        pass.output_path_for("./test/stubs/template-passthrough/static/test.js"),
+        "_site/directory/test.js"
+    );
 }
 
 /// "Output paths match with different templatePassthrough methods"
@@ -275,7 +320,9 @@ fn output_paths_match_with_different_template_passthrough_methods() {
     let pass1 = mapped("./static/nested", "./test", "_site", "test/stubs");
     let pass2 = get_template_passthrough("avatar.png", "_site/test", ".");
     assert_eq!(
-        pass1.pass.get_output_path_for_glob_file(&pass1.tc.directories, "avatar.png"),
+        pass1
+            .pass
+            .get_output_path_for_glob_file(&pass1.tc.directories, "avatar.png"),
         pass2.output_path()
     );
 }
@@ -283,7 +330,12 @@ fn output_paths_match_with_different_template_passthrough_methods() {
 /// "File renamed"
 #[test]
 fn file_renamed() {
-    let pass = mapped("./test/stubs/template-passthrough/static/test.js", "./rename.js", "_site", "test/stubs");
+    let pass = mapped(
+        "./test/stubs/template-passthrough/static/test.js",
+        "./rename.js",
+        "_site",
+        "test/stubs",
+    );
     assert_eq!(pass.output_path(), "_site/rename.js");
 }
 

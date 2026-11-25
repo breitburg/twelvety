@@ -30,11 +30,17 @@ fn read_events(path: &str) -> Vec<Value> {
 }
 
 fn types(events: &[Value]) -> Vec<String> {
-    events.iter().map(|e| e.get("type").to_output_string()).collect()
+    events
+        .iter()
+        .map(|e| e.get("type").to_output_string())
+        .collect()
 }
 
 fn find<'a>(events: &'a [Value], kind: &str) -> &'a Value {
-    events.iter().find(|e| e.get("type").as_str() == Some(kind)).unwrap_or_else(|| panic!("no {kind} event"))
+    events
+        .iter()
+        .find(|e| e.get("type").as_str() == Some(kind))
+        .unwrap_or_else(|| panic!("no {kind} event"))
 }
 
 /// Removes a directory when the test ends
@@ -51,19 +57,29 @@ impl Drop for Cleanup {
 }
 
 fn strip_ansi(s: &str) -> String {
-    regex::Regex::new("\x1b\\[[0-9;]*m").unwrap().replace_all(s, "").to_string()
+    regex::Regex::new("\x1b\\[[0-9;]*m")
+        .unwrap()
+        .replace_all(s, "")
+        .to_string()
 }
 
 /// "Test command line exit code success"
 #[test]
 fn exit_code_success() {
-    assert!(run("--input=test/stubs/exitCode_success --dryrun").status.success());
+    assert!(
+        run("--input=test/stubs/exitCode_success --dryrun")
+            .status
+            .success()
+    );
 }
 
 /// "Test command line exit code for template error"
 #[test]
 fn exit_code_for_template_error() {
-    assert_eq!(run("--input=test/stubs/exitCode --dryrun").status.code(), Some(1));
+    assert_eq!(
+        run("--input=test/stubs/exitCode --dryrun").status.code(),
+        Some(1)
+    );
 }
 
 // "Test command line exit code for global data error": the fixture is a JavaScript data file,
@@ -90,7 +106,13 @@ fn data_should_not_process_in_version() {
 fn version_prints_the_package_name_before_the_version() {
     let o = run("--version");
     assert!(o.status.success());
-    assert!(regex::Regex::new(r"^twelvety \d+\.\d+\.\d+\S*\n$").unwrap().is_match(&stdout(&o)), "{}", stdout(&o));
+    assert!(
+        regex::Regex::new(r"^twelvety \d+\.\d+\.\d+\S*\n$")
+            .unwrap()
+            .is_match(&stdout(&o)),
+        "{}",
+        stdout(&o)
+    );
 }
 
 /// "Test command line --events-file writes build.end on success"
@@ -108,7 +130,11 @@ fn events_file_writes_build_end_on_success() {
     let end = find(&events, "build.end");
     assert_eq!(start.get("v"), Value::Number(1.0));
     let uuid = regex::Regex::new(r"^[\da-f]{8}(-[\da-f]{4}){3}-[\da-f]{12}$").unwrap();
-    assert!(uuid.is_match(&start.get("id").to_output_string()), "{:?}", start.get("id"));
+    assert!(
+        uuid.is_match(&start.get("id").to_output_string()),
+        "{:?}",
+        start.get("id")
+    );
     assert_eq!(end.get("id"), start.get("id"));
     assert_eq!(end.get("ok"), Value::Bool(true));
     let duration = end.get("durationMs").as_f64().unwrap();
@@ -118,7 +144,11 @@ fn events_file_writes_build_end_on_success() {
     assert_eq!(pages[0].get("url"), Value::str("/"));
     assert!(pages[0].get("inputPath").as_str().is_some());
     assert!(pages[0].get("content").is_undefined());
-    assert!(strip_ansi(&stdout(&o)).contains("Wrote 1 file"), "{}", stdout(&o));
+    assert!(
+        strip_ansi(&stdout(&o)).contains("Wrote 1 file"),
+        "{}",
+        stdout(&o)
+    );
     assert!(!stdout(&o).contains(r#"{"v":1"#));
 }
 
@@ -130,10 +160,15 @@ fn events_file_writes_build_end_on_success() {
 fn events_file_writes_an_empty_passthrough_map_without_passthrough_copy() {
     let _cleanup = Cleanup("test/stubs/events-file-ok/_site/no-passthrough");
     let events_file = "test/stubs/events-file-ok/_site/no-passthrough/.events.ndjson";
-    let o = run(&format!("--input=test/stubs/events-file-ok --formats=md --events-file={events_file} --dryrun"));
+    let o = run(&format!(
+        "--input=test/stubs/events-file-ok --formats=md --events-file={events_file} --dryrun"
+    ));
     assert!(o.status.success(), "{}", stderr(&o));
     let events = read_events(events_file);
-    let passthrough: Vec<&Value> = events.iter().filter(|e| e.get("type").as_str() == Some("passthrough")).collect();
+    let passthrough: Vec<&Value> = events
+        .iter()
+        .filter(|e| e.get("type").as_str() == Some("passthrough"))
+        .collect();
     assert_eq!(passthrough.len(), 1);
     assert_eq!(passthrough[0].get("map"), Value::object());
 }
@@ -143,7 +178,9 @@ fn events_file_writes_an_empty_passthrough_map_without_passthrough_copy() {
 fn events_file_works_with_to_json() {
     let _cleanup = Cleanup("test/stubs/events-file-ok/_site/json");
     let events_file = "test/stubs/events-file-ok/_site/json/.events.ndjson";
-    let o = run(&format!("--input=test/stubs/events-file-ok --formats=md --to=json --events-file={events_file}"));
+    let o = run(&format!(
+        "--input=test/stubs/events-file-ok --formats=md --to=json --events-file={events_file}"
+    ));
     assert!(o.status.success(), "{}", stderr(&o));
     let json: serde_json::Value = serde_json::from_str(&stdout(&o)).unwrap();
     assert_eq!(json[0]["url"], "/");
@@ -175,7 +212,9 @@ fn events_file_rejects_repeated_flags() {
 fn events_file_writes_build_error_for_a_template_error() {
     let _cleanup = Cleanup("test/stubs/events-file-broken/_site");
     let events_file = "test/stubs/events-file-broken/_site/template-error/.events.ndjson";
-    let o = run(&format!("--input=test/stubs/events-file-broken --formats=njk --events-file={events_file} --dryrun"));
+    let o = run(&format!(
+        "--input=test/stubs/events-file-broken --formats=njk --events-file={events_file} --dryrun"
+    ));
     assert_eq!(o.status.code(), Some(1));
     let events = read_events(events_file);
     let build_error = find(&events, "build.error");
@@ -193,7 +232,9 @@ fn events_file_writes_build_error_for_a_template_error() {
 fn events_file_writes_build_error_for_a_data_file_error() {
     let _cleanup = Cleanup("test/stubs/events-file-broken-data/_site");
     let events_file = "test/stubs/events-file-broken-data/_site/data-file-error/.events.ndjson";
-    let o = run(&format!("--input=test/stubs/events-file-broken-data --formats=md --events-file={events_file} --dryrun"));
+    let o = run(&format!(
+        "--input=test/stubs/events-file-broken-data --formats=md --events-file={events_file} --dryrun"
+    ));
     assert_eq!(o.status.code(), Some(1));
     let events = read_events(events_file);
     let build_error = find(&events, "build.error");

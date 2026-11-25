@@ -79,7 +79,10 @@ pub fn get_context(options: TestOptions) -> Result<Arc<BuildContext>> {
     let mut env = Map::new();
     env.insert("source".into(), Value::str("script"));
     env.insert("runMode".into(), Value::str("build"));
-    env.insert("root".into(), Value::str(crate::util::template_path::get_working_dir()));
+    env.insert(
+        "root".into(),
+        Value::str(crate::util::template_path::get_working_dir()),
+    );
     let (ctx, _) = BuildContext::create(&tc, logger, "build", Value::from_map(env))?;
     Ok(ctx)
 }
@@ -106,7 +109,10 @@ pub struct RenderedPage {
 }
 
 /// Build a `TemplateMap` from templates and process it (`templateMap.cache()`)
-pub fn get_template_map(templates: &[Arc<Template>], ctx: &Arc<BuildContext>) -> Result<TemplateMap> {
+pub fn get_template_map(
+    templates: &[Arc<Template>],
+    ctx: &Arc<BuildContext>,
+) -> Result<TemplateMap> {
     let mut map = TemplateMap::new(ctx.clone());
     for t in templates {
         map.add(t.clone())?;
@@ -116,7 +122,10 @@ pub fn get_template_map(templates: &[Arc<Template>], ctx: &Arc<BuildContext>) ->
 }
 
 /// `getRenderedTemplates(template, data)`: render all pages with layouts and transforms
-pub fn render_templates(templates: &[Arc<Template>], ctx: &Arc<BuildContext>) -> Result<Vec<RenderedPage>> {
+pub fn render_templates(
+    templates: &[Arc<Template>],
+    ctx: &Arc<BuildContext>,
+) -> Result<Vec<RenderedPage>> {
     let map = get_template_map(templates, ctx)?;
     let mut out = vec![];
     for entry in &map.map {
@@ -155,7 +164,12 @@ pub fn render_file(path: &str, options: TestOptions) -> Result<String> {
 }
 
 /// `getNewTemplateRender(name, inputDir)` + `getCompiledTemplate(str)` + render
-pub fn render_string(engine_or_path: &str, src: &str, data: Value, options: TestOptions) -> Result<String> {
+pub fn render_string(
+    engine_or_path: &str,
+    src: &str,
+    data: Value,
+    options: TestOptions,
+) -> Result<String> {
     let ctx = get_context(options)?;
     let tr = TemplateRender::new(ctx, engine_or_path)?;
     let f = tr.get_compiled_template(src, false, None)?;

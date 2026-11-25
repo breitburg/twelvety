@@ -41,9 +41,19 @@ impl PatternSet {
         let mut out: Vec<usize> = self
             .globs
             .as_ref()
-            .map(|g| g.matches(path).into_iter().map(|i| self.glob_indexes[i]).collect())
+            .map(|g| {
+                g.matches(path)
+                    .into_iter()
+                    .map(|i| self.glob_indexes[i])
+                    .collect()
+            })
             .unwrap_or_default();
-        out.extend(self.extglobs.iter().filter(|(_, e)| e.is_match(path)).map(|(i, _)| *i));
+        out.extend(
+            self.extglobs
+                .iter()
+                .filter(|(_, e)| e.is_match(path))
+                .map(|(i, _)| *i),
+        );
         out.sort_unstable();
         out
     }
@@ -77,16 +87,19 @@ pub fn build_glob_set(patterns: &[String]) -> PatternSet {
 
 /// The pattern a negated glob (`!pattern`, but not an extglob like `!(a|b)`) excludes
 pub fn strip_negation(pattern: &str) -> Option<&str> {
-    pattern.strip_prefix('!').filter(|_| !pattern.starts_with("!("))
+    pattern
+        .strip_prefix('!')
+        .filter(|_| !pattern.starts_with("!("))
 }
 
 /// Whether a pattern uses extglob syntax (`@(…)`, `?(…)`, `+(…)`, `*(…)`, `!(…)`)
 pub fn has_extglob(pattern: &str) -> bool {
     let chars: Vec<char> = pattern.chars().collect();
-    chars
-        .windows(2)
-        .enumerate()
-        .any(|(i, w)| matches!(w[0], '@' | '?' | '+' | '*' | '!') && w[1] == '(' && (i == 0 || chars[i - 1] != '\\'))
+    chars.windows(2).enumerate().any(|(i, w)| {
+        matches!(w[0], '@' | '?' | '+' | '*' | '!')
+            && w[1] == '('
+            && (i == 0 || chars[i - 1] != '\\')
+    })
 }
 
 #[derive(Clone, Debug)]
@@ -100,7 +113,10 @@ enum Node {
     GlobstarSlash,
     /// `/**` at the end of a pattern (or a lone `**`): anything below
     GlobstarEnd,
-    Class { negated: bool, ranges: Vec<(char, char)> },
+    Class {
+        negated: bool,
+        ranges: Vec<(char, char)>,
+    },
     /// `{a,b}` or `@(a|b)`
     Alt(Vec<Vec<Node>>),
     /// `kind(a|b)` with kind one of `?`, `+`, `*`, `!`
@@ -140,27 +156,29 @@ impl Parser {
                 '@' | '?' | '+' | '*' | '!' if self.peek(1) == Some('(') => {
                     self.pos += 2;
                     let alts = self.alternatives('|', ')')?;
-                    nodes.push(if c == '@' { Node::Alt(alts) } else { Node::Ext(c, alts) });
+                    nodes.push(if c == '@' {
+                        Node::Alt(alts)
+                    } else {
+                        Node::Ext(c, alts)
+                    });
                 }
-                '*' if self.peek(1) == Some('*') && at_segment_start => {
-                    match self.peek(2) {
-                        Some('/') => {
-                            self.pos += 3;
-                            nodes.push(Node::GlobstarSlash);
-                        }
-                        None => {
-                            self.pos += 2;
-                            if matches!(nodes.last(), Some(Node::Lit('/'))) {
-                                nodes.pop();
-                            }
-                            nodes.push(Node::GlobstarEnd);
-                        }
-                        _ => {
-                            self.pos += 2;
-                            nodes.push(Node::Star);
-                        }
+                '*' if self.peek(1) == Some('*') && at_segment_start => match self.peek(2) {
+                    Some('/') => {
+                        self.pos += 3;
+                        nodes.push(Node::GlobstarSlash);
                     }
-                }
+                    None => {
+                        self.pos += 2;
+                        if matches!(nodes.last(), Some(Node::Lit('/'))) {
+                            nodes.pop();
+                        }
+                        nodes.push(Node::GlobstarEnd);
+                    }
+                    _ => {
+                        self.pos += 2;
+                        nodes.push(Node::Star);
+                    }
+                },
                 '*' => {
                     self.pos += 1;
                     if !matches!(nodes.last(), Some(Node::Star)) {
@@ -228,7 +246,11 @@ impl Parser {
 }
 
 fn segment_end(s: &[char], i: usize) -> usize {
-    s[i..].iter().position(|c| *c == '/').map(|p| i + p).unwrap_or(s.len())
+    s[i..]
+        .iter()
+        .position(|c| *c == '/')
+        .map(|p| i + p)
+        .unwrap_or(s.len())
 }
 
 fn concat(a: &[Node], b: &[Node]) -> Vec<Node> {
@@ -237,7 +259,10 @@ fn concat(a: &[Node], b: &[Node]) -> Vec<Node> {
 
 impl ExtGlob {
     pub fn new(pattern: &str) -> Option<Self> {
-        let mut parser = Parser { chars: pattern.chars().collect(), pos: 0 };
+        let mut parser = Parser {
+            chars: pattern.chars().collect(),
+            pos: 0,
+        };
         let nodes = parser.sequence(&[])?;
         (parser.pos == parser.chars.len()).then_some(ExtGlob { nodes })
     }
@@ -257,12 +282,15 @@ fn match_nodes(nodes: &[Node], s: &[char], i: usize) -> bool {
         Node::Any => s.get(i).is_some_and(|c| *c != '/') && match_nodes(rest, s, i + 1),
         Node::Star => (i..=segment_end(s, i)).any(|j| match_nodes(rest, s, j)),
         Node::GlobstarSlash => {
-            match_nodes(rest, s, i) || (i..s.len()).any(|j| s[j] == '/' && match_nodes(rest, s, j + 1))
+            match_nodes(rest, s, i)
+                || (i..s.len()).any(|j| s[j] == '/' && match_nodes(rest, s, j + 1))
         }
         Node::GlobstarEnd => i == s.len() || i == 0 || s[i] == '/',
-        Node::Class { negated, ranges } => s.get(i).is_some_and(|c| {
-            *c != '/' && ranges.iter().any(|(a, b)| a <= c && c <= b) != *negated
-        }) && match_nodes(rest, s, i + 1),
+        Node::Class { negated, ranges } => {
+            s.get(i).is_some_and(|c| {
+                *c != '/' && ranges.iter().any(|(a, b)| a <= c && c <= b) != *negated
+            }) && match_nodes(rest, s, i + 1)
+        }
         Node::Alt(alts) => alts.iter().any(|alt| match_nodes(&concat(alt, rest), s, i)),
         Node::Ext('?', alts) => {
             match_nodes(rest, s, i) || alts.iter().any(|alt| match_nodes(&concat(alt, rest), s, i))
@@ -270,14 +298,19 @@ fn match_nodes(nodes: &[Node], s: &[char], i: usize) -> bool {
         Node::Ext('+', alts) => {
             let repeat = Node::Ext('*', alts.clone());
             alts.iter().any(|alt| {
-                !alt.is_empty() && match_nodes(&concat(alt, &concat(std::slice::from_ref(&repeat), rest)), s, i)
+                !alt.is_empty()
+                    && match_nodes(
+                        &concat(alt, &concat(std::slice::from_ref(&repeat), rest)),
+                        s,
+                        i,
+                    )
             })
         }
         Node::Ext('*', alts) => {
             match_nodes(rest, s, i)
-                || alts.iter().any(|alt| {
-                    !alt.is_empty() && match_nodes(&concat(alt, nodes), s, i)
-                })
+                || alts
+                    .iter()
+                    .any(|alt| !alt.is_empty() && match_nodes(&concat(alt, nodes), s, i))
         }
         Node::Ext(_, alts) => {
             // `!(…)`: anything within the segment that doesn’t match the alternatives. Like
@@ -285,13 +318,12 @@ fn match_nodes(nodes: &[Node], s: &[char], i: usize) -> bool {
             // at this position at all (`!(index)*.md` doesn’t match `index2.md`).
             let end = segment_end(s, i);
             if rest.is_empty() {
-                return end == s.len()
-                    && !alts.iter().any(|alt| match_nodes(alt, &s[..end], i));
+                return end == s.len() && !alts.iter().any(|alt| match_nodes(alt, &s[..end], i));
             }
             let segment = &s[..end];
-            let blocked = alts.iter().any(|alt| {
-                (i..=end).any(|j| match_nodes(alt, &segment[..j], i))
-            });
+            let blocked = alts
+                .iter()
+                .any(|alt| (i..=end).any(|j| match_nodes(alt, &segment[..j], i)));
             !blocked && (i..=end).any(|j| match_nodes(rest, s, j))
         }
     }
@@ -312,7 +344,8 @@ pub fn is_glob_match(filepath: &str, globs: &[String]) -> bool {
             positives.push(g.clone());
         }
     }
-    build_glob_set(&positives).is_match(&input_path) && !build_glob_set(&negatives).is_match(&input_path)
+    build_glob_set(&positives).is_match(&input_path)
+        && !build_glob_set(&negatives).is_match(&input_path)
 }
 
 /// `isDynamicPattern` (picomatch.scan isGlob || negated)
@@ -386,7 +419,8 @@ impl IgnoreMatcher {
             .iter()
             .map(|entry| {
                 let negated = strip_negation(entry).is_some();
-                let glob = template_path::strip_leading_dot_slash(strip_negation(entry).unwrap_or(entry));
+                let glob =
+                    template_path::strip_leading_dot_slash(strip_negation(entry).unwrap_or(entry));
                 IgnoreRule {
                     negated,
                     git: !negated && git.contains(&glob),
@@ -406,11 +440,12 @@ impl IgnoreMatcher {
     }
 
     fn get_last_match(&self, input_path: &str) -> Option<(usize, &IgnoreRule)> {
-        self.rules
-            .iter()
-            .enumerate()
-            .rev()
-            .find(|(_, r)| r.matcher.as_ref().map(|m| m.is_match(input_path)).unwrap_or(false))
+        self.rules.iter().enumerate().rev().find(|(_, r)| {
+            r.matcher
+                .as_ref()
+                .map(|m| m.is_match(input_path))
+                .unwrap_or(false)
+        })
     }
 
     pub fn get_prunable_ignores(&self) -> Vec<String> {
@@ -426,10 +461,10 @@ impl IgnoreMatcher {
         let input_path = template_path::strip_leading_dot_slash(filepath);
         let segments: Vec<&str> = input_path.split('/').collect();
         for depth in 1..segments.len() {
-            if let Some((_, rule)) = self.get_last_match(&segments[..depth].join("/")) {
-                if rule.git {
-                    return true;
-                }
+            if let Some((_, rule)) = self.get_last_match(&segments[..depth].join("/"))
+                && rule.git
+            {
+                return true;
             }
         }
         match self.get_last_match(&input_path) {
@@ -437,8 +472,7 @@ impl IgnoreMatcher {
             Some((_, rule)) if rule.negated => false,
             Some((index, rule)) => {
                 rule.git
-                    || !(is_directory
-                        && self.has_later_negation(index, &input_path.to_lowercase()))
+                    || !(is_directory && self.has_later_negation(index, &input_path.to_lowercase()))
             }
         }
     }

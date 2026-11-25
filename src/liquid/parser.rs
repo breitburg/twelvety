@@ -176,8 +176,9 @@ impl<'a> Parser<'a> {
                 Token::Text(t) => nodes.push(Node::Text(t)),
                 Token::Raw(t) => nodes.push(Node::Raw(t)),
                 Token::Output { content, line } => {
-                    let expr = parse_filtered(&content)
-                        .with_context(|| format!("invalid output {{{{ {content} }}}}, line:{line}"))?;
+                    let expr = parse_filtered(&content).with_context(|| {
+                        format!("invalid output {{{{ {content} }}}}, line:{line}")
+                    })?;
                     nodes.push(Node::Output(expr, line));
                 }
                 Token::Tag { name, args, line } => {
@@ -249,7 +250,10 @@ impl<'a> Parser<'a> {
                 Node::Assign(var, value)
             }
             "capture" => {
-                let var = args.trim().trim_matches(|c| c == '"' || c == '\'').to_string();
+                let var = args
+                    .trim()
+                    .trim_matches(|c| c == '"' || c == '\'')
+                    .to_string();
                 let (body, _, _) = self.expect_block("capture", &["endcapture"])?;
                 Node::Capture(var, body)
             }
@@ -275,7 +279,10 @@ impl<'a> Parser<'a> {
                     shortcodes: self.shortcodes,
                 };
                 let (nodes, _) = sub.parse_until(&[])?;
-                Node::If(vec![(Cond::Value(Expr::Literal(Value::Bool(true))), nodes)], vec![])
+                Node::If(
+                    vec![(Cond::Value(Expr::Literal(Value::Bool(true))), nodes)],
+                    vec![],
+                )
             }
             "if" => {
                 let mut branches = vec![];
@@ -407,7 +414,10 @@ impl<'a> Parser<'a> {
                 Node::Layout(name_part, hash, body)
             }
             "block" => {
-                let block_name = args.trim().trim_matches(|c| c == '"' || c == '\'').to_string();
+                let block_name = args
+                    .trim()
+                    .trim_matches(|c| c == '"' || c == '\'')
+                    .to_string();
                 let (body, _, _) = self.expect_block("block", &["endblock"])?;
                 Node::Block(block_name, body)
             }
@@ -447,6 +457,16 @@ pub struct ExprParser {
     pos: usize,
 }
 
+impl Iterator for ExprParser {
+    type Item = ExprToken;
+
+    fn next(&mut self) -> Option<ExprToken> {
+        let t = self.tokens.get(self.pos).cloned();
+        self.pos += 1;
+        t
+    }
+}
+
 impl ExprParser {
     pub fn new(tokens: Vec<ExprToken>) -> Self {
         Self { tokens, pos: 0 }
@@ -462,12 +482,6 @@ impl ExprParser {
 
     pub fn peek_at(&self, offset: usize) -> Option<&ExprToken> {
         self.tokens.get(self.pos + offset)
-    }
-
-    pub fn next(&mut self) -> Option<ExprToken> {
-        let t = self.tokens.get(self.pos).cloned();
-        self.pos += 1;
-        t
     }
 
     pub fn eat(&mut self, t: &ExprToken) -> bool {
@@ -575,7 +589,8 @@ impl ExprParser {
     }
 
     pub fn parse_filter_arg(&mut self) -> Result<FilterArg> {
-        if let (Some(ExprToken::Ident(k)), Some(ExprToken::Colon)) = (self.peek(), self.peek_at(1)) {
+        if let (Some(ExprToken::Ident(k)), Some(ExprToken::Colon)) = (self.peek(), self.peek_at(1))
+        {
             let k = k.clone();
             self.pos += 2;
             return Ok(FilterArg::Keyword(k, self.parse_value()?));
@@ -612,11 +627,11 @@ fn parse_when_values(src: &str) -> Result<Vec<Expr>> {
     while !p.done() {
         values.push(p.parse_value()?);
         if !p.eat(&ExprToken::Comma) {
-            if let Some(ExprToken::Ident(i)) = p.peek() {
-                if i == "or" {
-                    p.pos += 1;
-                    continue;
-                }
+            if let Some(ExprToken::Ident(i)) = p.peek()
+                && i == "or"
+            {
+                p.pos += 1;
+                continue;
             }
             break;
         }
@@ -649,11 +664,11 @@ fn parse_or(p: &mut ExprParser) -> Result<Cond> {
 }
 
 fn parse_not(p: &mut ExprParser) -> Result<Cond> {
-    if let Some(ExprToken::Ident(op)) = p.peek() {
-        if op == "not" {
-            p.pos += 1;
-            return Ok(Cond::Not(Box::new(parse_not(p)?)));
-        }
+    if let Some(ExprToken::Ident(op)) = p.peek()
+        && op == "not"
+    {
+        p.pos += 1;
+        return Ok(Cond::Not(Box::new(parse_not(p)?)));
     }
     parse_comparison(p)
 }
@@ -813,7 +828,11 @@ fn parse_include_args(args: &str, isolated: bool, dynamic: bool) -> Result<Inclu
 }
 
 /// The `with`/`for`/hash arguments following an include/render file name
-fn parse_include_options(name: PartialName, mut p: ExprParser, isolated: bool) -> Result<IncludeTag> {
+fn parse_include_options(
+    name: PartialName,
+    mut p: ExprParser,
+    isolated: bool,
+) -> Result<IncludeTag> {
     let mut tag = IncludeTag {
         name,
         with: None,
@@ -823,16 +842,18 @@ fn parse_include_options(name: PartialName, mut p: ExprParser, isolated: bool) -
     };
     loop {
         match p.peek().cloned() {
-            Some(ExprToken::Ident(k)) if (k == "with" || k == "for") && p.peek_at(1) != Some(&ExprToken::Colon) => {
+            Some(ExprToken::Ident(k))
+                if (k == "with" || k == "for") && p.peek_at(1) != Some(&ExprToken::Colon) =>
+            {
                 p.pos += 1;
                 let value = p.parse_value()?;
                 let mut alias = None;
-                if let Some(ExprToken::Ident(a)) = p.peek() {
-                    if a == "as" {
-                        p.pos += 1;
-                        if let Some(ExprToken::Ident(n)) = p.next() {
-                            alias = Some(n);
-                        }
+                if let Some(ExprToken::Ident(a)) = p.peek()
+                    && a == "as"
+                {
+                    p.pos += 1;
+                    if let Some(ExprToken::Ident(n)) = p.next() {
+                        alias = Some(n);
                     }
                 }
                 if k == "with" {
@@ -911,7 +932,8 @@ mod tests {
 
     #[test]
     fn static_partial_names() {
-        let tag = parse_include_args("./dir/included.html, myVariable: 'myValue'", false, false).unwrap();
+        let tag =
+            parse_include_args("./dir/included.html, myVariable: 'myValue'", false, false).unwrap();
         assert!(matches!(&tag.name, PartialName::Static(n) if n == "./dir/included.html"));
         assert_eq!(tag.hash.len(), 1);
         let tag = parse_include_args("included", false, false).unwrap();

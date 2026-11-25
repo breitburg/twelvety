@@ -23,7 +23,10 @@ pub fn get_chain(format: &str) -> Option<&'static [&'static str]> {
 pub fn get_preprocessor(chain: &[&str], config: &Config) -> Result<Option<String>> {
     let format = chain[0];
     let (key, name) = match format {
-        "md" => ("markdownTemplateEngine", config.markdown_template_engine.clone()),
+        "md" => (
+            "markdownTemplateEngine",
+            config.markdown_template_engine.clone(),
+        ),
         "html" => ("htmlTemplateEngine", config.html_template_engine.clone()),
         _ => return Ok(None),
     };
@@ -60,10 +63,9 @@ pub fn parse(syntax: &str) -> Result<Vec<String>> {
     if formats.is_empty() {
         return Ok(templates);
     }
-    let Some(chain) = FORMAT_CHAINS
-        .iter()
-        .find(|chain| chain.len() == formats.len() && formats.iter().all(|f| chain.contains(&f.as_str())))
-    else {
+    let Some(chain) = FORMAT_CHAINS.iter().find(|chain| {
+        chain.len() == formats.len() && formats.iter().all(|f| chain.contains(&f.as_str()))
+    }) else {
         bail!("Unsupported output format combination in template syntax: {syntax}");
     };
     let mut out = templates;
@@ -84,9 +86,9 @@ pub fn validate(steps: &[String]) -> Result<()> {
         );
     }
     if !formats.is_empty()
-        && !FORMAT_CHAINS
-            .iter()
-            .any(|chain| chain.len() == formats.len() && chain.iter().zip(formats).all(|(a, b)| a == b))
+        && !FORMAT_CHAINS.iter().any(|chain| {
+            chain.len() == formats.len() && chain.iter().zip(formats).all(|(a, b)| a == b)
+        })
     {
         bail!("Unsupported template pipeline: {}", steps.join(","));
     }

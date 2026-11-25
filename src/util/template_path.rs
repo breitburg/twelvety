@@ -67,10 +67,10 @@ pub fn normalize_url_path(url_paths: &[&str]) -> String {
 }
 
 pub fn absolute_path(paths: &[&str]) -> String {
-    if let Some(first) = paths.first() {
-        if node_path::is_absolute(first) {
-            return join(paths);
-        }
+    if let Some(first) = paths.first()
+        && node_path::is_absolute(first)
+    {
+        return join(paths);
     }
     let cwd = get_working_dir();
     let mut all = vec![cwd.as_str()];
@@ -107,7 +107,11 @@ fn get_sub_path_remainder(file_path: &str, sub_path: &str) -> Option<String> {
     if sub_path == "." {
         let is_outside =
             file_path == ".." || file_path.starts_with("../") || node_path::is_absolute(file_path);
-        return if is_outside { None } else { Some(file_path.to_string()) };
+        return if is_outside {
+            None
+        } else {
+            Some(file_path.to_string())
+        };
     }
     let prefix = if sub_path.ends_with('/') {
         sub_path.to_string()
@@ -159,10 +163,11 @@ pub fn remove_extension(path: &str, extension: Option<&str>) -> String {
         return path.to_string();
     };
     let path_extension = get_extension(path);
-    if !path_extension.is_empty() && extension.ends_with(&path_extension) {
-        if let Some(i) = path.rfind(&path_extension) {
-            return path[..i.saturating_sub(1)].to_string();
-        }
+    if !path_extension.is_empty()
+        && extension.ends_with(&path_extension)
+        && let Some(i) = path.rfind(&path_extension)
+    {
+        return path[..i.saturating_sub(1)].to_string();
     }
     path.to_string()
 }
@@ -179,7 +184,10 @@ mod tests {
     fn test_strip_leading_sub_path() {
         assert_eq!(strip_leading_sub_path("./src/test.md", "./src/"), "test.md");
         assert_eq!(strip_leading_sub_path("./test.md", "."), "test.md");
-        assert_eq!(strip_leading_sub_path("./other/test.md", "./src"), "other/test.md");
+        assert_eq!(
+            strip_leading_sub_path("./other/test.md", "./src"),
+            "other/test.md"
+        );
     }
 
     #[test]

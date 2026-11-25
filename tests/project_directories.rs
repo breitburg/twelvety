@@ -79,7 +79,8 @@ fn input_as_file_deep() {
 #[test]
 fn input_as_file_deep_with_input_dir() {
     let mut d = ProjectDirectories::new();
-    d.set_input(Some("test/stubs/img/stub.md"), Some("test/stubs")).unwrap();
+    d.set_input(Some("test/stubs/img/stub.md"), Some("test/stubs"))
+        .unwrap();
     assert_eq!(d.input(), "./test/stubs/");
     assert_eq!(d.input_file, s("./test/stubs/img/stub.md"));
 }
@@ -157,20 +158,32 @@ fn content_template_input_paths() {
     let mut d = ProjectDirectories::new();
     assert_eq!(d.get_input_path("test.md"), "./test.md");
     assert_eq!(d.get_input_path("./test.md"), "./test.md");
-    assert_eq!(d.get_layout_path("./layout.html"), "./_includes/layout.html");
+    assert_eq!(
+        d.get_layout_path("./layout.html"),
+        "./_includes/layout.html"
+    );
 
     input(&mut d, "test");
     assert_eq!(d.get_input_path("test.md"), "./test/test.md");
     assert_eq!(d.get_input_path("./test.md"), "./test/test.md");
-    assert_eq!(d.get_layout_path("./layout.html"), "./test/_includes/layout.html");
+    assert_eq!(
+        d.get_layout_path("./layout.html"),
+        "./test/_includes/layout.html"
+    );
 }
 
 /// "Project file paths"
 #[test]
 fn project_file_paths() {
     let d = ProjectDirectories::new();
-    assert_eq!(d.get_project_path("twelvety.config.js"), "./twelvety.config.js");
-    assert_eq!(d.get_project_path("./twelvety.config.js"), "./twelvety.config.js");
+    assert_eq!(
+        d.get_project_path("twelvety.config.js"),
+        "./twelvety.config.js"
+    );
+    assert_eq!(
+        d.get_project_path("./twelvety.config.js"),
+        "./twelvety.config.js"
+    );
 }
 
 /// "Input could be a glob!"
@@ -186,7 +199,14 @@ fn input_could_be_a_glob() {
 #[test]
 fn setting_values_via_config_object() {
     let mut d = ProjectDirectories::new();
-    via_config(&mut d, ConfigDirs { input: s("test/stubs"), output: s("dist"), ..Default::default() });
+    via_config(
+        &mut d,
+        ConfigDirs {
+            input: s("test/stubs"),
+            output: s("dist"),
+            ..Default::default()
+        },
+    );
     assert_eq!(d.input(), "./test/stubs/");
     assert_eq!(d.input_file, None);
     assert_eq!(d.output(), "./dist/");
@@ -287,7 +307,12 @@ fn setting_values_via_config_object_layouts_is_set_but_falsy() {
     let mut d = ProjectDirectories::new();
     via_config(
         &mut d,
-        ConfigDirs { input: s("test/stubs"), output: s("_site"), layouts: s(""), ..Default::default() },
+        ConfigDirs {
+            input: s("test/stubs"),
+            output: s("_site"),
+            layouts: s(""),
+            ..Default::default()
+        },
     );
     assert_eq!(d.input(), "./test/stubs/");
     assert_eq!(d.output(), "./_site/");
@@ -300,7 +325,14 @@ fn setting_values_via_config_object_layouts_is_set_but_falsy() {
 #[test]
 fn setting_values_via_config_object_output_is_falsy() {
     let mut d = ProjectDirectories::new();
-    via_config(&mut d, ConfigDirs { input: s("test/stubs"), output: s(""), ..Default::default() });
+    via_config(
+        &mut d,
+        ConfigDirs {
+            input: s("test/stubs"),
+            output: s(""),
+            ..Default::default()
+        },
+    );
     assert_eq!(d.input(), "./test/stubs/");
     assert_eq!(d.output(), "./");
     assert_eq!(d.data(), "./test/stubs/_data/");
@@ -335,7 +367,14 @@ fn cli_values_should_override_all_others_both() {
     input(&mut d, "src");
     d.set_output(Some("dist"));
     d.freeze();
-    via_config(&mut d, ConfigDirs { input: s("test/stubs"), includes: s("myincludes"), ..Default::default() });
+    via_config(
+        &mut d,
+        ConfigDirs {
+            input: s("test/stubs"),
+            includes: s("myincludes"),
+            ..Default::default()
+        },
+    );
     assert_eq!(d.input(), "./src/");
     assert_eq!(d.output(), "./dist/");
     assert_eq!(d.data(), "./src/_data/");
@@ -351,7 +390,12 @@ fn cli_values_should_override_all_others_just_input() {
     d.freeze();
     via_config(
         &mut d,
-        ConfigDirs { input: s("test/stubs"), includes: s("myincludes"), output: s("dist"), ..Default::default() },
+        ConfigDirs {
+            input: s("test/stubs"),
+            includes: s("myincludes"),
+            output: s("dist"),
+            ..Default::default()
+        },
     );
     assert_eq!(d.input(), "./src/");
     assert_eq!(d.output(), "./dist/");
@@ -395,17 +439,36 @@ fn get_layout_path_layouts_dir() {
             ..Default::default()
         },
     );
-    assert_eq!(d.get_layout_path("layout.html"), "./test/stubs/mylayouts/layout.html");
-    assert_eq!(d.get_layout_path_relative_to_input_directory("layout.html"), "mylayouts/layout.html");
+    assert_eq!(
+        d.get_layout_path("layout.html"),
+        "./test/stubs/mylayouts/layout.html"
+    );
+    assert_eq!(
+        d.get_layout_path_relative_to_input_directory("layout.html"),
+        "mylayouts/layout.html"
+    );
 }
 
 /// "getLayoutPath (includes dir)"
 #[test]
 fn get_layout_path_includes_dir() {
     let mut d = ProjectDirectories::new();
-    via_config(&mut d, ConfigDirs { input: s("test/stubs"), includes: s("components"), ..Default::default() });
-    assert_eq!(d.get_layout_path("layout.html"), "./test/stubs/components/layout.html");
-    assert_eq!(d.get_layout_path_relative_to_input_directory("layout.html"), "components/layout.html");
+    via_config(
+        &mut d,
+        ConfigDirs {
+            input: s("test/stubs"),
+            includes: s("components"),
+            ..Default::default()
+        },
+    );
+    assert_eq!(
+        d.get_layout_path("layout.html"),
+        "./test/stubs/components/layout.html"
+    );
+    assert_eq!(
+        d.get_layout_path_relative_to_input_directory("layout.html"),
+        "components/layout.html"
+    );
 }
 
 /// "isFileIn*Folder"
@@ -493,17 +556,29 @@ fn input_relative_directories_configured_as_project_root_relative_throw() {
 
     d.set_includes(Some("test/stubs"));
     assert_eq!(
-        d.check_input_relative(&ExistsCache::new()).unwrap_err().to_string(),
+        d.check_input_relative(&ExistsCache::new())
+            .unwrap_err()
+            .to_string(),
         "The `includes` directory is relative to the input directory: \"test/stubs\" resolves to \"./test/test/stubs/\", which doesn’t exist. Did you mean \"./stubs/\" (resolves to \"./test/stubs/\")?"
     );
 
     d.set_includes(Some("stubs"));
     d.set_layouts(Some("./test/stubs/"));
-    assert!(d.check_input_relative(&ExistsCache::new()).unwrap_err().to_string().contains("`layouts`"));
+    assert!(
+        d.check_input_relative(&ExistsCache::new())
+            .unwrap_err()
+            .to_string()
+            .contains("`layouts`")
+    );
 
     d.set_layouts(Some("stubs"));
     d.set_data(Some("test/stubs"));
-    assert!(d.check_input_relative(&ExistsCache::new()).unwrap_err().to_string().contains("`data`"));
+    assert!(
+        d.check_input_relative(&ExistsCache::new())
+            .unwrap_err()
+            .to_string()
+            .contains("`data`")
+    );
 
     // Missing in both places is not an error
     d.set_data(Some("does-not-exist"));

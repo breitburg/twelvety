@@ -17,7 +17,14 @@ fn new_sub(link: &str, subdir: &str) -> TemplatePermalink {
 
 /// `generate(dir, filenameNoExt, extraSubdir, fileExtension = "html")`
 fn generate(dir: &str, name: &str, subdir: Option<&str>, ext: Option<&str>) -> TemplatePermalink {
-    TemplatePermalink::generate(dir, name, subdir.unwrap_or(""), ext.unwrap_or("html"), false).unwrap()
+    TemplatePermalink::generate(
+        dir,
+        name,
+        subdir.unwrap_or(""),
+        ext.unwrap_or("html"),
+        false,
+    )
+    .unwrap()
 }
 
 fn out(p: &TemplatePermalink) -> String {
@@ -37,19 +44,43 @@ where
 
 #[test]
 fn simple_straight_permalink() {
-    assert_eq!(out(&new("permalinksubfolder/test.html")), "permalinksubfolder/test.html");
-    assert_eq!(out(&new("./permalinksubfolder/test.html")), "permalinksubfolder/test.html");
-    assert_eq!(href(&new("permalinksubfolder/test.html")), "/permalinksubfolder/test.html");
-    assert_eq!(href(&new("./permalinksubfolder/test.html")), "/permalinksubfolder/test.html");
+    assert_eq!(
+        out(&new("permalinksubfolder/test.html")),
+        "permalinksubfolder/test.html"
+    );
+    assert_eq!(
+        out(&new("./permalinksubfolder/test.html")),
+        "permalinksubfolder/test.html"
+    );
+    assert_eq!(
+        href(&new("permalinksubfolder/test.html")),
+        "/permalinksubfolder/test.html"
+    );
+    assert_eq!(
+        href(&new("./permalinksubfolder/test.html")),
+        "/permalinksubfolder/test.html"
+    );
     assert_eq!(href(&new("./testindex.html")), "/testindex.html");
-    assert_eq!(href(&new("./permalinksubfolder/testindex.html")), "/permalinksubfolder/testindex.html");
+    assert_eq!(
+        href(&new("./permalinksubfolder/testindex.html")),
+        "/permalinksubfolder/testindex.html"
+    );
 }
 
 #[test]
 fn permalink_without_filename() {
-    assert_eq!(out(&new("permalinksubfolder/")), "permalinksubfolder/index.html");
-    assert_eq!(out(&new("./permalinksubfolder/")), "permalinksubfolder/index.html");
-    assert_eq!(out(&new("/permalinksubfolder/")), "/permalinksubfolder/index.html");
+    assert_eq!(
+        out(&new("permalinksubfolder/")),
+        "permalinksubfolder/index.html"
+    );
+    assert_eq!(
+        out(&new("./permalinksubfolder/")),
+        "permalinksubfolder/index.html"
+    );
+    assert_eq!(
+        out(&new("/permalinksubfolder/")),
+        "/permalinksubfolder/index.html"
+    );
     assert_eq!(href(&new("permalinksubfolder/")), "/permalinksubfolder/");
     assert_eq!(href(&new("./permalinksubfolder/")), "/permalinksubfolder/");
     assert_eq!(href(&new("/permalinksubfolder/")), "/permalinksubfolder/");
@@ -57,10 +88,22 @@ fn permalink_without_filename() {
 
 #[test]
 fn permalink_with_pagination_subdir() {
-    assert_eq!(out(&new_sub("permalinksubfolder/test.html", "0/")), "permalinksubfolder/0/test.html");
-    assert_eq!(out(&new_sub("permalinksubfolder/test.html", "1/")), "permalinksubfolder/1/test.html");
-    assert_eq!(href(&new_sub("permalinksubfolder/test.html", "0/")), "/permalinksubfolder/0/test.html");
-    assert_eq!(href(&new_sub("permalinksubfolder/test.html", "1/")), "/permalinksubfolder/1/test.html");
+    assert_eq!(
+        out(&new_sub("permalinksubfolder/test.html", "0/")),
+        "permalinksubfolder/0/test.html"
+    );
+    assert_eq!(
+        out(&new_sub("permalinksubfolder/test.html", "1/")),
+        "permalinksubfolder/1/test.html"
+    );
+    assert_eq!(
+        href(&new_sub("permalinksubfolder/test.html", "0/")),
+        "/permalinksubfolder/0/test.html"
+    );
+    assert_eq!(
+        href(&new_sub("permalinksubfolder/test.html", "1/")),
+        "/permalinksubfolder/1/test.html"
+    );
 }
 
 #[test]
@@ -71,9 +114,15 @@ fn permalink_generate() {
     assert_eq!(href(&generate(".", "index", None, None)), "/");
     assert_eq!(out(&generate(".", "test", None, None)), "test/index.html");
     assert_eq!(href(&generate(".", "test", None, None)), "/test/");
-    assert_eq!(out(&generate(".", "test", Some("0/"), None)), "test/0/index.html");
+    assert_eq!(
+        out(&generate(".", "test", Some("0/"), None)),
+        "test/0/index.html"
+    );
     assert_eq!(href(&generate(".", "test", Some("0/"), None)), "/test/0/");
-    assert_eq!(out(&generate(".", "test", Some("1/"), None)), "test/1/index.html");
+    assert_eq!(
+        out(&generate(".", "test", Some("1/"), None)),
+        "test/1/index.html"
+    );
     assert_eq!(href(&generate(".", "test", Some("1/"), None)), "/test/1/");
 }
 
@@ -81,7 +130,10 @@ fn permalink_generate() {
 fn permalink_generate_with_suffix() {
     assert_eq!(out(&generate(".", "test", None, None)), "test/index.html");
     assert_eq!(href(&generate(".", "test", None, None)), "/test/");
-    assert_eq!(out(&generate(".", "test", Some("1/"), None)), "test/1/index.html");
+    assert_eq!(
+        out(&generate(".", "test", Some("1/"), None)),
+        "test/1/index.html"
+    );
     assert_eq!(href(&generate(".", "test", Some("1/"), None)), "/test/1/");
 }
 
@@ -89,21 +141,42 @@ fn permalink_generate_with_suffix() {
 fn permalink_generate_with_new_extension() {
     assert_eq!(out(&generate(".", "test", None, Some("css"))), "test.css");
     assert_eq!(href(&generate(".", "test", None, Some("css"))), "/test.css");
-    assert_eq!(out(&generate(".", "test", Some("1/"), Some("css"))), "1/test.css");
-    assert_eq!(href(&generate(".", "test", Some("1/"), Some("css"))), "/1/test.css");
+    assert_eq!(
+        out(&generate(".", "test", Some("1/"), Some("css"))),
+        "1/test.css"
+    );
+    assert_eq!(
+        href(&generate(".", "test", Some("1/"), Some("css"))),
+        "/1/test.css"
+    );
 }
 
 #[test]
 fn permalink_generate_with_subfolders() {
-    assert_eq!(out(&generate("permalinksubfolder/", "index", None, None)), "permalinksubfolder/index.html");
-    assert_eq!(out(&generate("permalinksubfolder/", "test", None, None)), "permalinksubfolder/test/index.html");
+    assert_eq!(
+        out(&generate("permalinksubfolder/", "index", None, None)),
+        "permalinksubfolder/index.html"
+    );
+    assert_eq!(
+        out(&generate("permalinksubfolder/", "test", None, None)),
+        "permalinksubfolder/test/index.html"
+    );
     assert_eq!(
         out(&generate("permalinksubfolder/", "test", Some("1/"), None)),
         "permalinksubfolder/test/1/index.html"
     );
-    assert_eq!(href(&generate("permalinksubfolder/", "index", None, None)), "/permalinksubfolder/");
-    assert_eq!(href(&generate("permalinksubfolder/", "test", None, None)), "/permalinksubfolder/test/");
-    assert_eq!(href(&generate("permalinksubfolder/", "test", Some("1/"), None)), "/permalinksubfolder/test/1/");
+    assert_eq!(
+        href(&generate("permalinksubfolder/", "index", None, None)),
+        "/permalinksubfolder/"
+    );
+    assert_eq!(
+        href(&generate("permalinksubfolder/", "test", None, None)),
+        "/permalinksubfolder/test/"
+    );
+    assert_eq!(
+        href(&generate("permalinksubfolder/", "test", Some("1/"), None)),
+        "/permalinksubfolder/test/1/"
+    );
 }
 
 #[test]
@@ -115,8 +188,14 @@ fn permalink_matching_folder_and_filename() {
     assert!(has_dupe("component", "component"));
     assert!(has_dupe("component/", "component"));
 
-    assert_eq!(out(&generate("component/", "component", None, None)), "component/component/index.html");
-    assert_eq!(href(&generate("component/", "component", None, None)), "/component/component/");
+    assert_eq!(
+        out(&generate("component/", "component", None, None)),
+        "component/component/index.html"
+    );
+    assert_eq!(
+        href(&generate("component/", "component", None, None)),
+        "/component/component/"
+    );
 
     let legacy = TemplatePermalink::generate("component/", "component", "", "html", true).unwrap();
     assert_eq!(out(&legacy), "component/index.html");
@@ -125,7 +204,8 @@ fn permalink_matching_folder_and_filename() {
 
 #[test]
 fn permalink_object_build_alias() {
-    let p = TemplatePermalink::new(&json(r#"{"build": "permalinksubfolder/test.html"}"#), "").unwrap();
+    let p =
+        TemplatePermalink::new(&json(r#"{"build": "permalinksubfolder/test.html"}"#), "").unwrap();
     assert_eq!(out(&p), "permalinksubfolder/test.html");
     let p = TemplatePermalink::new(&json(r#"{"build": false}"#), "").unwrap();
     assert_eq!(p.to_output_path(), None);
@@ -213,7 +293,10 @@ fn language_suffix() -> regex::Regex {
 
 /// Strips a `.xx.html` language suffix, with or without a trailing slash, checking the
 /// `url`/`urlStem` arguments the transform receives
-fn strip_language(expected: Option<(&'static str, &'static str)>, trailing_slash: bool) -> (UrlTransformFn, Arc<Mutex<usize>>) {
+fn strip_language(
+    expected: Option<(&'static str, &'static str)>,
+    trailing_slash: bool,
+) -> (UrlTransformFn, Arc<Mutex<usize>>) {
     let calls = Arc::new(Mutex::new(0));
     let c = calls.clone();
     let re = language_suffix();
@@ -225,14 +308,22 @@ fn strip_language(expected: Option<(&'static str, &'static str)>, trailing_slash
         *c.lock().unwrap() += 1;
         if re.is_match(url) {
             let stripped = &url[..url.len() - ".en.html".len()];
-            return Some(if trailing_slash { format!("{stripped}/") } else { stripped.to_string() });
+            return Some(if trailing_slash {
+                format!("{stripped}/")
+            } else {
+                stripped.to_string()
+            });
         }
         None
     });
     (f, calls)
 }
 
-fn transformed_href(link: &str, expected: Option<(&'static str, &'static str)>, trailing_slash: bool) -> String {
+fn transformed_href(
+    link: &str,
+    expected: Option<(&'static str, &'static str)>,
+    trailing_slash: bool,
+) -> String {
     let mut tp = new(link);
     let (f, calls) = strip_language(expected, trailing_slash);
     tp.set_url_transforms(&[f]);
@@ -250,20 +341,35 @@ fn permalink_generate_with_url_transforms_code_index_file_761() {
 
 #[test]
 fn permalink_generate_with_url_transforms_code_not_index_file_761() {
-    assert_eq!(transformed_href("about.es.html", Some(("/about.es.html", "/about.es")), true), "/about/");
+    assert_eq!(
+        transformed_href("about.es.html", Some(("/about.es.html", "/about.es")), true),
+        "/about/"
+    );
     assert_eq!(transformed_href("about.es.html", None, false), "/about");
 }
 
 #[test]
 fn permalink_generate_with_url_transforms_code_index_file_with_subdir_761() {
     let expected = Some(("/subdir/index.es.html", "/subdir/index.es"));
-    assert_eq!(transformed_href("subdir/index.es.html", expected, true), "/subdir/");
-    assert_eq!(transformed_href("subdir/index.es.html", expected, false), "/subdir/");
+    assert_eq!(
+        transformed_href("subdir/index.es.html", expected, true),
+        "/subdir/"
+    );
+    assert_eq!(
+        transformed_href("subdir/index.es.html", expected, false),
+        "/subdir/"
+    );
 }
 
 #[test]
 fn permalink_generate_with_url_transforms_code_not_index_file_with_subdir_761() {
     let expected = Some(("/subdir/about.es.html", "/subdir/about.es"));
-    assert_eq!(transformed_href("subdir/about.es.html", expected, true), "/subdir/about/");
-    assert_eq!(transformed_href("subdir/about.es.html", expected, false), "/subdir/about");
+    assert_eq!(
+        transformed_href("subdir/about.es.html", expected, true),
+        "/subdir/about/"
+    );
+    assert_eq!(
+        transformed_href("subdir/about.es.html", expected, false),
+        "/subdir/about"
+    );
 }

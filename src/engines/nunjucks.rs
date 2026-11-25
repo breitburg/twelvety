@@ -10,7 +10,9 @@ use std::sync::{Arc, Mutex, RwLock};
 
 use anyhow::{Result, anyhow};
 use minijinja::value::Rest;
-use minijinja::{AutoEscape, Environment, Error, ErrorKind, State, UndefinedBehavior, Value as MjValue};
+use minijinja::{
+    AutoEscape, Environment, Error, ErrorKind, State, UndefinedBehavior, Value as MjValue,
+};
 
 use super::nunjucks_value::{from_mj, to_mj};
 use super::{RenderFn, TemplateEngine};
@@ -64,22 +66,24 @@ impl NunjucksEngine {
                 AutoEscape::None
             }
         });
-        if config.nunjucks_environment_options.get("trimBlocks").is_truthy() {
+        if config
+            .nunjucks_environment_options
+            .get("trimBlocks")
+            .is_truthy()
+        {
             env.set_trim_blocks(true);
         }
-        if config.nunjucks_environment_options.get("lstripBlocks").is_truthy() {
+        if config
+            .nunjucks_environment_options
+            .get("lstripBlocks")
+            .is_truthy()
+        {
             env.set_lstrip_blocks(true);
         }
 
         let sources: Arc<RwLock<HashMap<String, String>>> = Arc::new(RwLock::new(HashMap::new()));
-        let shortcodes: Arc<HashSet<String>> = Arc::new(
-            config
-                .nunjucks
-                .shortcodes
-                .keys()
-                .cloned()
-                .collect(),
-        );
+        let shortcodes: Arc<HashSet<String>> =
+            Arc::new(config.nunjucks.shortcodes.keys().cloned().collect());
         // Raw paired shortcodes (body passed unrendered) are marked with a `raw:` entry
         let paired: Arc<HashSet<String>> = Arc::new(
             config
@@ -98,7 +102,7 @@ impl NunjucksEngine {
         );
 
         // FileSystemLoader([includes, cwd])
-        let search_paths = vec![dirs.includes(), ".".to_string()];
+        let search_paths = [dirs.includes(), ".".to_string()];
         let (src_map, sc, psc) = (sources.clone(), shortcodes.clone(), paired.clone());
         env.set_loader(move |name: &str| {
             if let Some(src) = src_map.read().unwrap().get(name) {
@@ -137,11 +141,15 @@ impl NunjucksEngine {
             } else {
                 name.to_string()
             };
-            let from = if parent_path.is_empty() { engine_name.as_str() } else { parent_path };
+            let from = if parent_path.is_empty() {
+                engine_name.as_str()
+            } else {
+                parent_path
+            };
             uses_for_join
                 .lock()
                 .unwrap()
-                .add_dependency(from, &[resolved.clone()]);
+                .add_dependency(from, std::slice::from_ref(&resolved));
             resolved.into()
         });
 
@@ -197,7 +205,10 @@ impl NunjucksEngine {
             let fname = name.clone();
             env.add_filter(
                 name.clone(),
-                move |state: &State, value: MjValue, args: Rest<MjValue>| -> Result<MjValue, Error> {
+                move |state: &State,
+                      value: MjValue,
+                      args: Rest<MjValue>|
+                      -> Result<MjValue, Error> {
                     let lookup = state_lookup(state);
                     let call = CallContext::new("njk", &lookup);
                     let args: Vec<Value> = args.iter().map(from_mj).collect();
@@ -241,11 +252,17 @@ impl NunjucksEngine {
             let sname = name.clone();
             env.add_filter(
                 format!("__psc_{}", sanitize_name(name)),
-                move |state: &State, body: MjValue, args: Rest<MjValue>| -> Result<MjValue, Error> {
+                move |state: &State,
+                      body: MjValue,
+                      args: Rest<MjValue>|
+                      -> Result<MjValue, Error> {
                     let lookup = state_lookup(state);
                     let call = CallContext::new("njk", &lookup);
                     let args: Vec<Value> = args.iter().map(from_mj).collect();
-                    let content = body.as_str().map(String::from).unwrap_or_else(|| body.to_string());
+                    let content = body
+                        .as_str()
+                        .map(String::from)
+                        .unwrap_or_else(|| body.to_string());
                     let out = f(&call, &content, &args).map_err(|e| {
                         mj_err(e.context(format!("Error with Nunjucks paired shortcode `{sname}`")))
                     })?;
@@ -277,7 +294,13 @@ impl NunjucksEngine {
 
 fn sanitize_name(name: &str) -> String {
     name.chars()
-        .map(|c| if c.is_alphanumeric() || c == '_' { c } else { '_' })
+        .map(|c| {
+            if c.is_alphanumeric() || c == '_' {
+                c
+            } else {
+                '_'
+            }
+        })
         .collect()
 }
 
@@ -321,7 +344,9 @@ impl TemplateEngine for NunjucksEngine {
             .map_err(|e| anyhow!(format_mj_error(&e)))?;
         let env = self.env.clone();
         Ok(Arc::new(move |data: &Value| {
-            let tmpl = env.get_template(&name).map_err(|e| anyhow!(format_mj_error(&e)))?;
+            let tmpl = env
+                .get_template(&name)
+                .map_err(|e| anyhow!(format_mj_error(&e)))?;
             tmpl.render(to_mj(data))
                 .map_err(|e| anyhow!(format_mj_error(&e)))
         }))
@@ -339,7 +364,11 @@ fn format_mj_error(e: &Error) -> String {
 }
 
 /// Translate Nunjucks-only syntax to minijinja (Jinja2) syntax.
-pub fn nunjucks_compat(src: &str, shortcodes: &HashSet<String>, paired: &HashSet<String>) -> String {
+pub fn nunjucks_compat(
+    src: &str,
+    shortcodes: &HashSet<String>,
+    paired: &HashSet<String>,
+) -> String {
     let mut out = String::with_capacity(src.len());
     let mut i = 0;
     while i < src.len() {
@@ -374,7 +403,10 @@ pub fn nunjucks_compat(src: &str, shortcodes: &HashSet<String>, paired: &HashSet
         let inner = &src[abs + 2..end - 2];
         let (lmod, inner_trim, rmod) = strip_modifiers(inner);
         if !is_tag {
-            out.push_str(&format!("{{{{{lmod} {} {rmod}}}}}", js_operators(inner_trim)));
+            out.push_str(&format!(
+                "{{{{{lmod} {} {rmod}}}}}",
+                js_operators(inner_trim)
+            ));
             i = end;
             continue;
         }
@@ -400,21 +432,22 @@ pub fn nunjucks_compat(src: &str, shortcodes: &HashSet<String>, paired: &HashSet
             }
             continue;
         }
-        if paired.contains(name) && paired.contains(&format!("raw:{name}")) {
-            if let Some((s, e)) = find_end_tag(src, end, &format!("end{name}")) {
-                let args = js_operators(&strip_trailing_comma(args));
-                let call = if args.is_empty() {
-                    format!("__psc_{}", sanitize_name(name))
-                } else {
-                    format!("__psc_{}({})", sanitize_name(name), args)
-                };
-                let (l2, _, r2) = strip_modifiers(&src[s + 2..e - 2]);
-                out.push_str(&format!("{{%{lmod} filter {call} {rmod}%}}{{% raw %}}"));
-                out.push_str(&src[end..s]);
-                out.push_str(&format!("{{% endraw %}}{{%{l2} endfilter {r2}%}}"));
-                i = e;
-                continue;
-            }
+        if paired.contains(name)
+            && paired.contains(&format!("raw:{name}"))
+            && let Some((s, e)) = find_end_tag(src, end, &format!("end{name}"))
+        {
+            let args = js_operators(&strip_trailing_comma(args));
+            let call = if args.is_empty() {
+                format!("__psc_{}", sanitize_name(name))
+            } else {
+                format!("__psc_{}({})", sanitize_name(name), args)
+            };
+            let (l2, _, r2) = strip_modifiers(&src[s + 2..e - 2]);
+            out.push_str(&format!("{{%{lmod} filter {call} {rmod}%}}{{% raw %}}"));
+            out.push_str(&src[end..s]);
+            out.push_str(&format!("{{% endraw %}}{{%{l2} endfilter {r2}%}}"));
+            i = e;
+            continue;
         }
         let translated = if shortcodes.contains(name) {
             format!(
@@ -427,7 +460,11 @@ pub fn nunjucks_compat(src: &str, shortcodes: &HashSet<String>, paired: &HashSet
             if args.is_empty() {
                 format!("{{%{lmod} filter __psc_{} {rmod}%}}", sanitize_name(name))
             } else {
-                format!("{{%{lmod} filter __psc_{}({}) {rmod}%}}", sanitize_name(name), args)
+                format!(
+                    "{{%{lmod} filter __psc_{}({}) {rmod}%}}",
+                    sanitize_name(name),
+                    args
+                )
             }
         } else if let Some(base) = name.strip_prefix("end").filter(|b| paired.contains(*b)) {
             let _ = base;
@@ -557,7 +594,11 @@ fn js_operators(s: &str) -> String {
             }
             _ => {}
         }
-        if (c == '=' || c == '!') && i + 2 < chars.len() && chars[i + 1] == '=' && chars[i + 2] == '=' {
+        if (c == '=' || c == '!')
+            && i + 2 < chars.len()
+            && chars[i + 1] == '='
+            && chars[i + 2] == '='
+        {
             out.push(c);
             out.push('=');
             i += 3;
@@ -628,11 +669,21 @@ fn js_method(value: &Value, method: &str, args: &[Value]) -> Option<Value> {
                 "indexOf" => Value::Number(position(&arg(0)).map(|p| p as f64).unwrap_or(-1.0)),
                 "join" => {
                     let sep = arg(0);
-                    let sep = if sep.is_undefined() { ",".to_string() } else { sep.to_js_string() };
+                    let sep = if sep.is_undefined() {
+                        ",".to_string()
+                    } else {
+                        sep.to_js_string()
+                    };
                     Value::str(
                         items
                             .iter()
-                            .map(|v| if v.is_nullish() { String::new() } else { v.to_js_string() })
+                            .map(|v| {
+                                if v.is_nullish() {
+                                    String::new()
+                                } else {
+                                    v.to_js_string()
+                                }
+                            })
                             .collect::<Vec<_>>()
                             .join(&sep),
                     )
@@ -640,7 +691,12 @@ fn js_method(value: &Value, method: &str, args: &[Value]) -> Option<Value> {
                 "slice" => {
                     let start = index(arg(0), items.len(), 0);
                     let end = index(arg(1), items.len(), items.len());
-                    Value::array(items.get(start..end.max(start)).unwrap_or_default().to_vec())
+                    Value::array(
+                        items
+                            .get(start..end.max(start))
+                            .unwrap_or_default()
+                            .to_vec(),
+                    )
                 }
                 "concat" => {
                     let mut all = items.as_ref().clone();
@@ -686,14 +742,21 @@ fn js_method(value: &Value, method: &str, args: &[Value]) -> Option<Value> {
                 "trim" => Value::str(s.trim()),
                 "trimStart" => Value::str(s.trim_start()),
                 "trimEnd" => Value::str(s.trim_end()),
-                "slice" => substring(index(arg(0), len, 0), index(arg(1), len, len).max(index(arg(0), len, 0))),
+                "slice" => substring(
+                    index(arg(0), len, 0),
+                    index(arg(1), len, len).max(index(arg(0), len, 0)),
+                ),
                 "substring" => {
                     let clamp = |v: Value, default: usize| -> usize {
                         if v.is_undefined() {
                             return default;
                         }
                         let n = v.to_number();
-                        if n.is_nan() || n < 0.0 { 0 } else { (n as usize).min(len) }
+                        if n.is_nan() || n < 0.0 {
+                            0
+                        } else {
+                            (n as usize).min(len)
+                        }
                     };
                     substring(clamp(arg(0), 0), clamp(arg(1), len))
                 }
@@ -722,7 +785,11 @@ fn js_method(value: &Value, method: &str, args: &[Value]) -> Option<Value> {
                 "padStart" | "padEnd" => {
                     let width = arg(0).to_number().max(0.0) as usize;
                     let fill = arg(1);
-                    let fill = if fill.is_undefined() { " ".to_string() } else { fill.to_js_string() };
+                    let fill = if fill.is_undefined() {
+                        " ".to_string()
+                    } else {
+                        fill.to_js_string()
+                    };
                     if width <= len || fill.is_empty() {
                         return Some(value.clone());
                     }
@@ -767,7 +834,10 @@ fn parse_symbols(src: &str) -> Vec<String> {
         let expression = if close == "%}" {
             // drop the tag name
             let inner = inner.trim_start();
-            inner.find(char::is_whitespace).map(|p| &inner[p..]).unwrap_or("")
+            inner
+                .find(char::is_whitespace)
+                .map(|p| &inner[p..])
+                .unwrap_or("")
         } else {
             inner
         };
@@ -819,7 +889,9 @@ fn expression_symbols(expr: &str) -> Vec<String> {
     let mut filter_args = vec![];
     for segment in segments[1..].iter().rev() {
         let segment = segment.trim_start();
-        let name_len = segment.find(|c: char| !is_ident_char(c)).unwrap_or(segment.len());
+        let name_len = segment
+            .find(|c: char| !is_ident_char(c))
+            .unwrap_or(segment.len());
         if name_len > 0 {
             out.push(segment[..name_len].to_string());
         }
@@ -935,7 +1007,11 @@ fn register_nunjucks_filters(env: &mut Environment<'static>) {
     });
     env.add_filter(
         "truncate",
-        |v: String, length: Option<usize>, killwords: Option<bool>, end: Option<String>| -> String {
+        |v: String,
+         length: Option<usize>,
+         killwords: Option<bool>,
+         end: Option<String>|
+         -> String {
             let length = length.unwrap_or(255);
             let end = end.unwrap_or_else(|| "...".into());
             let chars: Vec<char> = v.chars().collect();
@@ -950,9 +1026,14 @@ fn register_nunjucks_filters(env: &mut Environment<'static>) {
             truncated[..idx].to_string() + &end
         },
     );
-    env.add_filter("wordcount", |v: String| -> usize { v.split_whitespace().count() });
+    env.add_filter("wordcount", |v: String| -> usize {
+        v.split_whitespace().count()
+    });
     env.add_filter("nl2br", |v: MjValue| -> MjValue {
-        let s = v.to_string().replace("\r\n", "\n").replace('\n', "<br />\n");
+        let s = v
+            .to_string()
+            .replace("\r\n", "\n")
+            .replace('\n', "<br />\n");
         if v.is_safe() {
             MjValue::from_safe_string(s)
         } else {
@@ -1016,28 +1097,51 @@ mod tests {
             "{% if a == 'b' %}{% elif c %}{% endif %}"
         );
         assert_eq!(
-            nunjucks_compat("{% youtube { id: x, \"t\": 1, n: {a: 'b:c'} } %}", &sc, &psc),
+            nunjucks_compat(
+                "{% youtube { id: x, \"t\": 1, n: {a: 'b:c'} } %}",
+                &sc,
+                &psc
+            ),
             "{{ __sc_youtube({ \"id\": x, \"t\": 1, \"n\": {\"a\": 'b:c'} }) }}"
         );
-        assert_eq!(nunjucks_compat("{{a if b else c}}", &sc, &psc), "{{ a if b else c }}");
+        assert_eq!(
+            nunjucks_compat("{{a if b else c}}", &sc, &psc),
+            "{{ a if b else c }}"
+        );
     }
 
     #[test]
     fn symbols() {
-        assert_eq!(parse_symbols("{{ a | f(b) | g }}{% for x in y.z %}{{ 'q' }}{% endfor %}"), [
-            "g", "f", "a", "b", "x", "y.z"
-        ]);
-        assert_eq!(parse_symbols("{# {{ hidden }} #}{{ obj.method().prop }}"), ["obj.method"]);
+        assert_eq!(
+            parse_symbols("{{ a | f(b) | g }}{% for x in y.z %}{{ 'q' }}{% endfor %}"),
+            ["g", "f", "a", "b", "x", "y.z"]
+        );
+        assert_eq!(
+            parse_symbols("{# {{ hidden }} #}{{ obj.method().prop }}"),
+            ["obj.method"]
+        );
     }
 
     #[test]
     fn js_methods() {
         let s = Value::str("Hello World");
-        assert_eq!(js_method(&s, "slice", &[Value::Number(-5.0)]), Some(Value::str("World")));
-        assert_eq!(js_method(&s, "indexOf", &[Value::str("o")]), Some(Value::Number(4.0)));
+        assert_eq!(
+            js_method(&s, "slice", &[Value::Number(-5.0)]),
+            Some(Value::str("World"))
+        );
+        assert_eq!(
+            js_method(&s, "indexOf", &[Value::str("o")]),
+            Some(Value::Number(4.0))
+        );
         let a = Value::array(vec![Value::str("a"), Value::Number(1.0)]);
-        assert_eq!(js_method(&a, "join", &[Value::str("-")]), Some(Value::str("a-1")));
-        assert_eq!(js_method(&a, "includes", &[Value::Number(1.0)]), Some(Value::Bool(true)));
+        assert_eq!(
+            js_method(&a, "join", &[Value::str("-")]),
+            Some(Value::str("a-1"))
+        );
+        assert_eq!(
+            js_method(&a, "includes", &[Value::Number(1.0)]),
+            Some(Value::Bool(true))
+        );
         assert_eq!(js_method(&a, "nope", &[]), None);
     }
 }

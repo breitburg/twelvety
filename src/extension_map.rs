@@ -71,7 +71,10 @@ impl ExtensionMap {
 
     pub fn set_formats(&mut self, format_keys: &[String]) {
         self.format_keys = format_keys.to_vec();
-        self.unfiltered_format_keys = format_keys.iter().map(|k| k.trim().to_lowercase()).collect();
+        self.unfiltered_format_keys = format_keys
+            .iter()
+            .map(|k| k.trim().to_lowercase())
+            .collect();
         self.valid_template_language_keys = self
             .unfiltered_format_keys
             .iter()
@@ -128,7 +131,7 @@ impl ExtensionMap {
             .filter(|ext| normalized.ends_with(&format!(".{ext}")) && valid.contains(*ext))
             .cloned()
             .collect();
-        extensions.sort_by(|a, b| b.len().cmp(&a.len()));
+        extensions.sort_by_key(|a| std::cmp::Reverse(a.len()));
         extensions
     }
 
@@ -204,7 +207,7 @@ impl ExtensionMap {
             .iter()
             .filter(|(ext, _)| lower == **ext || lower.ends_with(&format!(".{ext}")))
             .collect();
-        candidates.sort_by(|a, b| b.0.len().cmp(&a.0.len()));
+        candidates.sort_by_key(|a| std::cmp::Reverse(a.0.len()));
         for (_, entry) in candidates {
             let key = entry.alias_key.clone().unwrap_or_else(|| entry.key.clone());
             if self.valid_template_language_keys.contains(&key) {
@@ -243,7 +246,13 @@ mod tests {
 
     fn map() -> ExtensionMap {
         let mut m = ExtensionMap::new(&[]);
-        m.set_formats(&["liquid".into(), "md".into(), "njk".into(), "html".into(), "png".into()]);
+        m.set_formats(&[
+            "liquid".into(),
+            "md".into(),
+            "njk".into(),
+            "html".into(),
+            "png".into(),
+        ]);
         m
     }
 
@@ -260,6 +269,9 @@ mod tests {
     #[test]
     fn globs() {
         let m = map();
-        assert_eq!(m.get_globs("."), vec!["./**/*.{liquid,md,njk,html,png}".to_string()]);
+        assert_eq!(
+            m.get_globs("."),
+            vec!["./**/*.{liquid,md,njk,html,png}".to_string()]
+        );
     }
 }

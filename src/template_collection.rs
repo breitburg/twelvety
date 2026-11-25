@@ -30,7 +30,9 @@ impl SortFunction {
             "Z-A" => SortFunction::AlphabeticDescending,
             "0-9" => SortFunction::NumericAscending,
             "9-0" => SortFunction::NumericDescending,
-            _ => bail!("Invalid String argument for sort(). Received `{name}`. Valid values: A-Z,Z-A,0-9,9-0"),
+            _ => bail!(
+                "Invalid String argument for sort(). Received `{name}`. Valid values: A-Z,Z-A,0-9,9-0"
+            ),
         })
     }
 
@@ -238,7 +240,10 @@ impl TemplateCollection {
     }
 
     /// `sort(sortFunction)`: a sorted copy of the entries
-    pub fn sort_entries(&self, f: impl Fn(&PageEntry, &PageEntry) -> Ordering) -> Vec<Arc<PageEntry>> {
+    pub fn sort_entries(
+        &self,
+        f: impl Fn(&PageEntry, &PageEntry) -> Ordering,
+    ) -> Vec<Arc<PageEntry>> {
         let mut items = self.items.clone();
         items.sort_by(|a, b| f(a, b));
         items
@@ -286,7 +291,10 @@ impl TemplateCollection {
     }
 
     pub fn get_globs(globs: &[&str]) -> Vec<String> {
-        globs.iter().map(|g| template_path::add_leading_dot_slash(g)).collect()
+        globs
+            .iter()
+            .map(|g| template_path::add_leading_dot_slash(g))
+            .collect()
     }
 
     pub fn get_filtered_by_glob(&self, glob: &str) -> Value {
@@ -313,7 +321,12 @@ impl TemplateCollection {
         if tag.is_empty() {
             return self.get_all_sorted();
         }
-        to_value(self.tag_index().get(tag).map(|v| v.as_slice()).unwrap_or(&[]))
+        to_value(
+            self.tag_index()
+                .get(tag)
+                .map(|v| v.as_slice())
+                .unwrap_or(&[]),
+        )
     }
 
     pub fn get_filtered_by_tags(&self, tags: &[&str]) -> Value {

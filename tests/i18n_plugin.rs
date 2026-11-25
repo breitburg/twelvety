@@ -13,12 +13,22 @@ use twelvety::user_config::UserConfig;
 use common::{options, to_json};
 
 fn add_i18n(cfg: &mut UserConfig, plugin_options: &str) -> anyhow::Result<()> {
-    cfg.add_plugin("I18nPlugin", twelvety::plugins::i18n::plugin, json(plugin_options))
+    cfg.add_plugin(
+        "I18nPlugin",
+        twelvety::plugins::i18n::plugin,
+        json(plugin_options),
+    )
 }
 
 /// Build `./test/stubs-empty/` with programmatic configuration
-fn build_empty(config: impl Fn(&mut UserConfig) -> anyhow::Result<()> + Send + Sync + 'static) -> anyhow::Result<Vec<PageResult>> {
-    to_json("./test/stubs-empty/", Some("./test/stubs-empty/_site"), options(config))
+fn build_empty(
+    config: impl Fn(&mut UserConfig) -> anyhow::Result<()> + Send + Sync + 'static,
+) -> anyhow::Result<Vec<PageResult>> {
+    to_json(
+        "./test/stubs-empty/",
+        Some("./test/stubs-empty/_site"),
+        options(config),
+    )
 }
 
 fn content_by_url(results: &[PageResult], url: &str) -> String {
@@ -74,7 +84,10 @@ fn comparator_is_lang_code() {
 #[test]
 fn lang_utils_ignores_three_letter_language_codes_in_urls_and_paths() {
     assert_eq!(get_language_code_from_url("/new/", None), "");
-    assert_eq!(get_language_code_from_input_path("./new/es/index.md", None).as_deref(), Some("es"));
+    assert_eq!(
+        get_language_code_from_input_path("./new/es/index.md", None).as_deref(),
+        Some("es")
+    );
     assert_eq!(swap_language_code("/new/", "en", None), "/new/");
 }
 
@@ -85,7 +98,10 @@ fn lang_utils_swap_language_code() {
     assert_eq!(swap_language_code("/", "en", None), "/"); // skip
     assert_eq!(swap_language_code("/es/", "en", None), "/en/");
     assert_eq!(swap_language_code("/es/", "not", None), "/es/"); // skip
-    assert_eq!(swap_language_code("/not-a-lang/", "en", None), "/not-a-lang/"); // skip
+    assert_eq!(
+        swap_language_code("/not-a-lang/", "en", None),
+        "/not-a-lang/"
+    ); // skip
     assert_eq!(swap_language_code("/es/es/es/", "en", None), "/en/es/es/"); // first only
 }
 
@@ -99,28 +115,54 @@ fn error_mode_default_strict() {
     let result = to_json(
         "./test/stubs-i18n/",
         Some("./test/stubs-i18n/_site"),
-        options(|cfg| add_i18n(cfg, r#"{"_test": "this is from errorMode default (strict)", "defaultLanguage": "en"}"#)),
+        options(|cfg| {
+            add_i18n(
+                cfg,
+                r#"{"_test": "this is from errorMode default (strict)", "defaultLanguage": "en"}"#,
+            )
+        }),
     );
     assert!(result.is_err());
 }
 
 fn locale_url_preserves_fragments(error_mode: &'static str) {
-    const URLS: [&str; 7] = ["/#heading", "/en/#heading", "/en#heading", "/#", "/#heading%20one#two", "/?a=1", "/en?a=1#heading"];
+    const URLS: [&str; 7] = [
+        "/#heading",
+        "/en/#heading",
+        "/en#heading",
+        "/#",
+        "/#heading%20one#two",
+        "/?a=1",
+        "/en?a=1#heading",
+    ];
     let results = build_empty(move |cfg| {
-        add_i18n(cfg, &format!(r#"{{"defaultLanguage": "en", "errorMode": "{error_mode}"}}"#))?;
-        let mut template = URLS.iter().map(|u| format!(r#"{{{{ "{u}" | locale_url }}}}"#)).collect::<Vec<_>>().join("\n");
+        add_i18n(
+            cfg,
+            &format!(r#"{{"defaultLanguage": "en", "errorMode": "{error_mode}"}}"#),
+        )?;
+        let mut template = URLS
+            .iter()
+            .map(|u| format!(r#"{{{{ "{u}" | locale_url }}}}"#))
+            .collect::<Vec<_>>()
+            .join("\n");
         template.push_str("\n{{ \"/#heading\" | locale_url(\"en-us\") }}");
         let template: &'static str = Box::leak(template.into_boxed_str());
         for lang in ["en", "es", "en-us"] {
             cfg.add_template(&format!("{lang}/index.njk"), template, Value::object())?;
         }
-        cfg.add_template("index.njk", r#"{{ "/#heading" | locale_url }}"#, Value::object())
+        cfg.add_template(
+            "index.njk",
+            r#"{{ "/#heading" | locale_url }}"#,
+            Value::object(),
+        )
     })
     .unwrap();
     for lang in ["en", "es", "en-us"] {
         assert_eq!(
             content_by_url(&results, &format!("/{lang}/")),
-            format!("/{lang}/#heading\n/{lang}/#heading\n/{lang}/#heading\n/{lang}/\n/{lang}/#heading%20one#two\n/{lang}/?a=1\n/{lang}/?a=1#heading\n/en-us/#heading"),
+            format!(
+                "/{lang}/#heading\n/{lang}/#heading\n/{lang}/#heading\n/{lang}/\n/{lang}/#heading%20one#two\n/{lang}/?a=1\n/{lang}/?a=1#heading\n/en-us/#heading"
+            ),
             "{error_mode} {lang}"
         );
     }
@@ -147,7 +189,10 @@ fn locale_url_preserves_fragments_never() {
 
 fn locale_url_preserves_fragments_on_a_non_localized_fallback(error_mode: &'static str) {
     let results = build_empty(move |cfg| {
-        add_i18n(cfg, &format!(r#"{{"defaultLanguage": "en", "errorMode": "{error_mode}"}}"#))?;
+        add_i18n(
+            cfg,
+            &format!(r#"{{"defaultLanguage": "en", "errorMode": "{error_mode}"}}"#),
+        )?;
         cfg.add_template("shared.njk", "Shared page", Value::object())?;
         cfg.add_template(
             "es/index.njk",
@@ -156,7 +201,10 @@ fn locale_url_preserves_fragments_on_a_non_localized_fallback(error_mode: &'stat
         )
     })
     .unwrap();
-    assert_eq!(content_by_url(&results, "/es/"), "/shared/#heading\n/shared/?a=1");
+    assert_eq!(
+        content_by_url(&results, "/es/"),
+        "/shared/#heading\n/shared/?a=1"
+    );
 }
 
 /// "locale_url preserves fragments on a non-localized fallback (allow-fallback)"
@@ -177,15 +225,26 @@ fn locale_url_still_rejects_a_non_localized_fallback_with_a_fragment_in_strict_m
     let result = build_empty(|cfg| {
         add_i18n(cfg, r#"{"defaultLanguage": "en"}"#)?;
         cfg.add_template("shared.njk", "Shared page", Value::object())?;
-        cfg.add_template("es/index.njk", r#"{{ "/shared/#heading" | locale_url }}"#, Value::object())
+        cfg.add_template(
+            "es/index.njk",
+            r#"{{ "/shared/#heading" | locale_url }}"#,
+            Value::object(),
+        )
     });
     assert!(result.is_err());
 }
 
 fn locale_url_rejects_a_url_that_matches_no_page(error_mode: &'static str) {
     let result = build_empty(move |cfg| {
-        add_i18n(cfg, &format!(r#"{{"defaultLanguage": "en", "errorMode": "{error_mode}"}}"#))?;
-        cfg.add_template("es/index.njk", r#"{{ "/missing/" | locale_url }}"#, Value::object())
+        add_i18n(
+            cfg,
+            &format!(r#"{{"defaultLanguage": "en", "errorMode": "{error_mode}"}}"#),
+        )?;
+        cfg.add_template(
+            "es/index.njk",
+            r#"{{ "/missing/" | locale_url }}"#,
+            Value::object(),
+        )
     });
     assert!(result.is_err());
 }
@@ -223,13 +282,20 @@ fn locale_url_swaps_a_language_code_already_in_a_nested_url_2791() {
     let results = build_empty(|cfg| {
         add_i18n(cfg, r#"{"defaultLanguage": "en"}"#)?;
         for lang in ["en", "ro", "it"] {
-            cfg.add_template(&format!("{lang}/my-article.njk"), r#"{{ "/en/my-article/" | locale_url }}"#, Value::object())?;
+            cfg.add_template(
+                &format!("{lang}/my-article.njk"),
+                r#"{{ "/en/my-article/" | locale_url }}"#,
+                Value::object(),
+            )?;
         }
         Ok(())
     })
     .unwrap();
     for lang in ["en", "ro", "it"] {
-        assert_eq!(content_by_url(&results, &format!("/{lang}/my-article/")), format!("/{lang}/my-article/"));
+        assert_eq!(
+            content_by_url(&results, &format!("/{lang}/my-article/")),
+            format!("/{lang}/my-article/")
+        );
     }
 }
 
@@ -239,14 +305,26 @@ fn locale_url_ignores_file_names_that_look_like_language_codes_3766() {
     let results = build_empty(|cfg| {
         add_i18n(cfg, r#"{"defaultLanguage": "en", "errorMode": "never"}"#)?;
         for lang in ["en", "sv"] {
-            let prefix = if lang == "en" { String::new() } else { format!("/{lang}") };
-            cfg.add_template(&format!("{lang}/index.njk"), r#"{{ "/site.webmanifest" | locale_url }}"#, Value::object())?;
+            let prefix = if lang == "en" {
+                String::new()
+            } else {
+                format!("/{lang}")
+            };
+            cfg.add_template(
+                &format!("{lang}/index.njk"),
+                r#"{{ "/site.webmanifest" | locale_url }}"#,
+                Value::object(),
+            )?;
             cfg.add_template(
                 &format!("{lang}-manifest.njk"),
                 "",
                 json(&format!(r#"{{"permalink": "{prefix}/site.webmanifest"}}"#)),
             )?;
-            cfg.add_template(&format!("{lang}-feed.njk"), "", json(&format!(r#"{{"permalink": "/{lang}/feed/feed.xml"}}"#)))?;
+            cfg.add_template(
+                &format!("{lang}-feed.njk"),
+                "",
+                json(&format!(r#"{{"permalink": "/{lang}/feed/feed.xml"}}"#)),
+            )?;
         }
         Ok(())
     })
@@ -269,21 +347,33 @@ fn comparator_is_lang_code_with_an_explicit_languages_list() {
 #[test]
 fn languages_option_limits_detected_language_codes() {
     let results = build_empty(|cfg| {
-        add_i18n(cfg, r#"{"defaultLanguage": "en", "languages": ["ca-valencia"]}"#)?;
+        add_i18n(
+            cfg,
+            r#"{"defaultLanguage": "en", "languages": ["ca-valencia"]}"#,
+        )?;
         cfg.add_template("en/index.njk", "{{ page.lang }}", Value::object())?;
-        cfg.add_template("ca-valencia/index.njk", r#"{{ page.lang }} {{ "/" | locale_url }}"#, Value::object())?;
+        cfg.add_template(
+            "ca-valencia/index.njk",
+            r#"{{ page.lang }} {{ "/" | locale_url }}"#,
+            Value::object(),
+        )?;
         cfg.add_template("to-do.njk", "{{ page.lang }}", Value::object())
     })
     .unwrap();
     assert_eq!(content_by_url(&results, "/en/"), "en");
-    assert_eq!(content_by_url(&results, "/ca-valencia/"), "ca-valencia /ca-valencia/");
+    assert_eq!(
+        content_by_url(&results, "/ca-valencia/"),
+        "ca-valencia /ca-valencia/"
+    );
     assert_eq!(content_by_url(&results, "/to-do/"), "en");
 }
 
 /// "languages option must be an array"
 #[test]
 fn languages_option_must_be_an_array() {
-    let err = build_empty(|cfg| add_i18n(cfg, r#"{"defaultLanguage": "en", "languages": "en,es"}"#)).unwrap_err();
+    let err =
+        build_empty(|cfg| add_i18n(cfg, r#"{"defaultLanguage": "en", "languages": "en,es"}"#))
+            .unwrap_err();
     assert!(format!("{err:#}").contains("must be an array"), "{err:#}");
 }
 
@@ -298,7 +388,12 @@ fn languages_option_sets_default_language_to_its_first_entry_when_missing() {
     assert_eq!(results[0].content, "es");
 }
 
-fn add_posts(cfg: &mut UserConfig, ext: &str, content: &'static str, posts: &[(&str, &str)]) -> anyhow::Result<()> {
+fn add_posts(
+    cfg: &mut UserConfig,
+    ext: &str,
+    content: &'static str,
+    posts: &[(&str, &str)],
+) -> anyhow::Result<()> {
     for lang in ["en", "es"] {
         for (slug, date) in posts {
             cfg.add_template(
@@ -324,17 +419,32 @@ fn previous_and_next_collection_item_skip_translations_3207() {
         )
     })
     .unwrap();
-    assert_eq!(content_by_url(&results, "/en/posts/first/"), "NONE,/en/posts/second/");
-    assert_eq!(content_by_url(&results, "/en/posts/second/"), "/en/posts/first/,NONE");
-    assert_eq!(content_by_url(&results, "/es/posts/first/"), "NONE,/es/posts/second/");
-    assert_eq!(content_by_url(&results, "/es/posts/second/"), "/es/posts/first/,NONE");
+    assert_eq!(
+        content_by_url(&results, "/en/posts/first/"),
+        "NONE,/en/posts/second/"
+    );
+    assert_eq!(
+        content_by_url(&results, "/en/posts/second/"),
+        "/en/posts/first/,NONE"
+    );
+    assert_eq!(
+        content_by_url(&results, "/es/posts/first/"),
+        "NONE,/es/posts/second/"
+    );
+    assert_eq!(
+        content_by_url(&results, "/es/posts/second/"),
+        "/es/posts/first/,NONE"
+    );
 }
 
 /// "getCollectionItemIndex is relative to the default language pages (#3207)"
 #[test]
 fn get_collection_item_index_is_relative_to_the_default_language_pages_3207() {
     let results = build_empty(|cfg| {
-        add_i18n(cfg, r#"{"defaultLanguage": "en", "languages": ["en", "es"]}"#)?;
+        add_i18n(
+            cfg,
+            r#"{"defaultLanguage": "en", "languages": ["en", "es"]}"#,
+        )?;
         add_posts(
             cfg,
             "liquid",
@@ -351,13 +461,34 @@ fn get_collection_item_index_is_relative_to_the_default_language_pages_3207() {
 
 fn resolve_localized_item_from_collections_all(ext: &'static str, content: &'static str) {
     let results = build_empty(move |cfg| {
-        add_i18n(cfg, r#"{"defaultLanguage": "en", "languages": ["en", "es"]}"#)?;
-        add_posts(cfg, ext, content, &[("first", "2024-01-01"), ("second", "2024-01-02"), ("third", "2024-01-03")])
+        add_i18n(
+            cfg,
+            r#"{"defaultLanguage": "en", "languages": ["en", "es"]}"#,
+        )?;
+        add_posts(
+            cfg,
+            ext,
+            content,
+            &[
+                ("first", "2024-01-01"),
+                ("second", "2024-01-02"),
+                ("third", "2024-01-03"),
+            ],
+        )
     })
     .unwrap();
-    assert_eq!(content_by_url(&results, "/en/posts/first/"), "NONE,/es/posts/second/");
-    assert_eq!(content_by_url(&results, "/en/posts/second/"), "/es/posts/first/,/es/posts/third/");
-    assert_eq!(content_by_url(&results, "/es/posts/third/"), "/es/posts/second/,NONE");
+    assert_eq!(
+        content_by_url(&results, "/en/posts/first/"),
+        "NONE,/es/posts/second/"
+    );
+    assert_eq!(
+        content_by_url(&results, "/en/posts/second/"),
+        "/es/posts/first/,/es/posts/third/"
+    );
+    assert_eq!(
+        content_by_url(&results, "/es/posts/third/"),
+        "/es/posts/second/,NONE"
+    );
 }
 
 /// "getPreviousCollectionItem and getNextCollectionItem resolve a localized item from collections.all (liquid)"
@@ -399,10 +530,22 @@ fn locale_links_and_locale_url_match_paginated_pages_by_url() {
         Ok(())
     })
     .unwrap();
-    assert_eq!(content_by_url(&results, "/en/story/alpha/"), "/fr/story/alpha/ |/en/story/gamma/");
-    assert_eq!(content_by_url(&results, "/en/story/beta/"), "|/en/story/gamma/");
-    assert_eq!(content_by_url(&results, "/fr/story/alpha/"), "/en/story/alpha/ |/fr/story/gamma/");
-    assert_eq!(content_by_url(&results, "/fr/story/gamma/"), "/en/story/gamma/ |/fr/story/gamma/");
+    assert_eq!(
+        content_by_url(&results, "/en/story/alpha/"),
+        "/fr/story/alpha/ |/en/story/gamma/"
+    );
+    assert_eq!(
+        content_by_url(&results, "/en/story/beta/"),
+        "|/en/story/gamma/"
+    );
+    assert_eq!(
+        content_by_url(&results, "/fr/story/alpha/"),
+        "/en/story/alpha/ |/fr/story/gamma/"
+    );
+    assert_eq!(
+        content_by_url(&results, "/fr/story/gamma/"),
+        "/en/story/gamma/ |/fr/story/gamma/"
+    );
 }
 
 /// "locale_links matches paginated pages when the default language has no URL prefix"
@@ -458,9 +601,18 @@ fn buildawesome_translation_key_groups_paginated_translations_with_different_url
         Ok(())
     })
     .unwrap();
-    assert_eq!(content_by_url(&results, "/en/tags/wood/"), "/de/tags/holz/ |/en/tags/wood/");
-    assert_eq!(content_by_url(&results, "/de/tags/holz/"), "/en/tags/wood/ |/de/tags/holz/");
-    assert_eq!(content_by_url(&results, "/de/tags/metall/"), "/en/tags/metal/ |/de/tags/holz/");
+    assert_eq!(
+        content_by_url(&results, "/en/tags/wood/"),
+        "/de/tags/holz/ |/en/tags/wood/"
+    );
+    assert_eq!(
+        content_by_url(&results, "/de/tags/holz/"),
+        "/en/tags/wood/ |/de/tags/holz/"
+    );
+    assert_eq!(
+        content_by_url(&results, "/de/tags/metall/"),
+        "/en/tags/metal/ |/de/tags/holz/"
+    );
 }
 
 /// "locale_links labels use native language names"
@@ -479,7 +631,10 @@ fn locale_links_labels_use_native_language_names() {
     })
     .unwrap();
     // Capitalized for `es`, but not Georgian, `isiZulu` or scripts without case
-    assert_eq!(content_by_url(&results, "/en/"), "es:Español ja:日本語 ka:ქართული tl:Filipino zu:isiZulu ");
+    assert_eq!(
+        content_by_url(&results, "/en/"),
+        "es:Español ja:日本語 ka:ქართული tl:Filipino zu:isiZulu "
+    );
 }
 
 /// "locale_links includeCurrent option"
@@ -497,5 +652,8 @@ fn locale_links_include_current_option() {
         Ok(())
     })
     .unwrap();
-    assert_eq!(content_by_url(&results, "/en/"), "en:English es:Español |es ");
+    assert_eq!(
+        content_by_url(&results, "/en/"),
+        "en:English es:Español |es "
+    );
 }

@@ -14,9 +14,9 @@
 use std::sync::{Arc, Mutex};
 
 use anyhow::Result;
-use twelvety::testing::{TestOptions, get_context, json, render_string};
 use twelvety::template_render::TemplateRender;
-use twelvety::{Twelvety, Options, UserConfig, Value};
+use twelvety::testing::{TestOptions, get_context, json, render_string};
+use twelvety::{Options, Twelvety, UserConfig, Value};
 
 fn options(input: Option<&str>) -> TestOptions {
     match input {
@@ -53,7 +53,12 @@ fn render_with<F>(src: &str, data: Value, config: F) -> Result<String>
 where
     F: Fn(&mut UserConfig) -> Result<()> + Send + Sync + 'static,
 {
-    render_string("liquid", src, data, TestOptions::input("./test/stubs/").with_config(config))
+    render_string(
+        "liquid",
+        src,
+        data,
+        TestOptions::input("./test/stubs/").with_config(config),
+    )
 }
 
 fn page_data(extra: &str) -> Value {
@@ -107,13 +112,20 @@ fn liquid() {
 
 #[test]
 fn render_addition() {
-    assert_eq!(render("<p>{{ number | plus: 1 }}</p>", json(r#"{"number": 1}"#)).unwrap(), "<p>2</p>");
+    assert_eq!(
+        render("<p>{{ number | plus: 1 }}</p>", json(r#"{"number": 1}"#)).unwrap(),
+        "<p>2</p>"
+    );
 }
 
 #[test]
 fn render_raw() {
     assert_eq!(
-        render("<p>{% raw %}{{name}}{% endraw %}</p>", json(r#"{"name": "tim"}"#)).unwrap(),
+        render(
+            "<p>{% raw %}{{name}}{% endraw %}</p>",
+            json(r#"{"name": "tim"}"#)
+        )
+        .unwrap(),
         "<p>{{name}}</p>"
     );
 }
@@ -121,25 +133,38 @@ fn render_raw() {
 #[test]
 fn render_raw_multiline() {
     assert_eq!(
-        render("<p>{% raw %}\n{{name}}\n{% endraw %}</p>", json(r#"{"name": "tim"}"#)).unwrap(),
+        render(
+            "<p>{% raw %}\n{{name}}\n{% endraw %}</p>",
+            json(r#"{"name": "tim"}"#)
+        )
+        .unwrap(),
         "<p>\n{{name}}\n</p>"
     );
 }
 
 #[test]
 fn render_with_helper() {
-    assert_eq!(render("<p>{{name | capitalize}}</p>", json(r#"{"name": "tim"}"#)).unwrap(), "<p>Tim</p>");
+    assert_eq!(
+        render("<p>{{name | capitalize}}</p>", json(r#"{"name": "tim"}"#)).unwrap(),
+        "<p>Tim</p>"
+    );
 }
 
 #[test]
 fn render_include() {
-    assert_eq!(render_stubs_static("<p>{% include included %}</p>").unwrap(), "<p>This is an include.</p>");
+    assert_eq!(
+        render_stubs_static("<p>{% include included %}</p>").unwrap(),
+        "<p>This is an include.</p>"
+    );
 }
 
 #[test]
 fn render_relative_include_dynamic_partials_off() {
     // When the input path is `liquid`, this *only* uses _includes relative paths
-    assert_eq!(render_stubs_static("<p>{% include ./included %}</p>").unwrap(), "<p>This is an include.</p>");
+    assert_eq!(
+        render_stubs_static("<p>{% include ./included %}</p>").unwrap(),
+        "<p>This is an include.</p>"
+    );
 }
 
 #[test]
@@ -205,7 +230,9 @@ fn render_include_with_html_suffix() {
 #[test]
 fn render_include_with_html_suffix_and_data() {
     assert_eq!(
-        render_stubs_static("{% include included-data.html, myVariable: 'myValue' %}").unwrap().trim(),
+        render_stubs_static("{% include included-data.html, myVariable: 'myValue' %}")
+            .unwrap()
+            .trim(),
         "This is an include. myValue"
     );
 }
@@ -213,7 +240,9 @@ fn render_include_with_html_suffix_and_data() {
 #[test]
 fn custom_filter() {
     let out = render_with("{{ 'test' | prefixWithZach }}", Value::object(), |cfg| {
-        cfg.add_liquid_filter("prefixWithZach", |_, val, _| Ok(Value::str(format!("Zach{}", s(&val)))));
+        cfg.add_liquid_filter("prefixWithZach", |_, val, _| {
+            Ok(Value::str(format!("Zach{}", s(&val))))
+        });
         Ok(())
     })
     .unwrap();
@@ -223,7 +252,9 @@ fn custom_filter() {
 #[test]
 fn async_filter() {
     let out = render_with("{{ 'test' | myAsyncFilter }}", Value::object(), |cfg| {
-        cfg.add_async_filter("myAsyncFilter", |_, val, _| Ok(Value::str(format!("HI{}", s(&val)))));
+        cfg.add_async_filter("myAsyncFilter", |_, val, _| {
+            Ok(Value::str(format!("HI{}", s(&val))))
+        });
         Ok(())
     })
     .unwrap();
@@ -232,17 +263,23 @@ fn async_filter() {
 
 #[test]
 fn issue_3206_strict_variables_and_custom_filters_in_includes() {
-    let out = render_with("<p>{% render \"custom-filter\", name: \"Zach\" %}</p>", Value::object(), |cfg| {
-        cfg.set_liquid_options(json(r#"{"strictVariables": true}"#));
-        cfg.add_liquid_filter("makeItFoo", |_, _, _| Ok(Value::str("foo")));
-        Ok(())
-    })
+    let out = render_with(
+        "<p>{% render \"custom-filter\", name: \"Zach\" %}</p>",
+        Value::object(),
+        |cfg| {
+            cfg.set_liquid_options(json(r#"{"strictVariables": true}"#));
+            cfg.add_liquid_filter("makeItFoo", |_, _, _| Ok(Value::str("foo")));
+            Ok(())
+        },
+    )
     .unwrap();
     assert_eq!(out, "<p>foo</p>");
 }
 
 /// Shortcode that records `this.page.url` (upstream’s in-callback assertions)
-fn postfix_shortcode(seen: Arc<Mutex<Vec<String>>>) -> impl Fn(&mut UserConfig) -> Result<()> + Send + Sync {
+fn postfix_shortcode(
+    seen: Arc<Mutex<Vec<String>>>,
+) -> impl Fn(&mut UserConfig) -> Result<()> + Send + Sync {
     move |cfg| {
         let seen = seen.clone();
         cfg.add_shortcode("postfixWithZach", move |ctx, args| {
@@ -271,14 +308,18 @@ fn shortcode_returns_promise() {
     // Async shortcodes are regular shortcodes in Rust (covers the three upstream promise variants)
     let seen = Arc::new(Mutex::new(vec![]));
     let s2 = seen.clone();
-    let out = render_with("{% postfixWithZach name %}", page_data(r#"{"name": "test"}"#), move |cfg| {
-        let seen = s2.clone();
-        cfg.add_async_shortcode("postfixWithZach", move |ctx, args| {
-            seen.lock().unwrap().push(s(&ctx.page().get("url")));
-            Ok(format!("{}Zach", s(&args[0])))
-        });
-        Ok(())
-    })
+    let out = render_with(
+        "{% postfixWithZach name %}",
+        page_data(r#"{"name": "test"}"#),
+        move |cfg| {
+            let seen = s2.clone();
+            cfg.add_async_shortcode("postfixWithZach", move |ctx, args| {
+                seen.lock().unwrap().push(s(&ctx.page().get("url")));
+                Ok(format!("{}Zach", s(&args[0])))
+            });
+            Ok(())
+        },
+    )
     .unwrap();
     assert_eq!(out, "testZach");
     assert_eq!(*seen.lock().unwrap(), vec!["/hi/".to_string()]);
@@ -286,13 +327,17 @@ fn shortcode_returns_promise() {
 
 #[test]
 fn shortcode_safe_output() {
-    let out = render_with("{% postfixWithZach name %}", page_data(r#"{"name": "test"}"#), |cfg| {
-        cfg.add_shortcode("postfixWithZach", |ctx, args| {
-            assert_eq!(s(&ctx.page().get("url")), "/hi/");
-            Ok(format!("<span>{}</span>", s(&args[0])))
-        });
-        Ok(())
-    })
+    let out = render_with(
+        "{% postfixWithZach name %}",
+        page_data(r#"{"name": "test"}"#),
+        |cfg| {
+            cfg.add_shortcode("postfixWithZach", |ctx, args| {
+                assert_eq!(s(&ctx.page().get("url")), "/hi/");
+                Ok(format!("<span>{}</span>", s(&args[0])))
+            });
+            Ok(())
+        },
+    )
     .unwrap();
     assert_eq!(out, "<span>test</span>");
 }
@@ -338,7 +383,11 @@ fn render_include_subfolder() {
         "<p>{% include subfolder/included.html %}</p>",
         "<p>{% include subfolder/included %}</p>",
     ] {
-        assert_eq!(render_stubs_static(src).unwrap(), "<p>This is an include.</p>", "{src}");
+        assert_eq!(
+            render_stubs_static(src).unwrap(),
+            "<p>This is an include.</p>",
+            "{src}"
+        );
     }
 }
 
@@ -356,7 +405,11 @@ fn render_include_subfolder_quoted() {
         "<p>{% include 'subfolder/included.html', myVariable: 'myValue' %}</p>",
         "<p>{% include \"subfolder/included.html\", myVariable: \"myValue\" %}</p>",
     ] {
-        assert_eq!(render_stubs(src, Value::object()).unwrap(), "<p>This is an include.</p>", "{src}");
+        assert_eq!(
+            render_stubs(src, Value::object()).unwrap(),
+            "<p>This is an include.</p>",
+            "{src}"
+        );
     }
 }
 
@@ -419,7 +472,9 @@ fn shortcode_multiple_args() {
         "{% postfixWithZach name other %}",
         json(r#"{"name": "test", "other": "howdy"}"#),
         |cfg| {
-            cfg.add_shortcode("postfixWithZach", |_, args| Ok(format!("{}{}Zach", s(&args[0]), s(&args[1]))));
+            cfg.add_shortcode("postfixWithZach", |_, args| {
+                Ok(format!("{}{}Zach", s(&args[0]), s(&args[1])))
+            });
             Ok(())
         },
     )
@@ -437,9 +492,18 @@ fn shortcode_keyword_args() {
                 let kwargs = &args[1];
                 assert_eq!(kwargs.get("__keywords"), Value::Bool(true));
                 // `__keywords` is non-enumerable upstream
-                let keys: Vec<String> = kwargs.keys().into_iter().filter(|k| k != "__keywords").collect();
+                let keys: Vec<String> = kwargs
+                    .keys()
+                    .into_iter()
+                    .filter(|k| k != "__keywords")
+                    .collect();
                 assert_eq!(keys, vec!["prepend", "append"]);
-                Ok(format!("{}{}Zach{}", s(&kwargs.get("prepend")), s(&args[0]), s(&kwargs.get("append"))))
+                Ok(format!(
+                    "{}{}Zach{}",
+                    s(&kwargs.get("prepend")),
+                    s(&args[0]),
+                    s(&kwargs.get("append"))
+                ))
             });
             Ok(())
         },
@@ -456,7 +520,11 @@ fn shortcode_only_keyword_args_comma_separated() {
         |cfg| {
             cfg.add_shortcode("postfixWithZach", |_, args| {
                 let kwargs = &args[0];
-                Ok(format!("{}Zach{}", s(&kwargs.get("prepend")), s(&kwargs.get("append"))))
+                Ok(format!(
+                    "{}Zach{}",
+                    s(&kwargs.get("prepend")),
+                    s(&kwargs.get("append"))
+                ))
             });
             Ok(())
         },
@@ -483,7 +551,12 @@ fn shortcode_keyword_args_mixed_with_property_access_and_literals() {
 
 #[test]
 fn shortcode_without_keyword_args_has_no_trailing_object() {
-    let out = render_with("{% argsToJson name %}", json(r#"{"name": "test"}"#), args_to_json_shortcode).unwrap();
+    let out = render_with(
+        "{% argsToJson name %}",
+        json(r#"{"name": "test"}"#),
+        args_to_json_shortcode,
+    )
+    .unwrap();
     assert_eq!(out, r#"["test"]"#);
 }
 
@@ -508,7 +581,11 @@ fn include_scope_leak() {
     // By design, `include` assigns to its parent scope (use `render` for a clean scope)
     // see: https://github.com/harttle/liquidjs/issues/404#issuecomment-955660149
     assert_eq!(
-        render_stubs("<p>{% include 'scopeleak' %}{{ test }}</p>", json(r#"{"test": 1}"#)).unwrap(),
+        render_stubs(
+            "<p>{% include 'scopeleak' %}{{ test }}</p>",
+            json(r#"{"test": 1}"#)
+        )
+        .unwrap(),
         "<p>22</p>"
     );
 }
@@ -516,7 +593,11 @@ fn include_scope_leak() {
 #[test]
 fn render_scope_leak() {
     assert_eq!(
-        render_stubs("<p>{% render 'scopeleak' %}-{{ test }}</p>", json(r#"{"test": 1}"#)).unwrap(),
+        render_stubs(
+            "<p>{% render 'scopeleak' %}-{{ test }}</p>",
+            json(r#"{"test": 1}"#)
+        )
+        .unwrap(),
         "<p>2-1</p>"
     );
 }
@@ -537,7 +618,9 @@ fn missing_filter_issue_183() {
 
 #[test]
 fn issue_258_render_date() {
-    let date = chrono::DateTime::parse_from_rfc3339("2016-01-01T00:00:00Z").unwrap().to_utc();
+    let date = chrono::DateTime::parse_from_rfc3339("2016-01-01T00:00:00Z")
+        .unwrap()
+        .to_utc();
     let mut data = Value::object();
     data.set("myDate", Value::Date(date));
     let out = render("<p>{{ myDate }}</p>", data).unwrap();
@@ -559,7 +642,15 @@ fn str_zach_shortcode(name: &'static str) -> impl Fn(&mut UserConfig) -> Result<
 #[test]
 fn issue_347_shortcode_string_argument() {
     let data = json(r#"{"name": "alkdsjfkslja"}"#);
-    assert_eq!(render_with("{% issue347 'test' %}", data, str_zach_shortcode("issue347")).unwrap(), "testZach");
+    assert_eq!(
+        render_with(
+            "{% issue347 'test' %}",
+            data,
+            str_zach_shortcode("issue347")
+        )
+        .unwrap(),
+        "testZach"
+    );
 }
 
 #[test]
@@ -587,7 +678,11 @@ fn issue_347_shortcode_string_arguments() {
         ("{% issue347 'test 2', 3 %}", "test 23Zach"),
         ("{% issue347 'test 2', 3.23 %}", "test 23.23Zach"),
     ] {
-        assert_eq!(render_with(src, data.clone(), str_zach_shortcode("issue347")).unwrap(), expected, "{src}");
+        assert_eq!(
+            render_with(src, data.clone(), str_zach_shortcode("issue347")).unwrap(),
+            expected,
+            "{src}"
+        );
     }
 }
 
@@ -595,13 +690,24 @@ fn issue_347_shortcode_string_arguments() {
 fn issue_347_shortcode_boolean_argument() {
     let config = |cfg: &mut UserConfig| {
         cfg.add_shortcode("issue347", |_, args| {
-            Ok(if args[0].is_truthy() { "Zach" } else { "Not Zach" }.to_string())
+            Ok(if args[0].is_truthy() {
+                "Zach"
+            } else {
+                "Not Zach"
+            }
+            .to_string())
         });
         Ok(())
     };
     let data = json(r#"{"name": "alkdsjfkslja"}"#);
-    assert_eq!(render_with("{% issue347 true %}", data.clone(), config).unwrap(), "Zach");
-    assert_eq!(render_with("{% issue347 false %}", data, config).unwrap(), "Not Zach");
+    assert_eq!(
+        render_with("{% issue347 true %}", data.clone(), config).unwrap(),
+        "Zach"
+    );
+    assert_eq!(
+        render_with("{% issue347 false %}", data, config).unwrap(),
+        "Not Zach"
+    );
 }
 
 #[test]
@@ -611,7 +717,12 @@ fn issue_347_paired_shortcode_with_spaces() {
         json(r#"{"name": "test"}"#),
         |cfg| {
             cfg.add_paired_shortcode("postfixWithZach", |_, content, args| {
-                Ok(format!("{}{}{}{content}Zach", s(&args[0]), s(&args[1]), s(&args[2])))
+                Ok(format!(
+                    "{}{}{}{content}Zach",
+                    s(&args[0]),
+                    s(&args[1]),
+                    s(&args[2])
+                ))
             });
             Ok(())
         },
@@ -623,7 +734,11 @@ fn issue_347_paired_shortcode_with_spaces() {
 #[test]
 fn render_with_dash_variable_issue_567() {
     assert_eq!(
-        render("<p>{{ my-global-name }}</p>", json(r#"{"my-global-name": "Zach"}"#)).unwrap(),
+        render(
+            "<p>{{ my-global-name }}</p>",
+            json(r#"{"my-global-name": "Zach"}"#)
+        )
+        .unwrap(),
         "<p>Zach</p>"
     );
 }
@@ -664,12 +779,16 @@ fn issue_600_shortcode_argument_with_underscores() {
 #[test]
 fn shortcode_error_throwing() {
     // Covers both the sync and async upstream variants
-    let err = render_with("{% postfixWithZach name %}", json(r#"{"name": "test"}"#), |cfg| {
-        cfg.add_shortcode("postfixWithZach", |_, _| {
-            anyhow::bail!("Liquid Shortcode (with sync function, error throwing)")
-        });
-        Ok(())
-    })
+    let err = render_with(
+        "{% postfixWithZach name %}",
+        json(r#"{"name": "test"}"#),
+        |cfg| {
+            cfg.add_shortcode("postfixWithZach", |_, _| {
+                anyhow::bail!("Liquid Shortcode (with sync function, error throwing)")
+            });
+            Ok(())
+        },
+    )
     .unwrap_err();
     assert!(
         format!("{err:#}").contains("Liquid Shortcode (with sync function, error throwing)"),
@@ -679,7 +798,10 @@ fn shortcode_error_throwing() {
 
 #[test]
 fn render_a_false_1069() {
-    assert_eq!(render("{{ falseValue }}", json(r#"{"falseValue": false}"#)).unwrap(), "false");
+    assert_eq!(
+        render("{{ falseValue }}", json(r#"{"falseValue": false}"#)).unwrap(),
+        "false"
+    );
 }
 
 #[test]
@@ -698,18 +820,29 @@ fn render_square_brackets_680() {
 #[test]
 fn render_square_brackets_680_variable_reference() {
     assert_eq!(
-        render("<p>{{ test[ref] }}</p>", json(r#"{"test": {"hey-a": 1}, "ref": "hey-a"}"#)).unwrap(),
+        render(
+            "<p>{{ test[ref] }}</p>",
+            json(r#"{"test": {"hey-a": 1}, "ref": "hey-a"}"#)
+        )
+        .unwrap(),
         "<p>1</p>"
     );
     assert_eq!(
-        render("<p>{{ test[ref[0]] }}</p>", json(r#"{"test": {"hey-a": 1}, "ref": ["hey-a"]}"#)).unwrap(),
+        render(
+            "<p>{{ test[ref[0]] }}</p>",
+            json(r#"{"test": {"hey-a": 1}, "ref": ["hey-a"]}"#)
+        )
+        .unwrap(),
         "<p>1</p>"
     );
 }
 
 fn engine() -> Arc<dyn twelvety::engines::TemplateEngine> {
     let ctx = get_context(options(None)).unwrap();
-    TemplateRender::new(ctx, "liquid").unwrap().get_engine_by_name("liquid").unwrap()
+    TemplateRender::new(ctx, "liquid")
+        .unwrap()
+        .get_engine_by_name("liquid")
+        .unwrap()
 }
 
 #[test]
@@ -723,14 +856,25 @@ fn bypass_compilation() {
 #[test]
 fn reverse_filter_in_output() {
     // https://liquidjs.com/filters/reverse.html
-    assert_eq!(render("{{ test | reverse | join: ',' }}", json(r#"{"test": [1, 2, 3]}"#)).unwrap(), "3,2,1");
+    assert_eq!(
+        render(
+            "{{ test | reverse | join: ',' }}",
+            json(r#"{"test": [1, 2, 3]}"#)
+        )
+        .unwrap(),
+        "3,2,1"
+    );
 }
 
 #[test]
 fn reverse_filter_in_for() {
     // https://liquidjs.com/tags/for.html#reversed
     assert_eq!(
-        render("{% for num in test reversed %}{{ num }}{% endfor %}", json(r#"{"test": [1, 2, 3]}"#)).unwrap(),
+        render(
+            "{% for num in test reversed %}{{ num }}{% endfor %}",
+            json(r#"{"test": [1, 2, 3]}"#)
+        )
+        .unwrap(),
         "321"
     );
 }
@@ -740,14 +884,26 @@ fn parse_for_symbols() {
     let engine = engine();
     let symbols = |src: &str| engine.parse_for_symbols(src).unwrap();
     assert_eq!(symbols("<p>{{ name }}</p>"), vec!["name"]);
-    assert_eq!(symbols("<p>{{ twelvety.deep.nested }}</p>"), vec!["twelvety.deep.nested"]);
+    assert_eq!(
+        symbols("<p>{{ twelvety.deep.nested }}</p>"),
+        vec!["twelvety.deep.nested"]
+    );
     assert_eq!(symbols("<p>{{ a }} {{ b }}</p>"), vec!["a", "b"]);
     assert_eq!(symbols("<p>{% if true %}{{ c }}{% endif %}</p>"), vec!["c"]);
-    assert_eq!(symbols("<p>{% if false %}{{ c }}{% endif %}</p>"), vec!["c"]);
+    assert_eq!(
+        symbols("<p>{% if false %}{{ c }}{% endif %}</p>"),
+        vec!["c"]
+    );
     // Note that the Nunjucks parser returns collections.all
-    assert_eq!(symbols("{{ collections.all[0] }}>"), vec!["collections.all[0]"]);
+    assert_eq!(
+        symbols("{{ collections.all[0] }}>"),
+        vec!["collections.all[0]"]
+    );
     assert_eq!(symbols("{{ collections.mine }}>"), vec!["collections.mine"]);
-    assert_eq!(symbols("{{ collections.mine | test }}>"), vec!["collections.mine"]);
+    assert_eq!(
+        symbols("{{ collections.mine | test }}>"),
+        vec!["collections.mine"]
+    );
 }
 
 fn virtual_shortcode_test(src: &'static str, paired: bool) -> Result<String> {
@@ -768,8 +924,16 @@ fn virtual_shortcode_test(src: &'static str, paired: bool) -> Result<String> {
 // `setLiquidParameterParsing("builtin")` is the only parsing mode in the port
 #[test]
 fn shortcode_builtin_argument_parsing() {
-    for src in ["{% test abc def %}", "{% test abc, def %}", "{% test abc,def %}"] {
-        assert_eq!(virtual_shortcode_test(src, false).unwrap(), "[123,456]", "{src}");
+    for src in [
+        "{% test abc def %}",
+        "{% test abc, def %}",
+        "{% test abc,def %}",
+    ] {
+        assert_eq!(
+            virtual_shortcode_test(src, false).unwrap(),
+            "[123,456]",
+            "{src}"
+        );
     }
 }
 
@@ -780,7 +944,11 @@ fn paired_shortcode_builtin_argument_parsing() {
         "{% test abc, def %}hi{% endtest %}",
         "{% test abc,def %}hi{% endtest %}",
     ] {
-        assert_eq!(virtual_shortcode_test(src, true).unwrap(), r#"["hi",123,456]"#, "{src}");
+        assert_eq!(
+            virtual_shortcode_test(src, true).unwrap(),
+            r#"["hi",123,456]"#,
+            "{src}"
+        );
     }
 }
 
@@ -800,7 +968,11 @@ fn js_truthy_default_changed_3507() {
 #[test]
 fn globals_inside_render_1541() {
     let out = build_virtual("./test/stubs/stubs-1541/", |cfg| {
-        cfg.add_template("index.liquid", "{% render \"render-source.liquid\" %}", Value::object())
+        cfg.add_template(
+            "index.liquid",
+            "{% render \"render-source.liquid\" %}",
+            Value::object(),
+        )
     })
     .unwrap();
     assert_eq!(out, "/ via script collections.all size: 1");
@@ -810,7 +982,11 @@ fn globals_inside_render_1541() {
 fn layout_tag_resolves_from_custom_layouts_directory_2233() {
     let out = build_virtual("./test/stubs/stubs-2233/", |cfg| {
         cfg.set_layouts_directory("layouts")?;
-        cfg.add_template("index.liquid", "{% layout \"base\" %}{% block content %}Hi{% endblock %}", Value::object())
+        cfg.add_template(
+            "index.liquid",
+            "{% layout \"base\" %}{% block content %}Hi{% endblock %}",
+            Value::object(),
+        )
     })
     .unwrap();
     assert_eq!(out, "Before Hi After");

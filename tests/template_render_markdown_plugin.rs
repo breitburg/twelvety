@@ -54,10 +54,15 @@ fn assert_sends_context_data(tr: &TemplateRender) {
     *ENVIRONMENT.lock().unwrap() = None;
     let data = json(r#"{"some": "data"}"#);
 
-    let f = tr.get_compiled_template("[link text](http://link.com)", false, None).unwrap();
+    let f = tr
+        .get_compiled_template("[link text](http://link.com)", false, None)
+        .unwrap();
     let result = f(&data).unwrap();
     assert_eq!(ENVIRONMENT.lock().unwrap().clone(), Some(data));
-    assert_eq!(result, "<p><a href=\"http://link.com?data=data\">link text</a></p>\n");
+    assert_eq!(
+        result,
+        "<p><a href=\"http://link.com?data=data\">link text</a></p>\n"
+    );
 }
 
 #[test]
@@ -74,4 +79,3 @@ fn without_html_prerender_sends_context_data_to_the_markdown_library() {
 
 // Skipped: "renderer that only implements the render function" passes a plain JS object with a
 // `render` method to `setLibrary`; swapping in a JS library object is not supported in the port.
-

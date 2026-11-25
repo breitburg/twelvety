@@ -9,14 +9,15 @@
 
 use std::sync::Arc;
 
-use twelvety::core::{Twelvety, Options};
+use twelvety::Value;
+use twelvety::core::{Options, Twelvety};
 use twelvety::page_entry::PageEntry;
 use twelvety::plugins::pagination::Pagination;
 use twelvety::template::Template;
 use twelvety::testing::{TestOptions, get_new_template, json, render_template};
-use twelvety::Value;
 
-const ITEMS_LIST: &str = "<ol>{% for item in pagination.items %}<li>{{ item }}</li>{% endfor %}</ol>";
+const ITEMS_LIST: &str =
+    "<ol>{% for item in pagination.items %}<li>{{ item }}</li>{% endfor %}</ol>";
 
 fn stub(relative_path: &str) -> String {
     let fm = match relative_path {
@@ -46,14 +47,18 @@ fn stub(relative_path: &str) -> String {
         "paged/pagedobjectfilterarray.njk" => return object_stub("  filter:\n    - item4\n"),
         "paged/pagedobjectfilterstring.njk" => return object_stub("  filter: item4\n"),
         "paged/pagedobjectvalues.njk" => return object_stub("  resolve: values\n"),
-        "paged/pagedpermalink.njk" => return permalink_stub("paged/{{ pagination.items[0] | slugify }}/index.html"),
+        "paged/pagedpermalink.njk" => {
+            return permalink_stub("paged/{{ pagination.items[0] | slugify }}/index.html");
+        }
         "paged/pagedpermalinkif.liquid" | "paged/pagedpermalinkif.njk" => {
             "pagination:\n  data: items\n  size: 2\nitems:\n  - item1\n  - item2\n  - item3\n  - item4\npermalink: paged/{% if pagination.pageNumber > 0 %}page-{{ pagination.pageNumber }}/{% endif %}index.html\n"
         }
         "paged/pagedpermalinkleadingslash.njk" => {
             return permalink_stub("/paged/page-{{ pagination.pageNumber }}/index.html");
         }
-        "paged/pagedpermalinknumeric.njk" => return permalink_stub("paged/page-{{ pagination.pageNumber }}/index.html"),
+        "paged/pagedpermalinknumeric.njk" => {
+            return permalink_stub("paged/page-{{ pagination.pageNumber }}/index.html");
+        }
         "paged/pagedpermalinknumericoneindexed.njk" => {
             return permalink_stub("paged/page-{{ pagination.pageNumber + 1 }}/index.html");
         }
@@ -105,7 +110,11 @@ fn get_templates(tmpl: &Arc<Template>) -> Vec<Arc<PageEntry>> {
 
 /// `renderTemplate(page.template, page.data)`
 fn render(page: &Arc<PageEntry>) -> String {
-    page.template.render_page_entry_without_layout(page).unwrap().trim().to_string()
+    page.template
+        .render_page_entry_without_layout(page)
+        .unwrap()
+        .trim()
+        .to_string()
 }
 
 fn output_path(page: &Arc<PageEntry>) -> String {
@@ -191,10 +200,22 @@ fn resolve_paged_data_in_frontmatter() {
 fn paginate_data_in_frontmatter() {
     let pages = get_templates(&get_new_virtual_template("paged/pagedinlinedata.njk"));
     assert_eq!(pages.len(), 2);
-    assert_eq!(output_path(&pages[0]), "./dist/paged/pagedinlinedata/index.html");
-    assert_eq!(render(&pages[0]), "<ol><li>item1</li><li>item2</li><li>item3</li><li>item4</li></ol>");
-    assert_eq!(output_path(&pages[1]), "./dist/paged/pagedinlinedata/1/index.html");
-    assert_eq!(render(&pages[1]), "<ol><li>item5</li><li>item6</li><li>item7</li><li>item8</li></ol>");
+    assert_eq!(
+        output_path(&pages[0]),
+        "./dist/paged/pagedinlinedata/index.html"
+    );
+    assert_eq!(
+        render(&pages[0]),
+        "<ol><li>item1</li><li>item2</li><li>item3</li><li>item4</li></ol>"
+    );
+    assert_eq!(
+        output_path(&pages[1]),
+        "./dist/paged/pagedinlinedata/1/index.html"
+    );
+    assert_eq!(
+        render(&pages[1]),
+        "<ol><li>item5</li><li>item6</li><li>item7</li><li>item8</li></ol>"
+    );
 }
 
 #[test]
@@ -202,7 +223,7 @@ fn paginate_external_data_file() {
     let tmpl = stubs_template("./test/stubs/paged/paged.njk");
     let data = tmpl.get_data().unwrap();
     // local data
-    assert!(data.get_path("items.sub").len() > 0);
+    assert!(!data.get_path("items.sub").is_empty());
 
     let pages = get_templates(&tmpl);
     assert_eq!(pages.len(), 2);
@@ -212,14 +233,23 @@ fn paginate_external_data_file() {
         "<ol><li>item1</li><li>item2</li><li>item3</li><li>item4</li><li>item5</li></ol>"
     );
     assert_eq!(output_path(&pages[1]), "./dist/paged/paged/1/index.html");
-    assert_eq!(render(&pages[1]), "<ol><li>item6</li><li>item7</li><li>item8</li></ol>");
+    assert_eq!(
+        render(&pages[1]),
+        "<ol><li>item6</li><li>item7</li><li>item8</li></ol>"
+    );
 }
 
 #[test]
 fn permalink_with_pagination_variables() {
     let pages = get_templates(&get_new_virtual_template("paged/pagedpermalink.njk"));
-    assert_eq!(output_path(&pages[0]), "./dist/paged/slug-candidate/index.html");
-    assert_eq!(output_path(&pages[1]), "./dist/paged/another-slug-candidate/index.html");
+    assert_eq!(
+        output_path(&pages[0]),
+        "./dist/paged/slug-candidate/index.html"
+    );
+    assert_eq!(
+        output_path(&pages[1]),
+        "./dist/paged/another-slug-candidate/index.html"
+    );
 }
 
 #[test]
@@ -232,15 +262,27 @@ fn permalink_with_pagination_variables_numeric() {
     assert!(pagination(&pages[0], "lastPageHref").is_truthy());
     assert_eq!(output_path(&pages[0]), "./dist/paged/page-0/index.html");
     assert!(!pagination(&pages[0], "previousPageLink").is_truthy());
-    assert_eq!(pagination(&pages[0], "nextPageLink"), Value::str("/paged/page-1/index.html"));
-    assert_eq!(pagination(&pages[0], "nextPageHref"), Value::str("/paged/page-1/"));
+    assert_eq!(
+        pagination(&pages[0], "nextPageLink"),
+        Value::str("/paged/page-1/index.html")
+    );
+    assert_eq!(
+        pagination(&pages[0], "nextPageHref"),
+        Value::str("/paged/page-1/")
+    );
     assert_eq!(pagination(&pages[0], "pageLinks").len(), 2);
     assert_eq!(pagination(&pages[0], "links").len(), 2);
     assert_eq!(pagination(&pages[0], "hrefs").len(), 2);
 
     assert_eq!(output_path(&pages[1]), "./dist/paged/page-1/index.html");
-    assert_eq!(pagination(&pages[1], "previousPageLink"), Value::str("/paged/page-0/index.html"));
-    assert_eq!(pagination(&pages[1], "previousPageHref"), Value::str("/paged/page-0/"));
+    assert_eq!(
+        pagination(&pages[1], "previousPageLink"),
+        Value::str("/paged/page-0/index.html")
+    );
+    assert_eq!(
+        pagination(&pages[1], "previousPageHref"),
+        Value::str("/paged/page-0/")
+    );
     assert!(!pagination(&pages[1], "nextPageLink").is_truthy());
     assert_eq!(pagination(&pages[1], "pageLinks").len(), 2);
     assert_eq!(pagination(&pages[1], "links").len(), 2);
@@ -249,32 +291,60 @@ fn permalink_with_pagination_variables_numeric() {
 
 #[test]
 fn pagination_links_with_a_leading_slash_permalink_issue_1350() {
-    let pages = get_templates(&get_new_virtual_template("paged/pagedpermalinkleadingslash.njk"));
+    let pages = get_templates(&get_new_virtual_template(
+        "paged/pagedpermalinkleadingslash.njk",
+    ));
     assert_eq!(
         pagination(&pages[0], "links"),
         json(r#"["/paged/page-0/index.html", "/paged/page-1/index.html"]"#)
     );
-    assert_eq!(pagination(&pages[0], "nextPageLink"), Value::str("/paged/page-1/index.html"));
-    assert_eq!(pagination(&pages[1], "previousPageLink"), Value::str("/paged/page-0/index.html"));
-    assert_eq!(pagination(&pages[1], "firstPageLink"), Value::str("/paged/page-0/index.html"));
-    assert_eq!(pagination(&pages[0], "hrefs"), json(r#"["/paged/page-0/", "/paged/page-1/"]"#));
+    assert_eq!(
+        pagination(&pages[0], "nextPageLink"),
+        Value::str("/paged/page-1/index.html")
+    );
+    assert_eq!(
+        pagination(&pages[1], "previousPageLink"),
+        Value::str("/paged/page-0/index.html")
+    );
+    assert_eq!(
+        pagination(&pages[1], "firstPageLink"),
+        Value::str("/paged/page-0/index.html")
+    );
+    assert_eq!(
+        pagination(&pages[0], "hrefs"),
+        json(r#"["/paged/page-0/", "/paged/page-1/"]"#)
+    );
 }
 
 #[test]
 fn permalink_with_pagination_variables_numeric_one_indexed() {
-    let pages = get_templates(&get_new_virtual_template("paged/pagedpermalinknumericoneindexed.njk"));
+    let pages = get_templates(&get_new_virtual_template(
+        "paged/pagedpermalinknumericoneindexed.njk",
+    ));
 
     assert_eq!(output_path(&pages[0]), "./dist/paged/page-1/index.html");
     assert!(!pagination(&pages[0], "previousPageLink").is_truthy());
-    assert_eq!(pagination(&pages[0], "nextPageLink"), Value::str("/paged/page-2/index.html"));
-    assert_eq!(pagination(&pages[0], "nextPageHref"), Value::str("/paged/page-2/"));
+    assert_eq!(
+        pagination(&pages[0], "nextPageLink"),
+        Value::str("/paged/page-2/index.html")
+    );
+    assert_eq!(
+        pagination(&pages[0], "nextPageHref"),
+        Value::str("/paged/page-2/")
+    );
     assert_eq!(pagination(&pages[0], "pageLinks").len(), 2);
     assert_eq!(pagination(&pages[0], "links").len(), 2);
     assert_eq!(pagination(&pages[0], "hrefs").len(), 2);
 
     assert_eq!(output_path(&pages[1]), "./dist/paged/page-2/index.html");
-    assert_eq!(pagination(&pages[1], "previousPageLink"), Value::str("/paged/page-1/index.html"));
-    assert_eq!(pagination(&pages[1], "previousPageHref"), Value::str("/paged/page-1/"));
+    assert_eq!(
+        pagination(&pages[1], "previousPageLink"),
+        Value::str("/paged/page-1/index.html")
+    );
+    assert_eq!(
+        pagination(&pages[1], "previousPageHref"),
+        Value::str("/paged/page-1/")
+    );
     assert!(!pagination(&pages[1], "nextPageLink").is_truthy());
     assert_eq!(pagination(&pages[1], "pageLinks").len(), 2);
     assert_eq!(pagination(&pages[1], "links").len(), 2);
@@ -285,17 +355,31 @@ fn permalink_with_pagination_variables_numeric_one_indexed() {
 fn permalink_first_and_last_page_link_numeric() {
     let pages = get_templates(&get_new_virtual_template("paged/pagedpermalinknumeric.njk"));
     for page in &pages {
-        assert_eq!(pagination(page, "firstPageLink"), Value::str("/paged/page-0/index.html"));
-        assert_eq!(pagination(page, "lastPageLink"), Value::str("/paged/page-1/index.html"));
+        assert_eq!(
+            pagination(page, "firstPageLink"),
+            Value::str("/paged/page-0/index.html")
+        );
+        assert_eq!(
+            pagination(page, "lastPageLink"),
+            Value::str("/paged/page-1/index.html")
+        );
     }
 }
 
 #[test]
 fn permalink_first_and_last_page_link_numeric_one_indexed() {
-    let pages = get_templates(&get_new_virtual_template("paged/pagedpermalinknumericoneindexed.njk"));
+    let pages = get_templates(&get_new_virtual_template(
+        "paged/pagedpermalinknumericoneindexed.njk",
+    ));
     for page in &pages {
-        assert_eq!(pagination(page, "firstPageLink"), Value::str("/paged/page-1/index.html"));
-        assert_eq!(pagination(page, "lastPageLink"), Value::str("/paged/page-2/index.html"));
+        assert_eq!(
+            pagination(page, "firstPageLink"),
+            Value::str("/paged/page-1/index.html")
+        );
+        assert_eq!(
+            pagination(page, "lastPageLink"),
+            Value::str("/paged/page-2/index.html")
+        );
     }
 }
 
@@ -346,52 +430,97 @@ fn issue_135() {
     let data = tmpl.get_data().unwrap();
     let templates = render_template(&tmpl).unwrap();
     assert_eq!(data.get("articles").len(), 1);
-    assert_eq!(data.get_path("articles.0.title"), Value::str("Do you even paginate bro?"));
-    assert_eq!(templates[0].output_path, Value::str("./dist/blog/do-you-even-paginate-bro/index.html"));
+    assert_eq!(
+        data.get_path("articles.0.title"),
+        Value::str("Do you even paginate bro?")
+    );
+    assert_eq!(
+        templates[0].output_path,
+        Value::str("./dist/blog/do-you-even-paginate-bro/index.html")
+    );
 
     let pages = get_templates(&tmpl);
     assert_eq!(pages.len(), 1);
-    assert_eq!(output_path(&pages[0]), "./dist/blog/do-you-even-paginate-bro/index.html");
+    assert_eq!(
+        output_path(&pages[0]),
+        "./dist/blog/do-you-even-paginate-bro/index.html"
+    );
 }
 
 #[test]
 fn get_templates_has_page_variables_set() {
     let pages = get_templates(&get_new_virtual_template("paged/pagedpermalinkif.njk"));
     assert_eq!(pages[0].data().get_path("page.url"), Value::str("/paged/"));
-    assert_eq!(pages[0].data().get_path("page.outputPath"), Value::str("./dist/paged/index.html"));
-    assert_eq!(pages[1].data().get_path("page.url"), Value::str("/paged/page-1/"));
-    assert_eq!(pages[1].data().get_path("page.outputPath"), Value::str("./dist/paged/page-1/index.html"));
+    assert_eq!(
+        pages[0].data().get_path("page.outputPath"),
+        Value::str("./dist/paged/index.html")
+    );
+    assert_eq!(
+        pages[1].data().get_path("page.url"),
+        Value::str("/paged/page-1/")
+    );
+    assert_eq!(
+        pages[1].data().get_path("page.outputPath"),
+        Value::str("./dist/paged/page-1/index.html")
+    );
 }
 
 #[test]
 fn rendered_templates_have_page_variables_set() {
     let pages = render_template(&get_new_virtual_template("paged/pagedpermalinkif.njk")).unwrap();
     assert_eq!(pages[0].data.get_path("page.url"), Value::str("/paged/"));
-    assert_eq!(pages[0].data.get_path("page.outputPath"), Value::str("./dist/paged/index.html"));
-    assert_eq!(pages[1].data.get_path("page.url"), Value::str("/paged/page-1/"));
-    assert_eq!(pages[1].data.get_path("page.outputPath"), Value::str("./dist/paged/page-1/index.html"));
+    assert_eq!(
+        pages[0].data.get_path("page.outputPath"),
+        Value::str("./dist/paged/index.html")
+    );
+    assert_eq!(
+        pages[1].data.get_path("page.url"),
+        Value::str("/paged/page-1/")
+    );
+    assert_eq!(
+        pages[1].data.get_path("page.outputPath"),
+        Value::str("./dist/paged/page-1/index.html")
+    );
 }
 
 #[test]
 fn page_over_an_object_use_keys() {
     let pages = get_templates(&get_new_virtual_template("paged/pagedobject.njk"));
     assert_eq!(pages.len(), 3);
-    assert_eq!(output_path(&pages[0]), "./dist/paged/pagedobject/index.html");
-    assert_eq!(render(&pages[0]), "<ol><li>item1</li><li>item2</li><li>item3</li><li>item4</li></ol>");
-    assert_eq!(output_path(&pages[1]), "./dist/paged/pagedobject/1/index.html");
-    assert_eq!(render(&pages[1]), "<ol><li>item5</li><li>item6</li><li>item7</li><li>item8</li></ol>");
+    assert_eq!(
+        output_path(&pages[0]),
+        "./dist/paged/pagedobject/index.html"
+    );
+    assert_eq!(
+        render(&pages[0]),
+        "<ol><li>item1</li><li>item2</li><li>item3</li><li>item4</li></ol>"
+    );
+    assert_eq!(
+        output_path(&pages[1]),
+        "./dist/paged/pagedobject/1/index.html"
+    );
+    assert_eq!(
+        render(&pages[1]),
+        "<ol><li>item5</li><li>item6</li><li>item7</li><li>item8</li></ol>"
+    );
 }
 
 #[test]
 fn page_over_an_object_use_values() {
     let pages = get_templates(&get_new_virtual_template("paged/pagedobjectvalues.njk"));
     assert_eq!(pages.len(), 3);
-    assert_eq!(output_path(&pages[0]), "./dist/paged/pagedobjectvalues/index.html");
+    assert_eq!(
+        output_path(&pages[0]),
+        "./dist/paged/pagedobjectvalues/index.html"
+    );
     assert_eq!(
         render(&pages[0]),
         "<ol><li>itemvalue1</li><li>itemvalue2</li><li>itemvalue3</li><li>itemvalue4</li></ol>"
     );
-    assert_eq!(output_path(&pages[1]), "./dist/paged/pagedobjectvalues/1/index.html");
+    assert_eq!(
+        output_path(&pages[1]),
+        "./dist/paged/pagedobjectvalues/1/index.html"
+    );
     assert_eq!(
         render(&pages[1]),
         "<ol><li>itemvalue5</li><li>itemvalue6</li><li>itemvalue7</li><li>itemvalue8</li></ol>"
@@ -400,15 +529,28 @@ fn page_over_an_object_use_values() {
 
 #[test]
 fn page_over_an_object_filtered_array() {
-    let pages = get_templates(&get_new_virtual_template("paged/pagedobjectfilterarray.njk"));
-    assert_eq!(render(&pages[0]), "<ol><li>item1</li><li>item2</li><li>item3</li><li>item5</li></ol>");
-    assert_eq!(render(&pages[1]), "<ol><li>item6</li><li>item7</li><li>item8</li><li>item9</li></ol>");
+    let pages = get_templates(&get_new_virtual_template(
+        "paged/pagedobjectfilterarray.njk",
+    ));
+    assert_eq!(
+        render(&pages[0]),
+        "<ol><li>item1</li><li>item2</li><li>item3</li><li>item5</li></ol>"
+    );
+    assert_eq!(
+        render(&pages[1]),
+        "<ol><li>item6</li><li>item7</li><li>item8</li><li>item9</li></ol>"
+    );
 }
 
 #[test]
 fn page_over_an_object_exclude_array() {
-    let pages = get_templates(&get_new_virtual_template("paged/pagedobjectexcludearray.njk"));
-    assert_eq!(render(&pages[0]), "<ol><li>item1</li><li>item2</li><li>item3</li><li>item5</li></ol>");
+    let pages = get_templates(&get_new_virtual_template(
+        "paged/pagedobjectexcludearray.njk",
+    ));
+    assert_eq!(
+        render(&pages[0]),
+        "<ol><li>item1</li><li>item2</li><li>item3</li><li>item5</li></ol>"
+    );
 }
 
 #[test]
@@ -424,10 +566,18 @@ fn pagination_exclude_with_a_falsy_value() {
 
 #[test]
 fn page_over_an_object_filtered_string() {
-    let pages = get_templates(&get_new_virtual_template("paged/pagedobjectfilterstring.njk"));
+    let pages = get_templates(&get_new_virtual_template(
+        "paged/pagedobjectfilterstring.njk",
+    ));
     assert_eq!(pages.len(), 2);
-    assert_eq!(render(&pages[0]), "<ol><li>item1</li><li>item2</li><li>item3</li><li>item5</li></ol>");
-    assert_eq!(render(&pages[1]), "<ol><li>item6</li><li>item7</li><li>item8</li><li>item9</li></ol>");
+    assert_eq!(
+        render(&pages[0]),
+        "<ol><li>item1</li><li>item2</li><li>item3</li><li>item5</li></ol>"
+    );
+    assert_eq!(
+        render(&pages[1]),
+        "<ol><li>item6</li><li>item7</li><li>item8</li><li>item9</li></ol>"
+    );
 }
 
 #[test]
@@ -435,10 +585,22 @@ fn pagination_with_deep_data_merge_147() {
     // upstream also sets `tmpl.config.keys.layout = "layout"` (the default)
     let pages = get_templates(&get_new_virtual_template("paged/pagedinlinedata.njk"));
     assert_eq!(pages.len(), 2);
-    assert_eq!(output_path(&pages[0]), "./dist/paged/pagedinlinedata/index.html");
-    assert_eq!(render(&pages[0]), "<ol><li>item1</li><li>item2</li><li>item3</li><li>item4</li></ol>");
-    assert_eq!(output_path(&pages[1]), "./dist/paged/pagedinlinedata/1/index.html");
-    assert_eq!(render(&pages[1]), "<ol><li>item5</li><li>item6</li><li>item7</li><li>item8</li></ol>");
+    assert_eq!(
+        output_path(&pages[0]),
+        "./dist/paged/pagedinlinedata/index.html"
+    );
+    assert_eq!(
+        render(&pages[0]),
+        "<ol><li>item1</li><li>item2</li><li>item3</li><li>item4</li></ol>"
+    );
+    assert_eq!(
+        output_path(&pages[1]),
+        "./dist/paged/pagedinlinedata/1/index.html"
+    );
+    assert_eq!(
+        render(&pages[1]),
+        "<ol><li>item5</li><li>item6</li><li>item7</li><li>item8</li></ol>"
+    );
 }
 
 #[test]
@@ -453,12 +615,26 @@ fn pagination_with_deep_data_merge_with_alias_147() {
 
 #[test]
 fn paginate_data_in_frontmatter_reversed() {
-    let pages = get_templates(&get_new_virtual_template("paged/pagedinlinedata-reverse.njk"));
+    let pages = get_templates(&get_new_virtual_template(
+        "paged/pagedinlinedata-reverse.njk",
+    ));
     assert_eq!(pages.len(), 2);
-    assert_eq!(output_path(&pages[0]), "./dist/paged/pagedinlinedata-reverse/index.html");
-    assert_eq!(render(&pages[0]), "<ol><li>item8</li><li>item7</li><li>item6</li><li>item5</li></ol>");
-    assert_eq!(output_path(&pages[1]), "./dist/paged/pagedinlinedata-reverse/1/index.html");
-    assert_eq!(render(&pages[1]), "<ol><li>item4</li><li>item3</li><li>item2</li><li>item1</li></ol>");
+    assert_eq!(
+        output_path(&pages[0]),
+        "./dist/paged/pagedinlinedata-reverse/index.html"
+    );
+    assert_eq!(
+        render(&pages[0]),
+        "<ol><li>item8</li><li>item7</li><li>item6</li><li>item5</li></ol>"
+    );
+    assert_eq!(
+        output_path(&pages[1]),
+        "./dist/paged/pagedinlinedata-reverse/1/index.html"
+    );
+    assert_eq!(
+        render(&pages[1]),
+        "<ol><li>item4</li><li>item3</li><li>item2</li><li>item1</li></ol>"
+    );
 }
 
 #[test]
@@ -498,20 +674,35 @@ fn circular_dependency_but_uses_twelvety_exclude_from_collections() {
 const SIX_ITEMS: &str = r#"["item1", "item2", "item3", "item4", "item5", "item6"]"#;
 
 /// A `---js` front matter stub: `pagination` (with a `before` callback) and `items`
-fn before_template(relative_path: &str, pagination: &str, extra: &str, before: fn(Vec<Value>, &Value) -> Vec<Value>) -> Arc<Template> {
-    let mut data = json(&format!(r#"{{"pagination": {pagination}, "items": {SIX_ITEMS}{extra}}}"#));
+fn before_template(
+    relative_path: &str,
+    pagination: &str,
+    extra: &str,
+    before: fn(Vec<Value>, &Value) -> Vec<Value>,
+) -> Arc<Template> {
+    let mut data = json(&format!(
+        r#"{{"pagination": {pagination}, "items": {SIX_ITEMS}{extra}}}"#
+    ));
     let mut p = data.get("pagination");
-    p.set("before", Value::function(move |args| Ok(Value::array(before(args[0].to_vec(), &args[1])))));
+    p.set(
+        "before",
+        Value::function(move |args| Ok(Value::array(before(args[0].to_vec(), &args[1])))),
+    );
     data.set("pagination", p);
     virtual_template_with_data(relative_path, ITEMS_LIST.to_string(), data)
 }
 
 #[test]
 fn pagination_before_callback() {
-    let tmpl = before_template("paged/paged-before.njk", r#"{"data": "items", "size": 1, "alias": "myalias"}"#, "", |mut items, _| {
-        items.reverse();
-        items
-    });
+    let tmpl = before_template(
+        "paged/paged-before.njk",
+        r#"{"data": "items", "size": 1, "alias": "myalias"}"#,
+        "",
+        |mut items, _| {
+            items.reverse();
+            items
+        },
+    );
     let pages = get_templates(&tmpl);
     assert_eq!(pagination(&pages[0], "items"), json(r#"["item6"]"#));
     assert_eq!(pages[0].data().get("myalias"), Value::str("item6"));
@@ -523,7 +714,12 @@ fn pagination_before_callback_with_metadata() {
         "paged/paged-before-metadata.njk",
         r#"{"data": "items", "size": 1}"#,
         r#", "keyword": "item3""#,
-        |items, metadata| items.into_iter().filter(|el| *el == metadata.get("keyword")).collect(),
+        |items, metadata| {
+            items
+                .into_iter()
+                .filter(|el| *el == metadata.get("keyword"))
+                .collect()
+        },
     );
     let pages = get_templates(&tmpl);
     assert_eq!(pagination(&pages[0], "items"), json(r#"["item3"]"#));
@@ -531,9 +727,12 @@ fn pagination_before_callback_with_metadata() {
 
 #[test]
 fn pagination_before_callback_with_a_filter() {
-    let tmpl = before_template("paged/paged-before-filter.njk", r#"{"data": "items", "size": 1, "alias": "myalias"}"#, "", |items, _| {
-        items.into_iter().take(2).rev().collect()
-    });
+    let tmpl = before_template(
+        "paged/paged-before-filter.njk",
+        r#"{"data": "items", "size": 1, "alias": "myalias"}"#,
+        "",
+        |items, _| items.into_iter().take(2).rev().collect(),
+    );
     let pages = get_templates(&tmpl);
     assert_eq!(pagination(&pages[0], "items"), json(r#"["item2"]"#));
     assert_eq!(pages[0].data().get("myalias"), Value::str("item2"));
@@ -548,7 +747,10 @@ fn pagination_data_as_an_array_issue_4420() {
     );
     let pages = get_templates(&tmpl);
     assert_eq!(pages.len(), 2);
-    assert_eq!(pagination(&pages[0], "items"), json(r#"["item1", "item2"]"#));
+    assert_eq!(
+        pagination(&pages[0], "items"),
+        json(r#"["item1", "item2"]"#)
+    );
     assert_eq!(pagination(&pages[1], "items"), json(r#"["item3"]"#));
 }
 
@@ -557,7 +759,9 @@ fn pagination_data_as_an_object_issue_4420() {
     let tmpl = virtual_template_with_data(
         "paged/paged-data-direct-object.njk",
         "{{ pagination.items[0] }}\n".into(),
-        json(r#"{"pagination": {"data": {"a": "item1", "b": "item2"}, "size": 1, "resolve": "values"}}"#),
+        json(
+            r#"{"pagination": {"data": {"a": "item1", "b": "item2"}, "size": 1, "resolve": "values"}}"#,
+        ),
     );
     let pages = get_templates(&tmpl);
     assert_eq!(pages.len(), 2);
@@ -631,10 +835,21 @@ fn pagination_mutable_global_data() {}
 
 #[test]
 fn pagination_and_twelvety_computed_permalink_issue_1555_and_1865() {
-    let pages = get_templates(&get_new_virtual_template("pagination-twelvetycomputed-permalink.liquid"));
-    assert_eq!(pages[0].data().get_path("page.url"), Value::str("/venues/first/"));
-    assert_eq!(pages[1].data().get_path("page.url"), Value::str("/venues/second/"));
-    assert_eq!(pages[2].data().get_path("page.url"), Value::str("/venues/third/"));
+    let pages = get_templates(&get_new_virtual_template(
+        "pagination-twelvetycomputed-permalink.liquid",
+    ));
+    assert_eq!(
+        pages[0].data().get_path("page.url"),
+        Value::str("/venues/first/")
+    );
+    assert_eq!(
+        pages[1].data().get_path("page.url"),
+        Value::str("/venues/second/")
+    );
+    assert_eq!(
+        pages[2].data().get_path("page.url"),
+        Value::str("/venues/third/")
+    );
 }
 
 fn no_config_file() -> Options {
@@ -666,7 +881,11 @@ fn pagination_and_twelvety_computed_data_issues_2512_2837_3013() {
             format!("<title>The Effervescent adventures of Paul Mescal</title>{le}"),
             "lang: {lang}"
         );
-        assert_eq!(written[1].url, Value::str("/populace-and-power/"), "lang: {lang}");
+        assert_eq!(
+            written[1].url,
+            Value::str("/populace-and-power/"),
+            "lang: {lang}"
+        );
         assert_eq!(
             written[1].content,
             format!("<title>Populace and Power: A user{apostrophe}s guide</title>{le}"),
@@ -684,25 +903,54 @@ fn pagination_data_keys_and_values_are_stable() {
         json(r#"{"pagination": {"data": "letters", "size": 1}, "letters": ["a", "b", "c"]}"#),
     );
     let pages = get_templates(&tmpl);
-    let second = pages.iter().find(|p| p.url() == Value::str("/paged/1/")).unwrap();
+    let second = pages
+        .iter()
+        .find(|p| p.url() == Value::str("/paged/1/"))
+        .unwrap();
     let p = second.data().get("pagination");
     assert_eq!(
         p.keys(),
         [
-            "data", "size", "alias", "pages", "items", "page", "pageNumber", "previousPageLink", "previous",
-            "nextPageLink", "next", "firstPageLink", "lastPageLink", "links", "pageLinks", "previousPageHref",
-            "nextPageHref", "firstPageHref", "lastPageHref", "hrefs", "href",
+            "data",
+            "size",
+            "alias",
+            "pages",
+            "items",
+            "page",
+            "pageNumber",
+            "previousPageLink",
+            "previous",
+            "nextPageLink",
+            "next",
+            "firstPageLink",
+            "lastPageLink",
+            "links",
+            "pageLinks",
+            "previousPageHref",
+            "nextPageHref",
+            "firstPageHref",
+            "lastPageHref",
+            "hrefs",
+            "href",
         ]
     );
     assert_eq!(p.get("pageNumber"), Value::from(1));
     assert_eq!(p.get("items"), json(r#"["b"]"#));
-    assert_eq!(p.get("page"), json(r#"{"previous": "a", "next": "c", "first": "a", "last": "c"}"#));
+    assert_eq!(
+        p.get("page"),
+        json(r#"{"previous": "a", "next": "c", "first": "a", "last": "c"}"#)
+    );
     assert_eq!(p.get("previous"), Value::str("/paged/index.html"));
     assert_eq!(p.get("next"), Value::str("/paged/2/index.html"));
-    assert_eq!(p.get("hrefs"), json(r#"["/paged/", "/paged/1/", "/paged/2/"]"#));
+    assert_eq!(
+        p.get("hrefs"),
+        json(r#"["/paged/", "/paged/1/", "/paged/2/"]"#)
+    );
     assert_eq!(
         p.get("href"),
-        json(r#"{"previous": "/paged/", "next": "/paged/2/", "first": "/paged/", "last": "/paged/2/"}"#)
+        json(
+            r#"{"previous": "/paged/", "next": "/paged/2/", "first": "/paged/", "last": "/paged/2/"}"#
+        )
     );
 }
 
@@ -728,6 +976,11 @@ fn paginated_nunjucks_templates_share_a_compiled_template_but_render_each_page()
     results.sort();
     assert_eq!(
         results,
-        [("/a/", "<b>a</b>"), ("/b/", "<b>b</b>"), ("/c/", "<b>c</b>")].map(|(a, b)| (a.to_string(), b.to_string()))
+        [
+            ("/a/", "<b>a</b>"),
+            ("/b/", "<b>b</b>"),
+            ("/c/", "<b>c</b>")
+        ]
+        .map(|(a, b)| (a.to_string(), b.to_string()))
     );
 }

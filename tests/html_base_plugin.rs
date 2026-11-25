@@ -89,74 +89,348 @@ fn using_the_filter_directly() {
     assert_eq!(apply("subdir/", "/", None, None), "subdir/");
     assert_eq!(apply("../subdir/", "/", None, None), "../subdir/");
     assert_eq!(apply("./subdir/", "/", None, None), "subdir/");
-    assert_eq!(apply("http://example.com/", "/", None, None), "http://example.com/");
-    assert_eq!(apply("http://example.com/test/", "/", None, None), "http://example.com/test/");
+    assert_eq!(
+        apply("http://example.com/", "/", None, None),
+        "http://example.com/"
+    );
+    assert_eq!(
+        apply("http://example.com/test/", "/", None, None),
+        "http://example.com/test/"
+    );
     assert_eq!(apply("/", "../", None, None), "/");
     assert_eq!(apply("/test/", "../", None, None), "/test/");
     assert_eq!(apply("subdir/", "../", None, None), "subdir/");
     assert_eq!(apply("../subdir/", "../", None, None), "../subdir/");
     assert_eq!(apply("./subdir/", "../", None, None), "subdir/");
-    assert_eq!(apply("http://example.com/", "../", None, None), "http://example.com/");
-    assert_eq!(apply("http://example.com/test/", "../", None, None), "http://example.com/test/");
+    assert_eq!(
+        apply("http://example.com/", "../", None, None),
+        "http://example.com/"
+    );
+    assert_eq!(
+        apply("http://example.com/test/", "../", None, None),
+        "http://example.com/test/"
+    );
     assert_eq!(apply("/", "/pathprefix/", None, None), "/pathprefix/");
-    assert_eq!(apply("/test/", "/pathprefix/", None, None), "/pathprefix/test/");
+    assert_eq!(
+        apply("/test/", "/pathprefix/", None, None),
+        "/pathprefix/test/"
+    );
     assert_eq!(apply("subdir/", "/pathprefix/", None, None), "subdir/");
-    assert_eq!(apply("../subdir/", "/pathprefix/", None, None), "../subdir/");
+    assert_eq!(
+        apply("../subdir/", "/pathprefix/", None, None),
+        "../subdir/"
+    );
     assert_eq!(apply("./subdir/", "/pathprefix/", None, None), "subdir/");
     assert_eq!(apply("#anchor", "/pathprefix/", None, None), "#anchor");
-    assert_eq!(apply("/test/#anchor", "/pathprefix/", None, None), "/pathprefix/test/#anchor");
-    assert_eq!(apply("/test/?param=value", "/pathprefix/", None, None), "/pathprefix/test/?param=value");
-    assert_eq!(apply("http://url.com/", "/pathprefix/", None, None), "http://url.com/");
-    assert_eq!(apply("http://url.com/test/", "/pathprefix/", None, None), "http://url.com/test/");
-    assert_eq!(apply("/", "http://example.com/", None, None), "http://example.com/");
-    assert_eq!(apply("/test/", "http://example.com/", None, None), "http://example.com/test/");
-    assert_eq!(apply("subdir/", "http://example.com/", None, None), "http://example.com/subdir/");
-    assert_eq!(apply("../subdir/", "http://example.com/", None, None), "http://example.com/subdir/");
-    assert_eq!(apply("./subdir/", "http://example.com/", None, None), "http://example.com/subdir/");
-    assert_eq!(apply("http://url.com/", "http://example.com/", None, None), "http://url.com/");
-    assert_eq!(apply("http://url.com/test/", "http://example.com/", None, None), "http://url.com/test/");
-    assert_eq!(apply("#anchor", "http://example.com/", None, None), "http://example.com/#anchor");
-    assert_eq!(apply("/test/#anchor", "http://example.com/", None, None), "http://example.com/test/#anchor");
-    assert_eq!(apply("/test/?param=value#anchor", "http://example.com/", None, None), "http://example.com/test/?param=value#anchor");
-    assert_eq!(apply("/", "http://example.com/ignored/", None, None), "http://example.com/");
-    assert_eq!(apply("/test/", "http://example.com/ignored/", None, None), "http://example.com/test/");
-    assert_eq!(apply("subdir/", "http://example.com/deep/", None, None), "http://example.com/deep/subdir/");
-    assert_eq!(apply("../subdir/", "http://example.com/deep/", None, None), "http://example.com/subdir/");
-    assert_eq!(apply("./subdir/", "http://example.com/deep/", None, None), "http://example.com/deep/subdir/");
-    assert_eq!(apply("http://url.com/", "http://example.com/ignored/", None, None), "http://url.com/");
-    assert_eq!(apply("http://url.com/test/", "http://example.com/ignored/", None, None), "http://url.com/test/");
-    assert_eq!(apply("/", "http://example.com/", Some("/"), None), "http://example.com/");
-    assert_eq!(apply("/test/", "http://example.com/", Some("/"), None), "http://example.com/test/");
-    assert_eq!(apply("subdir/", "http://example.com/", Some("/"), None), "http://example.com/subdir/");
-    assert_eq!(apply("../subdir/", "http://example.com/", Some("/"), None), "http://example.com/subdir/");
-    assert_eq!(apply("./subdir/", "http://example.com/", Some("/"), None), "http://example.com/subdir/");
-    assert_eq!(apply("http://url.com/", "http://example.com/", Some("/"), None), "http://url.com/");
-    assert_eq!(apply("http://url.com/test/", "http://example.com/", Some("/"), None), "http://url.com/test/");
-    assert_eq!(apply("/", "http://example.com/", Some("/pathprefix/"), None), "http://example.com/pathprefix/");
-    assert_eq!(apply("/test/", "http://example.com/", Some("/pathprefix/"), None), "http://example.com/pathprefix/test/");
-    assert_eq!(apply("subdir/", "http://example.com/", Some("/pathprefix/"), None), "http://example.com/pathprefix/subdir/");
-    assert_eq!(apply("../subdir/", "http://example.com/", Some("/pathprefix/"), None), "http://example.com/pathprefix/subdir/");
-    assert_eq!(apply("./subdir/", "http://example.com/", Some("/pathprefix/"), None), "http://example.com/pathprefix/subdir/");
-    assert_eq!(apply("http://url.com/", "http://example.com/", Some("/pathprefix/"), None), "http://url.com/");
-    assert_eq!(apply("http://url.com/test/", "http://example.com/", Some("/pathprefix/"), None), "http://url.com/test/");
-    assert_eq!(apply("/", "http://example.com/", Some("/pathprefix/"), Some("/deep/")), "http://example.com/pathprefix/");
-    assert_eq!(apply("/test/", "http://example.com/", Some("/pathprefix/"), Some("/deep/")), "http://example.com/pathprefix/test/");
-    assert_eq!(apply("subdir/", "http://example.com/", Some("/pathprefix/"), Some("/deep/")), "http://example.com/pathprefix/deep/subdir/");
-    assert_eq!(apply("../subdir/", "http://example.com/", Some("/pathprefix/"), Some("/deep/")), "http://example.com/pathprefix/subdir/");
-    assert_eq!(apply("./subdir/", "http://example.com/", Some("/pathprefix/"), Some("/deep/")), "http://example.com/pathprefix/deep/subdir/");
-    assert_eq!(apply("http://url.com/", "http://example.com/", Some("/pathprefix/"), Some("/deep/")), "http://url.com/");
-    assert_eq!(apply("http://url.com/test/", "http://example.com/", Some("/pathprefix/"), Some("/deep/")), "http://url.com/test/");
-    assert_eq!(apply("/", "http://example.com/ignored/", Some("/pathprefix/"), Some("/deep/")), "http://example.com/pathprefix/");
-    assert_eq!(apply("/test/", "http://example.com/ignored/", Some("/pathprefix/"), Some("/deep/")), "http://example.com/pathprefix/test/");
-    assert_eq!(apply("subdir/", "http://example.com/ignored/", Some("/pathprefix/"), Some("/deep/")), "http://example.com/pathprefix/deep/subdir/");
-    assert_eq!(apply("../subdir/", "http://example.com/ignored/", Some("/pathprefix/"), Some("/deep/")), "http://example.com/pathprefix/subdir/");
-    assert_eq!(apply("./subdir/", "http://example.com/ignored/", Some("/pathprefix/"), Some("/deep/")), "http://example.com/pathprefix/deep/subdir/");
-    assert_eq!(apply("http://url.com/", "http://example.com/ignored/", Some("/pathprefix/"), Some("/deep/")), "http://url.com/");
-    assert_eq!(apply("http://url.com/test/", "http://example.com/ignored/", Some("/pathprefix/"), Some("/deep/")), "http://url.com/test/");
+    assert_eq!(
+        apply("/test/#anchor", "/pathprefix/", None, None),
+        "/pathprefix/test/#anchor"
+    );
+    assert_eq!(
+        apply("/test/?param=value", "/pathprefix/", None, None),
+        "/pathprefix/test/?param=value"
+    );
+    assert_eq!(
+        apply("http://url.com/", "/pathprefix/", None, None),
+        "http://url.com/"
+    );
+    assert_eq!(
+        apply("http://url.com/test/", "/pathprefix/", None, None),
+        "http://url.com/test/"
+    );
+    assert_eq!(
+        apply("/", "http://example.com/", None, None),
+        "http://example.com/"
+    );
+    assert_eq!(
+        apply("/test/", "http://example.com/", None, None),
+        "http://example.com/test/"
+    );
+    assert_eq!(
+        apply("subdir/", "http://example.com/", None, None),
+        "http://example.com/subdir/"
+    );
+    assert_eq!(
+        apply("../subdir/", "http://example.com/", None, None),
+        "http://example.com/subdir/"
+    );
+    assert_eq!(
+        apply("./subdir/", "http://example.com/", None, None),
+        "http://example.com/subdir/"
+    );
+    assert_eq!(
+        apply("http://url.com/", "http://example.com/", None, None),
+        "http://url.com/"
+    );
+    assert_eq!(
+        apply("http://url.com/test/", "http://example.com/", None, None),
+        "http://url.com/test/"
+    );
+    assert_eq!(
+        apply("#anchor", "http://example.com/", None, None),
+        "http://example.com/#anchor"
+    );
+    assert_eq!(
+        apply("/test/#anchor", "http://example.com/", None, None),
+        "http://example.com/test/#anchor"
+    );
+    assert_eq!(
+        apply(
+            "/test/?param=value#anchor",
+            "http://example.com/",
+            None,
+            None
+        ),
+        "http://example.com/test/?param=value#anchor"
+    );
+    assert_eq!(
+        apply("/", "http://example.com/ignored/", None, None),
+        "http://example.com/"
+    );
+    assert_eq!(
+        apply("/test/", "http://example.com/ignored/", None, None),
+        "http://example.com/test/"
+    );
+    assert_eq!(
+        apply("subdir/", "http://example.com/deep/", None, None),
+        "http://example.com/deep/subdir/"
+    );
+    assert_eq!(
+        apply("../subdir/", "http://example.com/deep/", None, None),
+        "http://example.com/subdir/"
+    );
+    assert_eq!(
+        apply("./subdir/", "http://example.com/deep/", None, None),
+        "http://example.com/deep/subdir/"
+    );
+    assert_eq!(
+        apply("http://url.com/", "http://example.com/ignored/", None, None),
+        "http://url.com/"
+    );
+    assert_eq!(
+        apply(
+            "http://url.com/test/",
+            "http://example.com/ignored/",
+            None,
+            None
+        ),
+        "http://url.com/test/"
+    );
+    assert_eq!(
+        apply("/", "http://example.com/", Some("/"), None),
+        "http://example.com/"
+    );
+    assert_eq!(
+        apply("/test/", "http://example.com/", Some("/"), None),
+        "http://example.com/test/"
+    );
+    assert_eq!(
+        apply("subdir/", "http://example.com/", Some("/"), None),
+        "http://example.com/subdir/"
+    );
+    assert_eq!(
+        apply("../subdir/", "http://example.com/", Some("/"), None),
+        "http://example.com/subdir/"
+    );
+    assert_eq!(
+        apply("./subdir/", "http://example.com/", Some("/"), None),
+        "http://example.com/subdir/"
+    );
+    assert_eq!(
+        apply("http://url.com/", "http://example.com/", Some("/"), None),
+        "http://url.com/"
+    );
+    assert_eq!(
+        apply(
+            "http://url.com/test/",
+            "http://example.com/",
+            Some("/"),
+            None
+        ),
+        "http://url.com/test/"
+    );
+    assert_eq!(
+        apply("/", "http://example.com/", Some("/pathprefix/"), None),
+        "http://example.com/pathprefix/"
+    );
+    assert_eq!(
+        apply("/test/", "http://example.com/", Some("/pathprefix/"), None),
+        "http://example.com/pathprefix/test/"
+    );
+    assert_eq!(
+        apply("subdir/", "http://example.com/", Some("/pathprefix/"), None),
+        "http://example.com/pathprefix/subdir/"
+    );
+    assert_eq!(
+        apply(
+            "../subdir/",
+            "http://example.com/",
+            Some("/pathprefix/"),
+            None
+        ),
+        "http://example.com/pathprefix/subdir/"
+    );
+    assert_eq!(
+        apply(
+            "./subdir/",
+            "http://example.com/",
+            Some("/pathprefix/"),
+            None
+        ),
+        "http://example.com/pathprefix/subdir/"
+    );
+    assert_eq!(
+        apply(
+            "http://url.com/",
+            "http://example.com/",
+            Some("/pathprefix/"),
+            None
+        ),
+        "http://url.com/"
+    );
+    assert_eq!(
+        apply(
+            "http://url.com/test/",
+            "http://example.com/",
+            Some("/pathprefix/"),
+            None
+        ),
+        "http://url.com/test/"
+    );
+    assert_eq!(
+        apply(
+            "/",
+            "http://example.com/",
+            Some("/pathprefix/"),
+            Some("/deep/")
+        ),
+        "http://example.com/pathprefix/"
+    );
+    assert_eq!(
+        apply(
+            "/test/",
+            "http://example.com/",
+            Some("/pathprefix/"),
+            Some("/deep/")
+        ),
+        "http://example.com/pathprefix/test/"
+    );
+    assert_eq!(
+        apply(
+            "subdir/",
+            "http://example.com/",
+            Some("/pathprefix/"),
+            Some("/deep/")
+        ),
+        "http://example.com/pathprefix/deep/subdir/"
+    );
+    assert_eq!(
+        apply(
+            "../subdir/",
+            "http://example.com/",
+            Some("/pathprefix/"),
+            Some("/deep/")
+        ),
+        "http://example.com/pathprefix/subdir/"
+    );
+    assert_eq!(
+        apply(
+            "./subdir/",
+            "http://example.com/",
+            Some("/pathprefix/"),
+            Some("/deep/")
+        ),
+        "http://example.com/pathprefix/deep/subdir/"
+    );
+    assert_eq!(
+        apply(
+            "http://url.com/",
+            "http://example.com/",
+            Some("/pathprefix/"),
+            Some("/deep/")
+        ),
+        "http://url.com/"
+    );
+    assert_eq!(
+        apply(
+            "http://url.com/test/",
+            "http://example.com/",
+            Some("/pathprefix/"),
+            Some("/deep/")
+        ),
+        "http://url.com/test/"
+    );
+    assert_eq!(
+        apply(
+            "/",
+            "http://example.com/ignored/",
+            Some("/pathprefix/"),
+            Some("/deep/")
+        ),
+        "http://example.com/pathprefix/"
+    );
+    assert_eq!(
+        apply(
+            "/test/",
+            "http://example.com/ignored/",
+            Some("/pathprefix/"),
+            Some("/deep/")
+        ),
+        "http://example.com/pathprefix/test/"
+    );
+    assert_eq!(
+        apply(
+            "subdir/",
+            "http://example.com/ignored/",
+            Some("/pathprefix/"),
+            Some("/deep/")
+        ),
+        "http://example.com/pathprefix/deep/subdir/"
+    );
+    assert_eq!(
+        apply(
+            "../subdir/",
+            "http://example.com/ignored/",
+            Some("/pathprefix/"),
+            Some("/deep/")
+        ),
+        "http://example.com/pathprefix/subdir/"
+    );
+    assert_eq!(
+        apply(
+            "./subdir/",
+            "http://example.com/ignored/",
+            Some("/pathprefix/"),
+            Some("/deep/")
+        ),
+        "http://example.com/pathprefix/deep/subdir/"
+    );
+    assert_eq!(
+        apply(
+            "http://url.com/",
+            "http://example.com/ignored/",
+            Some("/pathprefix/"),
+            Some("/deep/")
+        ),
+        "http://url.com/"
+    );
+    assert_eq!(
+        apply(
+            "http://url.com/test/",
+            "http://example.com/ignored/",
+            Some("/pathprefix/"),
+            Some("/deep/")
+        ),
+        "http://url.com/test/"
+    );
 }
 
 /// Render `template` (as `index.njk`) with the HTML base plugin and return `/deep/index.html`
-fn render_with_plugin(template: &'static str, path_prefix: Option<&str>, plugin_options: Value) -> String {
+fn render_with_plugin(
+    template: &'static str,
+    path_prefix: Option<&str>,
+    plugin_options: Value,
+) -> String {
     let mut opts = options(move |cfg: &mut UserConfig| {
         cfg.add_template("index.njk", template, Value::object())?;
         cfg.set_use_template_cache(false);
@@ -231,7 +505,11 @@ fn using_the_html_base_plugin_with_path_prefix_test() {
 #[test]
 fn using_the_html_base_plugin_with_path_prefix_test_and_base() {
     assert_eq!(
-        render_with_plugin(BASE_TEMPLATE, Some("/test/"), json(r#"{"baseHref": "http://example.com/"}"#)),
+        render_with_plugin(
+            BASE_TEMPLATE,
+            Some("/test/"),
+            json(r#"{"baseHref": "http://example.com/"}"#)
+        ),
         r#"<!doctype html>
 <html lang="en">
 <head>
@@ -258,7 +536,11 @@ fn using_the_html_base_plugin_with_path_prefix_test_and_base() {
 #[test]
 fn using_the_html_base_plugin_strips_extra_path_in_full_url_base_default_path_prefix() {
     assert_eq!(
-        render_with_plugin(BASE_TEMPLATE, None, json(r#"{"baseHref": "http://example.com/hello/"}"#)),
+        render_with_plugin(
+            BASE_TEMPLATE,
+            None,
+            json(r#"{"baseHref": "http://example.com/hello/"}"#)
+        ),
         r#"<!doctype html>
 <html lang="en">
 <head>
@@ -285,7 +567,11 @@ fn using_the_html_base_plugin_strips_extra_path_in_full_url_base_default_path_pr
 #[test]
 fn using_the_html_base_plugin_strips_extra_path_in_full_url_base_path_prefix_test() {
     assert_eq!(
-        render_with_plugin(BASE_TEMPLATE, Some("/test/"), json(r#"{"baseHref": "http://example.com/hello/"}"#)),
+        render_with_plugin(
+            BASE_TEMPLATE,
+            Some("/test/"),
+            json(r#"{"baseHref": "http://example.com/hello/"}"#)
+        ),
         r#"<!doctype html>
 <html lang="en">
 <head>
@@ -312,7 +598,11 @@ fn using_the_html_base_plugin_strips_extra_path_in_full_url_base_path_prefix_tes
 #[test]
 fn opt_out_of_the_transform_with_falsy_extensions_list() {
     assert_eq!(
-        render_with_plugin(BASE_TEMPLATE, Some("/test/"), json(r#"{"extensions": false}"#)),
+        render_with_plugin(
+            BASE_TEMPLATE,
+            Some("/test/"),
+            json(r#"{"extensions": false}"#)
+        ),
         r#"<!doctype html>
 <html lang="en">
 <head>
@@ -365,7 +655,11 @@ fn base_plugin_with_permalink_false_2602() {
 #[test]
 fn using_the_html_base_plugin_transformed_attributes_are_not_case_sensitive() {
     assert_eq!(
-        render_with_plugin(BASE_TEMPLATE_CASE_SENSITIVE, Some("/test/"), Value::object()),
+        render_with_plugin(
+            BASE_TEMPLATE_CASE_SENSITIVE,
+            Some("/test/"),
+            Value::object()
+        ),
         r#"<!doctype html>
 <html lang="en">
 <head>
@@ -403,9 +697,13 @@ fn count_plugins_added(adds: &'static [&'static str]) -> usize {
         *c.lock().unwrap() = (before, cfg.plugins.len());
         Ok(())
     });
-    common::twelvety("./test/stubs-virtual-nowrite/", Some("./test/stubs-virtual-nowrite/_site"), opts)
-        .to_json()
-        .unwrap();
+    common::twelvety(
+        "./test/stubs-virtual-nowrite/",
+        Some("./test/stubs-virtual-nowrite/_site"),
+        opts,
+    )
+    .to_json()
+    .unwrap();
     let (before, after) = *counts.lock().unwrap();
     after - before
 }
@@ -492,10 +790,17 @@ permalink: /deep/
 fn html_base_plugin_skips_attributes_with_no_value() {
     let mut opts = options(|cfg: &mut UserConfig| {
         cfg.set_use_template_cache(false);
-        cfg.add_template("index.html", r#"<a href>Test</a><img src><a href="/test/">Test</a>"#, Value::object())?;
+        cfg.add_template(
+            "index.html",
+            r#"<a href>Test</a><img src><a href="/test/">Test</a>"#,
+            Value::object(),
+        )?;
         cfg.add_plugin("HtmlBasePlugin", html_base::plugin, Value::object())
     });
     opts.path_prefix = Some("/prefixed/".into());
     let results = to_json("./test/stubs-virtual/", None, opts).unwrap();
-    assert_eq!(results[0].content, r#"<a href>Test</a><img src><a href="/prefixed/test/">Test</a>"#);
+    assert_eq!(
+        results[0].content,
+        r#"<a href>Test</a><img src><a href="/prefixed/test/">Test</a>"#
+    );
 }

@@ -22,7 +22,12 @@ pub fn render_env() -> Value {
 }
 
 /// Parse and render with `data` available via [`render_env`]
-fn render_with_env(md: &MarkdownIt, highlighter: Option<&MarkdownHighlighterFn>, src: &str, data: &Value) -> String {
+fn render_with_env(
+    md: &MarkdownIt,
+    highlighter: Option<&MarkdownHighlighterFn>,
+    src: &str,
+    data: &Value,
+) -> String {
     let previous = RENDER_ENV.with(|env| env.replace(data.clone()));
     let mut ast = md.parse(src);
     if let Some(h) = highlighter {
@@ -69,8 +74,10 @@ pub fn create_markdown_it(config: &Config) -> MarkdownIt {
         markdown_it::plugins::extra::smartquotes::add(&mut md);
     }
     if options.get("html").as_bool() == Some(false) {
-        md.block.remove_rule::<markdown_it::plugins::html::html_block::HtmlBlockScanner>();
-        md.inline.remove_rule::<markdown_it::plugins::html::html_inline::HtmlInlineScanner>();
+        md.block
+            .remove_rule::<markdown_it::plugins::html::html_block::HtmlBlockScanner>();
+        md.inline
+            .remove_rule::<markdown_it::plugins::html::html_inline::HtmlInlineScanner>();
     }
     // Indented code blocks are disabled in Twelvety (`mdLib.disable("code")`)
     md.block
@@ -96,7 +103,10 @@ fn apply_highlighter(root: &mut Node, highlighter: &MarkdownHighlighterFn) {
                 let class = if lang.is_empty() {
                     String::new()
                 } else {
-                    format!(" class=\"language-{}\"", html_escape::encode_double_quoted_attribute(&lang))
+                    format!(
+                        " class=\"language-{}\"",
+                        html_escape::encode_double_quoted_attribute(&lang)
+                    )
                 };
                 format!("<pre><code{class}>{highlighted}</code></pre>")
             };
@@ -130,7 +140,12 @@ impl MarkdownEngine {
     }
 
     pub fn render(&self, src: &str) -> String {
-        render_with_env(&self.inner.md, self.highlighter.as_ref(), src, &Value::object())
+        render_with_env(
+            &self.inner.md,
+            self.highlighter.as_ref(),
+            src,
+            &Value::object(),
+        )
     }
 }
 
@@ -147,6 +162,8 @@ impl TemplateEngine for MarkdownEngine {
         let md = self.inner.md.clone();
         let highlighter = self.highlighter.clone();
         let src = src.to_string();
-        Ok(Arc::new(move |data| Ok(render_with_env(&md, highlighter.as_ref(), &src, data))))
+        Ok(Arc::new(move |data| {
+            Ok(render_with_env(&md, highlighter.as_ref(), &src, data))
+        }))
     }
 }

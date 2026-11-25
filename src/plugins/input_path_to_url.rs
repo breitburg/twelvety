@@ -30,18 +30,17 @@ fn normalize_input_path(
     source_input_path: &str,
     content_map: &Value,
 ) -> String {
-    if template_path::join(&[target]).starts_with(&template_path::join(&[input_dir])) {
-        if let Some(p) = get_valid_path(content_map, target) {
-            return p;
-        }
+    if template_path::join(&[target]).starts_with(&template_path::join(&[input_dir]))
+        && let Some(p) = get_valid_path(content_map, target)
+    {
+        return p;
     }
     if let Some(p) = get_valid_path(content_map, &template_path::join(&[input_dir, target])) {
         return p;
     }
     if !target.is_empty() && !node_path::is_absolute(target) {
         let source_dir = template_path::get_dir_from_file_path(source_input_path);
-        if let Some(p) = get_valid_path(content_map, &template_path::join(&[&source_dir, target]))
-        {
+        if let Some(p) = get_valid_path(content_map, &template_path::join(&[&source_dir, target])) {
             return p;
         }
     }
@@ -54,7 +53,9 @@ fn parse_file_path(filepath: &str) -> (String, String) {
         return (filepath.to_string(), String::new());
     }
     let hash_idx = filepath.find('#');
-    let search_idx = filepath.find('?').filter(|i| hash_idx.map(|h| *i < h).unwrap_or(true));
+    let search_idx = filepath
+        .find('?')
+        .filter(|i| hash_idx.map(|h| *i < h).unwrap_or(true));
     let cut = match (search_idx, hash_idx) {
         (Some(s), _) => Some(s),
         (None, Some(h)) => Some(h),
@@ -106,10 +107,14 @@ pub fn register_filter(config: &mut UserConfig, handle: ConfigHandle) -> Result<
         }
         let urls = map.get(&target);
         let first = urls.get_index(0);
-        if !urls.is_truthy() || urls.len() == 0 {
+        if !urls.is_truthy() || urls.is_empty() {
             bail!("`inputPathToUrl` filter could not find a matching target for {target}");
         }
-        Ok(Value::str(format!("{}{}", first.to_output_string(), suffix)))
+        Ok(Value::str(format!(
+            "{}{}",
+            first.to_output_string(),
+            suffix
+        )))
     });
     Ok(())
 }
@@ -149,10 +154,14 @@ pub fn transform_plugin(config: &mut UserConfig, options: &Value) -> Result<()> 
                 );
             }
             let urls = map.get(&target);
-            if target.is_empty() || !urls.is_truthy() || urls.len() == 0 {
+            if target.is_empty() || !urls.is_truthy() || urls.is_empty() {
                 return Ok(format!("{target}{suffix}"));
             }
-            Ok(format!("{}{}", urls.get_index(0).to_output_string(), suffix))
+            Ok(format!(
+                "{}{}",
+                urls.get_index(0).to_output_string(),
+                suffix
+            ))
         }),
         AddOptions::default(),
     );

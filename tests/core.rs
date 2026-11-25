@@ -8,7 +8,7 @@ use std::sync::{Arc, Mutex};
 use twelvety::template::PageResult;
 use twelvety::testing::json;
 use twelvety::user_config::UserConfig;
-use twelvety::{Twelvety, Options, Value};
+use twelvety::{Options, Twelvety, Value};
 
 use common::options;
 
@@ -38,12 +38,19 @@ fn page(url: &str, input_path: &str, output_path: &str, raw_input: &str, content
 }
 
 fn by_url<'a>(results: &'a [PageResult], url: &str) -> Vec<&'a PageResult> {
-    results.iter().filter(|r| r.url.as_str() == Some(url)).collect()
+    results
+        .iter()
+        .filter(|r| r.url.as_str() == Some(url))
+        .collect()
 }
 
 #[allow(dead_code)]
 fn content_by_url(results: &[PageResult], url: &str) -> String {
-    by_url(results, url).first().unwrap_or_else(|| panic!("no page for {url}")).content.clone()
+    by_url(results, url)
+        .first()
+        .unwrap_or_else(|| panic!("no page for {url}"))
+        .content
+        .clone()
 }
 
 /// Removes a directory when the test ends
@@ -86,7 +93,14 @@ fn get_version() {
 /// "Twelvety, set is verbose (before config init)"
 #[test]
 fn set_is_verbose_before_config_init() {
-    let mut elev = Twelvety::new(None, None, Options { config_path: Some(String::new()), ..Default::default() });
+    let mut elev = Twelvety::new(
+        None,
+        None,
+        Options {
+            config_path: Some(String::new()),
+            ..Default::default()
+        },
+    );
     elev.set_is_verbose(true);
     elev.initialize_config().unwrap();
     assert!(elev.is_verbose());
@@ -95,7 +109,14 @@ fn set_is_verbose_before_config_init() {
 /// "Twelvety, set is verbose (after config init)"
 #[test]
 fn set_is_verbose_after_config_init() {
-    let mut elev = Twelvety::new(None, None, Options { config_path: Some(String::new()), ..Default::default() });
+    let mut elev = Twelvety::new(
+        None,
+        None,
+        Options {
+            config_path: Some(String::new()),
+            ..Default::default()
+        },
+    );
     elev.initialize_config().unwrap();
     elev.set_is_verbose(true);
     assert!(elev.is_verbose());
@@ -104,7 +125,11 @@ fn set_is_verbose_after_config_init() {
 /// "Twelvety set input/output"
 #[test]
 fn set_input_output() {
-    let mut elev = new(Some("./test/stubs"), Some("./test/stubs/_site"), no_config());
+    let mut elev = new(
+        Some("./test/stubs"),
+        Some("./test/stubs/_site"),
+        no_config(),
+    );
     let dirs = elev.create_directories().unwrap();
     assert_eq!(dirs.input(), "./test/stubs/");
     assert_eq!(dirs.output(), "./test/stubs/_site/");
@@ -114,9 +139,17 @@ fn set_input_output() {
 /// "process.env.TWELVETY_*" and "process.env.BUILDAWESOME_*"
 #[test]
 fn process_env_twelvety_and_buildawesome() {
-    let mut elev = new(Some("./test/stubs-virtual-nowrite"), Some("./test/stubs-virtual-nowrite/_site"), opts(|cfg| {
-        cfg.add_template("index.njk", "{{ twelvety.env.root }}|{{ buildawesome.env.root }}", Value::object())
-    }));
+    let mut elev = new(
+        Some("./test/stubs-virtual-nowrite"),
+        Some("./test/stubs-virtual-nowrite/_site"),
+        opts(|cfg| {
+            cfg.add_template(
+                "index.njk",
+                "{{ twelvety.env.root }}|{{ buildawesome.env.root }}",
+                Value::object(),
+            )
+        }),
+    );
     let results = elev.to_json().unwrap();
     assert!(std::env::var("TWELVETY_ROOT").is_ok_and(|v| !v.is_empty()));
     assert!(std::env::var("BUILDAWESOME_ROOT").is_ok_and(|v| !v.is_empty()));
@@ -130,7 +163,11 @@ fn process_env_twelvety_and_buildawesome() {
 /// "Twelvety set input/output, one file input"
 #[test]
 fn set_input_output_one_file_input() {
-    let elev = new(Some("./test/stubs/index.html"), Some("./test/stubs/_site"), no_config());
+    let elev = new(
+        Some("./test/stubs/index.html"),
+        Some("./test/stubs/_site"),
+        no_config(),
+    );
     let dirs = elev.create_directories().unwrap();
     assert_eq!(dirs.input_file.as_deref(), Some("./test/stubs/index.html"));
     assert_eq!(dirs.input(), "./test/stubs/");
@@ -143,10 +180,16 @@ fn set_input_output_one_file_input_deeper_subdirectory() {
     let elev = new(
         Some("./test/stubs/subdir/index.html"),
         Some("./test/stubs/_site"),
-        Options { input_dir: Some("./test/stubs".into()), ..no_config() },
+        Options {
+            input_dir: Some("./test/stubs".into()),
+            ..no_config()
+        },
     );
     let dirs = elev.create_directories().unwrap();
-    assert_eq!(dirs.input_file.as_deref(), Some("./test/stubs/subdir/index.html"));
+    assert_eq!(
+        dirs.input_file.as_deref(),
+        Some("./test/stubs/subdir/index.html")
+    );
     assert_eq!(dirs.input(), "./test/stubs/");
     assert_eq!(dirs.output(), "./test/stubs/_site/");
 }
@@ -170,10 +213,16 @@ fn set_input_output_one_file_input_exit_code() {
         let mut elev = new(
             Some("./test/stubs/exitCode/failure.njk"),
             Some("./test/stubs/exitCode/_site"),
-            Options { source: Some(source.into()), ..no_config() },
+            Options {
+                source: Some(source.into()),
+                ..no_config()
+            },
         );
         let err = elev.write().unwrap_err();
-        assert_eq!(err.to_string(), "Having trouble rendering njk template ./test/stubs/exitCode/failure.njk");
+        assert_eq!(
+            err.to_string(),
+            "Having trouble rendering njk template ./test/stubs/exitCode/failure.njk"
+        );
     }
 }
 
@@ -187,34 +236,64 @@ fn throwing_aftererror_listener_does_not_mask_the_original_error() {
         Some("./test/stubs/exitCode/failure.njk"),
         Some("./test/stubs/exitCode/_site"),
         opts(|cfg| {
-            cfg.on("buildawesome.aftererror", |_| anyhow::bail!("Listener failure"));
+            cfg.on("buildawesome.aftererror", |_| {
+                anyhow::bail!("Listener failure")
+            });
             Ok(())
         }),
     );
     let err = elev.to_json().unwrap_err();
-    assert_eq!(err.to_string(), "Having trouble rendering njk template ./test/stubs/exitCode/failure.njk");
+    assert_eq!(
+        err.to_string(),
+        "Having trouble rendering njk template ./test/stubs/exitCode/failure.njk"
+    );
 }
 
 fn add_to_json_templates(cfg: &mut UserConfig) -> anyhow::Result<()> {
     cfg.add_template("test.md", "# hi\n", Value::object())?;
-    cfg.add_template("test2.liquid", "---\nhi: hello\n---\n{{ hi }}", Value::object())
+    cfg.add_template(
+        "test2.liquid",
+        "---\nhi: hello\n---\n{{ hi }}",
+        Value::object(),
+    )
 }
 
 fn to_json_results() -> Vec<PageResult> {
-    let mut elev = new(Some("./test/stubs-virtual-nowrite/"), None, opts(add_to_json_templates));
+    let mut elev = new(
+        Some("./test/stubs-virtual-nowrite/"),
+        None,
+        opts(add_to_json_templates),
+    );
     elev.set_is_verbose(false);
     elev.to_json().unwrap()
 }
 
 fn check_to_json(result: &[PageResult]) {
-    let values = |url| by_url(result, url).iter().map(|r| r.to_value()).collect::<Vec<_>>();
+    let values = |url| {
+        by_url(result, url)
+            .iter()
+            .map(|r| r.to_value())
+            .collect::<Vec<_>>()
+    };
     assert_eq!(
         values("/test/"),
-        vec![page("/test/", "./test/stubs-virtual-nowrite/test.md", "./_site/test/index.html", "# hi\n", "<h1>hi</h1>\n")]
+        vec![page(
+            "/test/",
+            "./test/stubs-virtual-nowrite/test.md",
+            "./_site/test/index.html",
+            "# hi\n",
+            "<h1>hi</h1>\n"
+        )]
     );
     assert_eq!(
         values("/test2/"),
-        vec![page("/test2/", "./test/stubs-virtual-nowrite/test2.liquid", "./_site/test2/index.html", "{{ hi }}", "hello")]
+        vec![page(
+            "/test2/",
+            "./test/stubs-virtual-nowrite/test2.liquid",
+            "./_site/test2/index.html",
+            "{{ hi }}",
+            "hello"
+        )]
     );
 }
 
@@ -236,7 +315,11 @@ fn programmatic_api_without_init() {
 /// "Can Twelvety run two executeBuilds in parallel?" (sequentially: builds take `&mut self`)
 #[test]
 fn can_twelvety_run_two_execute_builds() {
-    let mut elev = new(Some("./test/stubs-virtual-nowrite/"), None, opts(add_to_json_templates));
+    let mut elev = new(
+        Some("./test/stubs-virtual-nowrite/"),
+        None,
+        opts(add_to_json_templates),
+    );
     elev.set_is_verbose(false);
     let result1 = elev.to_json().unwrap();
     let result2 = elev.to_json().unwrap();
@@ -244,16 +327,27 @@ fn can_twelvety_run_two_execute_builds() {
     check_to_json(&result2);
 }
 
-fn nowrite(config: impl Fn(&mut UserConfig) -> anyhow::Result<()> + Send + Sync + 'static) -> Twelvety {
-    new(Some("./test/stubs-virtual-nowrite/"), Some("./test/stubs-virtual-nowrite/_site"), opts(config))
+fn nowrite(
+    config: impl Fn(&mut UserConfig) -> anyhow::Result<()> + Send + Sync + 'static,
+) -> Twelvety {
+    new(
+        Some("./test/stubs-virtual-nowrite/"),
+        Some("./test/stubs-virtual-nowrite/_site"),
+        opts(config),
+    )
 }
 
-fn nowrite_json(config: impl Fn(&mut UserConfig) -> anyhow::Result<()> + Send + Sync + 'static) -> Vec<PageResult> {
+fn nowrite_json(
+    config: impl Fn(&mut UserConfig) -> anyhow::Result<()> + Send + Sync + 'static,
+) -> Vec<PageResult> {
     nowrite(config).to_json().unwrap()
 }
 
 fn sorted_contents(results: &[PageResult]) -> Vec<String> {
-    let mut content: Vec<String> = results.iter().map(|r| r.content.replace("\r\n", "\n")).collect();
+    let mut content: Vec<String> = results
+        .iter()
+        .map(|r| r.content.replace("\r\n", "\n"))
+        .collect();
     content.sort();
     content
 }
@@ -262,7 +356,11 @@ fn sorted_contents(results: &[PageResult]) -> Vec<String> {
 #[test]
 fn unicode_in_front_matter_tags_670() {
     let mut results = nowrite_json(|cfg| {
-        cfg.add_template("content.njk", "---\ntags:\n  - Cañon City\n---", Value::object())?;
+        cfg.add_template(
+            "content.njk",
+            "---\ntags:\n  - Cañon City\n---",
+            Value::object(),
+        )?;
         cfg.add_template(
             "index.njk",
             "{{ collections | length }},{% for key,item in collections %}{{ key }},{% endfor %}",
@@ -279,13 +377,19 @@ fn unicode_in_front_matter_tags_670() {
 /// "git getUpdatedTimestamp returns undefined on nonexistent path"
 #[test]
 fn git_get_updated_timestamp_returns_undefined_on_nonexistent_path() {
-    assert_eq!(twelvety::util::git::get_updated_timestamp("./test/invalid.invalid"), None);
+    assert_eq!(
+        twelvety::util::git::get_updated_timestamp("./test/invalid.invalid"),
+        None
+    );
 }
 
 /// "git getCreatedTimestamp returns undefined on nonexistent path"
 #[test]
 fn git_get_created_timestamp_returns_undefined_on_nonexistent_path() {
-    assert_eq!(twelvety::util::git::get_created_timestamp("./test/invalid.invalid"), None);
+    assert_eq!(
+        twelvety::util::git::get_created_timestamp("./test/invalid.invalid"),
+        None
+    );
 }
 
 /// "#2167: Pagination with permalink: false"
@@ -308,7 +412,11 @@ fn pagination_over_collection_using_twelvety_computed(ext: &'static str) {
     let calls = Arc::new(Mutex::new(vec![]));
     let c = calls.clone();
     let results = nowrite_json(move |cfg| {
-        cfg.add_template(&format!("post.{ext}"), "---\ntags: posts\n---\nNo", Value::object())?;
+        cfg.add_template(
+            &format!("post.{ext}"),
+            "---\ntags: posts\n---\nNo",
+            Value::object(),
+        )?;
         cfg.add_template(
             &format!("test.{ext}"),
             "---\npagination:\n  data: \"collections.posts\"\n  size: 1\nquotes:\n  - The person that shared this is awesome\ntwelvetyComputed:\n  quote: \"{{ quotes | selectRandomFromArray }}\"\n---\n{{ quote }}",
@@ -326,7 +434,10 @@ fn pagination_over_collection_using_twelvety_computed(ext: &'static str) {
     }
     assert!(!calls.lock().unwrap().is_empty());
     assert_eq!(results.len(), 2);
-    assert_eq!(sorted_contents(&results), ["No", "The person that shared this is awesome"]);
+    assert_eq!(
+        sorted_contents(&results),
+        ["No", "The person that shared this is awesome"]
+    );
 }
 
 /// "Pagination over collection using twelvetyComputed (liquid)"
@@ -347,7 +458,11 @@ fn pagination_over_collection_using_twelvety_computed_njk() {
 #[test]
 fn liquid_shortcode_with_multiple_arguments_2348() {
     let results = nowrite_json(|cfg| {
-        cfg.add_template("templateWithLiquidShortcodeMultipleArguments.liquid", "---\nlayout: layout.liquid\n---", Value::object())?;
+        cfg.add_template(
+            "templateWithLiquidShortcodeMultipleArguments.liquid",
+            "---\nlayout: layout.liquid\n---",
+            Value::object(),
+        )?;
         cfg.add_template(
             "templateWithLiquidShortcodeMultipleArguments-template2.liquid",
             "---\nlayout: layout.liquid\n---",
@@ -358,7 +473,9 @@ fn liquid_shortcode_with_multiple_arguments_2348() {
             "---\ntext: layout\nurl: \"/mylayout\"\n---\n{% simplelink text url text url text url %}\n{% simplelink text, url, text, url, text, url %}",
             Value::object(),
         )?;
-        cfg.add_shortcode("simplelink", |_, args| Ok(Value::array(args.to_vec()).to_json_string()));
+        cfg.add_shortcode("simplelink", |_, args| {
+            Ok(Value::array(args.to_vec()).to_json_string())
+        });
         Ok(())
     });
     let arr = r#"["layout","/mylayout","layout","/mylayout","layout","/mylayout"]"#;
@@ -372,7 +489,13 @@ fn liquid_shortcode_with_multiple_arguments_2348() {
 fn does_path_prefix_affect_page_urls() {
     let mut options = opts(|cfg| cfg.add_template("README.md", "# Hi", Value::object()));
     options.path_prefix = Some("/testdirectory/".into());
-    let results = new(Some("./test/stubs-virtual-nowrite/"), Some("./_site"), options).to_json().unwrap();
+    let results = new(
+        Some("./test/stubs-virtual-nowrite/"),
+        Some("./_site"),
+        options,
+    )
+    .to_json()
+    .unwrap();
     assert_eq!(results[0].url, Value::str("/README/"));
 }
 
@@ -381,9 +504,18 @@ fn does_path_prefix_affect_page_urls() {
 #[test]
 fn get_tag_target_object_key_with_spaces_2851() {
     use twelvety::template_map::TemplateMap;
-    assert_eq!(TemplateMap::get_tag_target("collections.tag with spaces").as_deref(), Some("tag with spaces"));
-    assert_eq!(TemplateMap::get_tag_target("collections['tag with spaces']").as_deref(), Some("tag with spaces"));
-    assert_eq!(TemplateMap::get_tag_target("collections[\"tag with spaces\"]").as_deref(), Some("tag with spaces"));
+    assert_eq!(
+        TemplateMap::get_tag_target("collections.tag with spaces").as_deref(),
+        Some("tag with spaces")
+    );
+    assert_eq!(
+        TemplateMap::get_tag_target("collections['tag with spaces']").as_deref(),
+        Some("tag with spaces")
+    );
+    assert_eq!(
+        TemplateMap::get_tag_target("collections[\"tag with spaces\"]").as_deref(),
+        Some("tag with spaces")
+    );
 }
 
 /// "Twelvety tag collection with spaces in the tag name, issue #2851"
@@ -395,7 +527,11 @@ fn tag_collection_with_spaces_in_the_tag_name_2851() {
             "---\npagination:\n  data: \"collections['tag with spaces']\"\n  size: 1\n---\n",
             Value::object(),
         )?;
-        cfg.add_template("content.njk", "---\ntags: ['tag with spaces']\n---", Value::object())?;
+        cfg.add_template(
+            "content.njk",
+            "---\ntags: ['tag with spaces']\n---",
+            Value::object(),
+        )?;
         cfg.data_filter_selectors.insert("collections".into());
         Ok(())
     });
@@ -403,8 +539,17 @@ fn tag_collection_with_spaces_in_the_tag_name_2851() {
     let result = elev.to_json().unwrap();
     assert_eq!(result.len(), 2);
     let data = result[0].data.clone().unwrap();
-    assert_eq!(data.get("collections").get("all").to_vec().len(), result.len());
-    assert_eq!(data.get("collections").get("tag with spaces").to_vec().len(), 1);
+    assert_eq!(
+        data.get("collections").get("all").to_vec().len(),
+        result.len()
+    );
+    assert_eq!(
+        data.get("collections")
+            .get("tag with spaces")
+            .to_vec()
+            .len(),
+        1
+    );
 }
 
 /// "this.page in Liquid filters with strictVariables"
@@ -416,9 +561,17 @@ fn this_page_in_liquid_filters_with_strict_variables() {
         opts(|cfg| {
             cfg.set_liquid_options(json(r#"{"strictVariables": true}"#));
             cfg.add_filter("pageUrl", |ctx, _, _| {
-                Ok(Value::str(format!("{}|{}", ctx.page().get("url").to_output_string(), ctx.get("title").to_output_string())))
+                Ok(Value::str(format!(
+                    "{}|{}",
+                    ctx.page().get("url").to_output_string(),
+                    ctx.get("title").to_output_string()
+                )))
             });
-            cfg.add_template("index.liquid", "{{ '' | pageUrl }}", json(r#"{"title": "Hi"}"#))
+            cfg.add_template(
+                "index.liquid",
+                "{{ '' | pageUrl }}",
+                json(r#"{"title": "Hi"}"#),
+            )
         }),
     )
     .unwrap();
@@ -430,18 +583,38 @@ fn this_page_in_liquid_filters_with_strict_variables() {
 fn check_raw_input(results: &mut [PageResult]) {
     results.sort_by(|a, b| a.content.cmp(&b.content));
     assert_eq!(results.len(), 2);
-    assert_eq!(results[0].content, "This is the first template.This is the first template.{{ page.rawInput }}");
-    assert_eq!(results[0].raw_input, "This is the first template.{{ page.rawInput }}");
-    assert_eq!(results[1].content, "This is the second template.This is the first template.{{ page.rawInput }}");
-    assert_eq!(results[1].raw_input, "This is the second template.{{ collections.tag1[0].rawInput }}");
+    assert_eq!(
+        results[0].content,
+        "This is the first template.This is the first template.{{ page.rawInput }}"
+    );
+    assert_eq!(
+        results[0].raw_input,
+        "This is the first template.{{ page.rawInput }}"
+    );
+    assert_eq!(
+        results[1].content,
+        "This is the second template.This is the first template.{{ page.rawInput }}"
+    );
+    assert_eq!(
+        results[1].raw_input,
+        "This is the second template.{{ collections.tag1[0].rawInput }}"
+    );
 }
 
 /// "Access to raw input of file (toJSON), issue #1206"
 #[test]
 fn access_to_raw_input_of_file_to_json_1206() {
     let mut results = nowrite_json(|cfg| {
-        cfg.add_template("page1.njk", "---\ntags: tag1\n---\nThis is the first template.{{ page.rawInput }}", Value::object())?;
-        cfg.add_template("page2.njk", "This is the second template.{{ collections.tag1[0].rawInput }}", Value::object())
+        cfg.add_template(
+            "page1.njk",
+            "---\ntags: tag1\n---\nThis is the first template.{{ page.rawInput }}",
+            Value::object(),
+        )?;
+        cfg.add_template(
+            "page2.njk",
+            "This is the second template.{{ collections.tag1[0].rawInput }}",
+            Value::object(),
+        )
     });
     check_raw_input(&mut results);
 }
@@ -450,7 +623,13 @@ fn access_to_raw_input_of_file_to_json_1206() {
 #[test]
 fn access_to_raw_input_of_file_write_1206() {
     let _cleanup = Cleanup("./test/stubs-1206/_site/");
-    let (_, mut results) = new(Some("./test/stubs-1206"), Some("./test/stubs-1206/_site"), no_config()).write().unwrap();
+    let (_, mut results) = new(
+        Some("./test/stubs-1206"),
+        Some("./test/stubs-1206/_site"),
+        no_config(),
+    )
+    .write()
+    .unwrap();
     check_raw_input(&mut results);
 }
 
@@ -460,24 +639,36 @@ fn before_and_after_share_a_new_build_id_per_build() {
     let ids = Arc::new(Mutex::new(Vec::<String>::new()));
     let after_ids = Arc::new(Mutex::new(Vec::<String>::new()));
     let (i, a) = (ids.clone(), after_ids.clone());
-    let mut elev = new(Some("./test/noop/"), Some("./test/noop/_site"), opts(move |cfg| {
-        let (i, a) = (i.clone(), a.clone());
-        cfg.on("buildawesome.before", move |arg| {
-            i.lock().unwrap().push(arg.get("buildId").to_output_string());
+    let mut elev = new(
+        Some("./test/noop/"),
+        Some("./test/noop/_site"),
+        opts(move |cfg| {
+            let (i, a) = (i.clone(), a.clone());
+            cfg.on("buildawesome.before", move |arg| {
+                i.lock()
+                    .unwrap()
+                    .push(arg.get("buildId").to_output_string());
+                Ok(())
+            });
+            cfg.on("buildawesome.after", move |arg| {
+                a.lock()
+                    .unwrap()
+                    .push(arg.get("buildId").to_output_string());
+                Ok(())
+            });
             Ok(())
-        });
-        cfg.on("buildawesome.after", move |arg| {
-            a.lock().unwrap().push(arg.get("buildId").to_output_string());
-            Ok(())
-        });
-        Ok(())
-    }));
+        }),
+    );
     elev.to_json().unwrap();
     elev.to_json().unwrap();
     let ids = ids.lock().unwrap().clone();
     assert_eq!(ids, *after_ids.lock().unwrap());
     assert_eq!(ids.len(), 2);
-    assert!(regex::Regex::new(r"^[\da-f]{8}(-[\da-f]{4}){3}-[\da-f]{12}$").unwrap().is_match(&ids[0]));
+    assert!(
+        regex::Regex::new(r"^[\da-f]{8}(-[\da-f]{4}){3}-[\da-f]{12}$")
+            .unwrap()
+            .is_match(&ids[0])
+    );
     assert_ne!(ids[0], ids[1]);
     assert_eq!(elev.build_id.as_deref(), Some(ids[1].as_str()));
 }
@@ -487,7 +678,12 @@ fn event_args(dry_run: bool) -> Vec<Value> {
     let args = Arc::new(Mutex::new(vec![]));
     let a = args.clone();
     let mut options = opts(move |cfg| {
-        for name in ["twelvety.before", "buildawesome.before", "twelvety.after", "buildawesome.after"] {
+        for name in [
+            "twelvety.before",
+            "buildawesome.before",
+            "twelvety.after",
+            "buildawesome.after",
+        ] {
             let a = a.clone();
             cfg.on(name, move |arg| {
                 a.lock().unwrap().push(arg.clone());
@@ -497,7 +693,9 @@ fn event_args(dry_run: bool) -> Vec<Value> {
         Ok(())
     });
     options.dry_run = dry_run;
-    new(Some("./test/noop/"), Some("./test/noop/_site"), options).to_json().unwrap();
+    new(Some("./test/noop/"), Some("./test/noop/_site"), options)
+        .to_json()
+        .unwrap();
     let args = args.lock().unwrap().clone();
     assert_eq!(args.len(), 4);
     args
@@ -508,8 +706,14 @@ fn event_args(dry_run: bool) -> Vec<Value> {
 fn before_and_after_event_arguments_directories() {
     for arg in event_args(false) {
         assert_eq!(arg.get("inputDir"), Value::str("./test/noop/"));
-        assert_eq!(arg.get("directories").get("input"), Value::str("./test/noop/"));
-        assert_eq!(arg.get("directories").get("includes"), Value::str("./test/noop/_includes/"));
+        assert_eq!(
+            arg.get("directories").get("input"),
+            Value::str("./test/noop/")
+        );
+        assert_eq!(
+            arg.get("directories").get("includes"),
+            Value::str("./test/noop/_includes/")
+        );
     }
 }
 
@@ -540,25 +744,39 @@ fn before_directories(
 ) -> (Value, anyhow::Result<Vec<PageResult>>) {
     let dirs = Arc::new(Mutex::new(Value::Undefined));
     let d = dirs.clone();
-    let mut elev = new(Some(input), Some(output), opts(move |cfg| {
-        config(cfg)?;
-        let d = d.clone();
-        cfg.on("buildawesome.before", move |arg| {
-            *d.lock().unwrap() = arg.get("directories");
+    let mut elev = new(
+        Some(input),
+        Some(output),
+        opts(move |cfg| {
+            config(cfg)?;
+            let d = d.clone();
+            cfg.on("buildawesome.before", move |arg| {
+                *d.lock().unwrap() = arg.get("directories");
+                Ok(())
+            });
             Ok(())
-        });
-        Ok(())
-    }));
+        }),
+    );
     let result = elev.to_json();
     let dirs = dirs.lock().unwrap().clone();
     (dirs, result)
 }
 
-fn assert_dirs(dirs: &Value, input: &str, includes: &str, data: &str, layouts: Option<&str>, output: Option<&str>) {
+fn assert_dirs(
+    dirs: &Value,
+    input: &str,
+    includes: &str,
+    data: &str,
+    layouts: Option<&str>,
+    output: Option<&str>,
+) {
     assert_eq!(dirs.get("input"), Value::str(input));
     assert_eq!(dirs.get("includes"), Value::str(includes));
     assert_eq!(dirs.get("data"), Value::str(data));
-    assert_eq!(dirs.get("layouts"), layouts.map(Value::str).unwrap_or_default());
+    assert_eq!(
+        dirs.get("layouts"),
+        layouts.map(Value::str).unwrap_or_default()
+    );
     if let Some(output) = output {
         assert_eq!(dirs.get("output"), Value::str(output));
     }
@@ -571,7 +789,14 @@ fn set_input_directory_config_method_1503() {
         cfg.set_input_directory("./test/noop2/")
     });
     result.unwrap();
-    assert_dirs(&dirs, "./test/noop2/", "./test/noop2/_includes/", "./test/noop2/_data/", None, Some("./test/noop/_site/"));
+    assert_dirs(
+        &dirs,
+        "./test/noop2/",
+        "./test/noop2/_includes/",
+        "./test/noop2/_data/",
+        None,
+        Some("./test/noop/_site/"),
+    );
 }
 
 /// "setDirectoriesRelativeTo config method"
@@ -581,40 +806,81 @@ fn set_directories_relative_to_config_method() {
         cfg.set_directories_relative_to(".")?;
         cfg.set_includes_directory("test/stubs/_includes")?;
         cfg.set_data_directory("test/stubs/_data")?;
-        cfg.add_template("index.liquid", r#"{% include "included.liquid" %} {{ globalData.datakey1 }}"#, Value::object())
+        cfg.add_template(
+            "index.liquid",
+            r#"{% include "included.liquid" %} {{ globalData.datakey1 }}"#,
+            Value::object(),
+        )
     });
-    assert_dirs(&dirs, "./test/noop/", "./test/stubs/_includes/", "./test/stubs/_data/", None, None);
-    assert_eq!(result.unwrap()[0].content.trim(), "This is an include. datavalue1");
+    assert_dirs(
+        &dirs,
+        "./test/noop/",
+        "./test/stubs/_includes/",
+        "./test/stubs/_data/",
+        None,
+        None,
+    );
+    assert_eq!(
+        result.unwrap()[0].content.trim(),
+        "This is an include. datavalue1"
+    );
 }
 
 /// "setDirectoriesRelativeTo only supports \".\""
 #[test]
 fn set_directories_relative_to_only_supports_dot() {
-    let (_, result) = before_directories("./test/noop/", "./test/noop/_site", |cfg| cfg.set_directories_relative_to("src"));
+    let (_, result) = before_directories("./test/noop/", "./test/noop/_site", |cfg| {
+        cfg.set_directories_relative_to("src")
+    });
     let err = result.unwrap_err();
-    assert!(err.chain().any(|e| e.to_string().contains(r#"Only "." (the project root) is supported."#)), "{err:#}");
+    assert!(
+        err.chain().any(|e| e
+            .to_string()
+            .contains(r#"Only "." (the project root) is supported."#)),
+        "{err:#}"
+    );
 }
 
 /// "setIncludesDirectory config method #1503"
 #[test]
 fn set_includes_directory_config_method_1503() {
-    let (dirs, result) = before_directories("./test/noop/", "./test/noop/_site", |cfg| cfg.set_includes_directory("myincludes"));
+    let (dirs, result) = before_directories("./test/noop/", "./test/noop/_site", |cfg| {
+        cfg.set_includes_directory("myincludes")
+    });
     result.unwrap();
-    assert_dirs(&dirs, "./test/noop/", "./test/noop/myincludes/", "./test/noop/_data/", None, Some("./test/noop/_site/"));
+    assert_dirs(
+        &dirs,
+        "./test/noop/",
+        "./test/noop/myincludes/",
+        "./test/noop/_data/",
+        None,
+        Some("./test/noop/_site/"),
+    );
 }
 
 /// "setDataDirectory config method #1503"
 #[test]
 fn set_data_directory_config_method_1503() {
-    let (dirs, result) = before_directories("./test/noop/", "./test/noop/_site", |cfg| cfg.set_data_directory("data"));
+    let (dirs, result) = before_directories("./test/noop/", "./test/noop/_site", |cfg| {
+        cfg.set_data_directory("data")
+    });
     result.unwrap();
-    assert_dirs(&dirs, "./test/noop/", "./test/noop/_includes/", "./test/noop/data/", None, Some("./test/noop/_site/"));
+    assert_dirs(
+        &dirs,
+        "./test/noop/",
+        "./test/noop/_includes/",
+        "./test/noop/data/",
+        None,
+        Some("./test/noop/_site/"),
+    );
 }
 
 /// "setLayoutsDirectory config method #1503"
 #[test]
 fn set_layouts_directory_config_method_1503() {
-    let (dirs, result) = before_directories("./test/noop/", "./test/noop/_site", |cfg| cfg.set_layouts_directory("layouts"));
+    let (dirs, result) = before_directories("./test/noop/", "./test/noop/_site", |cfg| {
+        cfg.set_layouts_directory("layouts")
+    });
     result.unwrap();
     assert_dirs(
         &dirs,
@@ -630,21 +896,37 @@ fn set_layouts_directory_config_method_1503() {
 #[test]
 fn set_input_directory_config_method_in_a_plugin_throws_error() {
     let (_, result) = before_directories("./test/noop/", "./test/noop/_site", |cfg| {
-        cfg.add_plugin("", |cfg, _| cfg.set_input_directory("./test/noop2/"), Value::object())
+        cfg.add_plugin(
+            "",
+            |cfg, _| cfg.set_input_directory("./test/noop2/"),
+            Value::object(),
+        )
     });
     let err = result.unwrap_err();
     // The `set*Directory` configuration API methods are not yet allowed in plugins.
-    assert!(err.chain().any(|e| e.to_string() == "Error processing a plugin"), "{err:#}");
+    assert!(
+        err.chain()
+            .any(|e| e.to_string() == "Error processing a plugin"),
+        "{err:#}"
+    );
 }
 
 fn absolute(p: &str) -> String {
-    std::path::Path::new(p).canonicalize().unwrap().to_string_lossy().to_string()
+    std::path::Path::new(p)
+        .canonicalize()
+        .unwrap()
+        .to_string_lossy()
+        .to_string()
 }
 
 /// "Accepts absolute paths for input and output"
 #[test]
 fn accepts_absolute_paths_for_input_and_output() {
-    let mut elev = new(Some(&absolute("./test/noop/")), Some(&format!("{}/_site", absolute("./test/noop/"))), no_config());
+    let mut elev = new(
+        Some(&absolute("./test/noop/")),
+        Some(&format!("{}/_site", absolute("./test/noop/"))),
+        no_config(),
+    );
     elev.to_json().unwrap();
     let dirs = elev.directories.clone().unwrap();
     assert_eq!(dirs.input(), "./test/noop/");
@@ -659,7 +941,13 @@ fn accepts_absolute_paths_for_input_and_output() {
 fn accepts_absolute_paths_for_input_and_output_results_output_3805() {
     let input = absolute("./test/stubs-absolute/test.md");
     let output = format!("{}/_site", absolute("./test/stubs-absolute"));
-    assert_eq!(new(Some(&input), Some(&output), no_config()).to_json().unwrap().len(), 1);
+    assert_eq!(
+        new(Some(&input), Some(&output), no_config())
+            .to_json()
+            .unwrap()
+            .len(),
+        1
+    );
 }
 
 /// "Accepts absolute paths urls for input and output and a virtual template, results output #3805"
@@ -667,7 +955,11 @@ fn accepts_absolute_paths_for_input_and_output_results_output_3805() {
 fn accepts_absolute_paths_for_input_and_output_and_a_virtual_template_3805() {
     let input = absolute("./test/noop/");
     let output = format!("{input}/_site");
-    let mut elev = new(Some(&input), Some(&output), opts(|cfg| cfg.add_template("index.md", "# Title", Value::object())));
+    let mut elev = new(
+        Some(&input),
+        Some(&output),
+        opts(|cfg| cfg.add_template("index.md", "# Title", Value::object())),
+    );
     assert_eq!(elev.to_json().unwrap().len(), 1);
 }
 
@@ -689,7 +981,9 @@ fn pagination_works_okay_with_reserved_data_throws_3262() {
     assert_eq!(results.len(), 3);
 }
 
-fn virtual_json(config: impl Fn(&mut UserConfig) -> anyhow::Result<()> + Send + Sync + 'static) -> anyhow::Result<Vec<PageResult>> {
+fn virtual_json(
+    config: impl Fn(&mut UserConfig) -> anyhow::Result<()> + Send + Sync + 'static,
+) -> anyhow::Result<Vec<PageResult>> {
     common::to_json("./test/stubs-virtual/", None, opts(config))
 }
 
@@ -698,10 +992,23 @@ fn virtual_json(config: impl Fn(&mut UserConfig) -> anyhow::Result<()> + Send + 
 fn setting_pkg_data_is_okay_when_pkg_is_remapped_to_parkour() {
     let results = virtual_json(|cfg| {
         cfg.keys.package = Some("parkour".into());
-        cfg.add_template("index.html", "---\npkg:\n  myOwn: OVERRIDE\n---", Value::object())
+        cfg.add_template(
+            "index.html",
+            "---\npkg:\n  myOwn: OVERRIDE\n---",
+            Value::object(),
+        )
     })
     .unwrap();
-    assert_eq!(results[0].to_value(), page("/", "./test/stubs-virtual/index.html", "./_site/index.html", "", ""));
+    assert_eq!(
+        results[0].to_value(),
+        page(
+            "/",
+            "./test/stubs-virtual/index.html",
+            "./_site/index.html",
+            "",
+            ""
+        )
+    );
 }
 
 /// "Twelvety setting pkg data is okay when keys.package is false"
@@ -709,17 +1016,32 @@ fn setting_pkg_data_is_okay_when_pkg_is_remapped_to_parkour() {
 fn setting_pkg_data_is_okay_when_keys_package_is_false() {
     let results = virtual_json(|cfg| {
         cfg.keys.package = None;
-        cfg.add_template("index.html", "---\npkg:\n  myOwn: OVERRIDE\n---\n{{ pkg.myOwn }}", Value::object())
+        cfg.add_template(
+            "index.html",
+            "---\npkg:\n  myOwn: OVERRIDE\n---\n{{ pkg.myOwn }}",
+            Value::object(),
+        )
     })
     .unwrap();
     assert_eq!(
         results[0].to_value(),
-        page("/", "./test/stubs-virtual/index.html", "./_site/index.html", "{{ pkg.myOwn }}", "OVERRIDE")
+        page(
+            "/",
+            "./test/stubs-virtual/index.html",
+            "./_site/index.html",
+            "{{ pkg.myOwn }}",
+            "OVERRIDE"
+        )
     );
 }
 
 fn index_content(results: &[PageResult]) -> String {
-    results.iter().find(|r| r.input_path.ends_with("index.njk")).unwrap().content.clone()
+    results
+        .iter()
+        .find(|r| r.input_path.ends_with("index.njk"))
+        .unwrap()
+        .content
+        .clone()
 }
 
 /// "keys.tags false skips tag collections, #1254"
@@ -732,7 +1054,12 @@ fn keys_tags_false_skips_tag_collections_1254() {
                 api.get_all()
                     .to_vec()
                     .into_iter()
-                    .filter(|item| item.get("data").get("tags").to_vec().contains(&Value::str("post")))
+                    .filter(|item| {
+                        item.get("data")
+                            .get("tags")
+                            .to_vec()
+                            .contains(&Value::str("post"))
+                    })
                     .collect(),
             ))
         })?;
@@ -754,7 +1081,11 @@ fn keys_tags_renamed_creates_collections_from_another_key_1254() {
     let results = virtual_json(|cfg| {
         cfg.keys.tags = Some("category".into());
         cfg.add_collection("byTag", |api| Ok(api.get_filtered_by_tag("news")))?;
-        cfg.add_template("post.md", "", json(r#"{"category": "news", "tags": {"custom": true}}"#))?;
+        cfg.add_template(
+            "post.md",
+            "",
+            json(r#"{"category": "news", "tags": {"custom": true}}"#),
+        )?;
         cfg.add_template(
             "index.njk",
             "{% for name, items in collections %}{{ name }}:{{ items.length }},{% endfor %}",
@@ -768,12 +1099,19 @@ fn keys_tags_renamed_creates_collections_from_another_key_1254() {
 /// "keys.tags with a nested property throws, #1254"
 #[test]
 fn keys_tags_with_a_nested_property_throws_1254() {
-    let mut elev = new(Some("./test/stubs-virtual/"), None, opts(|cfg| {
-        cfg.keys.tags = Some("meta.tags".into());
-        Ok(())
-    }));
+    let mut elev = new(
+        Some("./test/stubs-virtual/"),
+        None,
+        opts(|cfg| {
+            cfg.keys.tags = Some("meta.tags".into());
+            Ok(())
+        }),
+    );
     let err = elev.initialize_config().unwrap_err();
-    assert!(format!("{err:#}").contains("Nested properties are not supported in `keys.tags`"), "{err:#}");
+    assert!(
+        format!("{err:#}").contains("Nested properties are not supported in `keys.tags`"),
+        "{err:#}"
+    );
 }
 
 fn draft_schema() -> Value {
@@ -795,7 +1133,11 @@ fn with_schema(mut data: Value, schema: Value) -> Value {
 fn data_schema_success_879() {
     let results = virtual_json(|cfg| {
         for name in ["index1.html", "index2.html"] {
-            cfg.add_template(name, "", with_schema(json(r#"{"draft": true}"#), draft_schema()))?;
+            cfg.add_template(
+                name,
+                "",
+                with_schema(json(r#"{"draft": true}"#), draft_schema()),
+            )?;
         }
         Ok(())
     })
@@ -806,13 +1148,22 @@ fn data_schema_success_879() {
 /// "Twelvety data schema (fails) #879"
 #[test]
 fn data_schema_fails_879() {
-    let err = virtual_json(|cfg| cfg.add_template("index1.html", "", with_schema(json(r#"{"draft": 1}"#), draft_schema())))
-        .unwrap_err();
+    let err = virtual_json(|cfg| {
+        cfg.add_template(
+            "index1.html",
+            "",
+            with_schema(json(r#"{"draft": 1}"#), draft_schema()),
+        )
+    })
+    .unwrap_err();
     assert_eq!(
         err.to_string(),
         "Error in the data schema for: ./test/stubs-virtual/index1.html (via `buildawesomeDataSchema` or `twelvetyDataSchema`)"
     );
-    assert_eq!(err.source().unwrap().to_string(), "Invalid data type for draft.");
+    assert_eq!(
+        err.source().unwrap().to_string(),
+        "Invalid data type for draft."
+    );
 }
 
 // "Twelvety data schema (fails, using zod) #879": zod is a JavaScript library (skipped).
@@ -826,7 +1177,13 @@ fn data_schema_has_access_to_custom_collections_879() {
         cfg.add_collection("userCollection", |c| Ok(c.get_all()))?;
         let l = l.clone();
         let schema = Value::function(move |args| {
-            l.lock().unwrap().push(args[0].get("collections").get("userCollection").to_vec().len());
+            l.lock().unwrap().push(
+                args[0]
+                    .get("collections")
+                    .get("userCollection")
+                    .to_vec()
+                    .len(),
+            );
             Ok(Value::Undefined)
         });
         cfg.add_template("index1.html", "", with_schema(Value::object(), schema))
@@ -840,8 +1197,16 @@ fn data_schema_has_access_to_custom_collections_879() {
 #[test]
 fn transforms_filter_using_collections_and_page_override_data() {
     let mut options = opts(|cfg| {
-        cfg.add_plugin("HtmlBasePlugin", twelvety::plugins::html_base::plugin, Value::object())?;
-        cfg.add_template("index.html", r#"<img src="/test.png" alt="abc">"#, json(r#"{"tags": "posts"}"#))?;
+        cfg.add_plugin(
+            "HtmlBasePlugin",
+            twelvety::plugins::html_base::plugin,
+            Value::object(),
+        )?;
+        cfg.add_template(
+            "index.html",
+            r#"<img src="/test.png" alt="abc">"#,
+            json(r#"{"tags": "posts"}"#),
+        )?;
         cfg.add_template(
             "feed.njk",
             "{% for post in collections.posts %}{{ post.content | renderTransforms(post.page) | safe }}{% endfor %}",
@@ -851,12 +1216,24 @@ fn transforms_filter_using_collections_and_page_override_data() {
     options.path_prefix = Some("hi".into());
     let results = common::to_json("./test/stubs-virtual/", None, options).unwrap();
     assert_eq!(results.len(), 2);
-    let content = |suffix: &str| results.iter().find(|r| r.input_path.ends_with(suffix)).unwrap().content.clone();
-    assert_eq!(content("index.html"), r#"<img src="/hi/test.png" alt="abc">"#);
+    let content = |suffix: &str| {
+        results
+            .iter()
+            .find(|r| r.input_path.ends_with(suffix))
+            .unwrap()
+            .content
+            .clone()
+    };
+    assert_eq!(
+        content("index.html"),
+        r#"<img src="/hi/test.png" alt="abc">"#
+    );
     assert_eq!(content("feed.njk"), r#"<img src="/hi/test.png" alt="abc">"#);
 }
 
-fn compile_extension(f: impl Fn(&str) -> String + Send + Sync + 'static) -> twelvety::user_config::ExtensionOptions {
+fn compile_extension(
+    f: impl Fn(&str) -> String + Send + Sync + 'static,
+) -> twelvety::user_config::ExtensionOptions {
     let f = Arc::new(f);
     twelvety::user_config::ExtensionOptions {
         compile: Some(Arc::new(move |src: &str, _input_path: &str| {
@@ -871,8 +1248,15 @@ fn compile_extension(f: impl Fn(&str) -> String + Send + Sync + 'static) -> twel
 #[test]
 fn custom_markdown_render_with_permalink_2780() {
     let results = virtual_json(|cfg| {
-        cfg.add_extension("md", compile_extension(|s| format!("<h1>{}</h1>", s.trim_start_matches("# "))))?;
-        cfg.add_template("template.md", "# Markdown?", json(r#"{"permalink": "/permalink.html"}"#))
+        cfg.add_extension(
+            "md",
+            compile_extension(|s| format!("<h1>{}</h1>", s.trim_start_matches("# "))),
+        )?;
+        cfg.add_template(
+            "template.md",
+            "# Markdown?",
+            json(r#"{"permalink": "/permalink.html"}"#),
+        )
     })
     .unwrap();
     assert_eq!(results.len(), 1);
@@ -885,8 +1269,18 @@ fn custom_markdown_render_with_permalink_2780() {
 fn custom_markdown_render_with_permalink_2780_3339() {
     let results = virtual_json(|cfg| {
         cfg.add_template_formats(&["markdown"]);
-        cfg.add_extension("markdown", twelvety::user_config::ExtensionOptions { key: "md".into(), ..Default::default() })?;
-        cfg.add_template("filename-hi.markdown", "# Markdown?", json(r#"{"permalink": "/{{ page.fileSlug }}.html"}"#))
+        cfg.add_extension(
+            "markdown",
+            twelvety::user_config::ExtensionOptions {
+                key: "md".into(),
+                ..Default::default()
+            },
+        )?;
+        cfg.add_template(
+            "filename-hi.markdown",
+            "# Markdown?",
+            json(r#"{"permalink": "/{{ page.fileSlug }}.html"}"#),
+        )
     })
     .unwrap();
     assert_eq!(results.len(), 1);
@@ -899,7 +1293,13 @@ fn custom_markdown_render_with_permalink_2780_3339() {
 fn alias_a_custom_template_syntax_registered_after_the_alias_2827() {
     let results = virtual_json(|cfg| {
         cfg.add_template_formats(&["foo", "bar"]);
-        cfg.add_extension("bar", twelvety::user_config::ExtensionOptions { key: "foo".into(), ..Default::default() })?;
+        cfg.add_extension(
+            "bar",
+            twelvety::user_config::ExtensionOptions {
+                key: "foo".into(),
+                ..Default::default()
+            },
+        )?;
         cfg.add_extension("foo", compile_extension(|s| format!("FOO({s})")))?;
         cfg.add_template("index.bar", "hi", Value::object())
     })
@@ -921,7 +1321,13 @@ fn alias_a_custom_template_syntax_added_via_plugin_2827() {
             Value::object(),
         )?;
         cfg.add_template_formats(&["bar"]);
-        cfg.add_extension("bar", twelvety::user_config::ExtensionOptions { key: "foo".into(), ..Default::default() })?;
+        cfg.add_extension(
+            "bar",
+            twelvety::user_config::ExtensionOptions {
+                key: "foo".into(),
+                ..Default::default()
+            },
+        )?;
         cfg.add_template("index.bar", "hi", Value::object())
     })
     .unwrap();
@@ -930,8 +1336,12 @@ fn alias_a_custom_template_syntax_added_via_plugin_2827() {
 }
 
 fn is_duplicate_permalink_error(err: &anyhow::Error) -> bool {
-    err.chain().any(|e| e.downcast_ref::<twelvety::errors::DuplicatePermalinkOutputError>().is_some())
-        || err.downcast_ref::<twelvety::errors::DuplicatePermalinkOutputError>().is_some()
+    err.chain().any(|e| {
+        e.downcast_ref::<twelvety::errors::DuplicatePermalinkOutputError>()
+            .is_some()
+    }) || err
+        .downcast_ref::<twelvety::errors::DuplicatePermalinkOutputError>()
+        .is_some()
 }
 
 /// "Test input/output conflicts (input overwrites output), Issue #3327"
@@ -940,7 +1350,13 @@ fn input_output_conflicts_input_overwrites_output_3327() {
     let err = common::to_json(
         "./test/stubs-virtual/",
         Some("./test/stubs-virtual/"),
-        opts(|cfg| cfg.add_template("test.html", "# Markdown", json(r#"{"permalink": "test.html"}"#))),
+        opts(|cfg| {
+            cfg.add_template(
+                "test.html",
+                "# Markdown",
+                json(r#"{"permalink": "test.html"}"#),
+            )
+        }),
     )
     .unwrap_err();
     assert!(is_duplicate_permalink_error(&err), "{err:#}");
@@ -954,7 +1370,11 @@ fn input_output_conflicts_output_overwrites_another_input_3327() {
         Some("./test/stubs-virtual/"),
         opts(|cfg| {
             cfg.add_template("test.html", "# Markdown", Value::object())?;
-            cfg.add_template("index.html", "# Markdown", json(r#"{"permalink": "test.html"}"#))
+            cfg.add_template(
+                "index.html",
+                "# Markdown",
+                json(r#"{"permalink": "test.html"}"#),
+            )
         }),
     )
     .unwrap_err();
@@ -971,9 +1391,18 @@ fn input_output_conflicts_output_overwrites_another_input_3327() {
 #[test]
 fn nunjucks_throw_on_undefined_with_shortcode_3206() {
     let results = virtual_json(|cfg| {
-        cfg.add_shortcode("customized", |ctx, _| Ok(format!("{}:Custom Shortcode", ctx.page().get("url").to_output_string())));
+        cfg.add_shortcode("customized", |ctx, _| {
+            Ok(format!(
+                "{}:Custom Shortcode",
+                ctx.page().get("url").to_output_string()
+            ))
+        });
         cfg.set_nunjucks_environment_options(json(r#"{"throwOnUndefined": true}"#));
-        cfg.add_template("index.html", "HELLO{% customized %}:{{ page.url }}", Value::object())
+        cfg.add_template(
+            "index.html",
+            "HELLO{% customized %}:{{ page.url }}",
+            Value::object(),
+        )
     })
     .unwrap();
     assert_eq!(results.len(), 1);
@@ -984,7 +1413,11 @@ fn nunjucks_throw_on_undefined_with_shortcode_3206() {
 #[test]
 fn error_messaging_when_trying_to_use_a_missing_layout_727() {
     let err = virtual_json(|cfg| {
-        cfg.add_template("index.html", "HELLO {{ page.url }}", json(r#"{"layout": "does-not-exist.html"}"#))
+        cfg.add_template(
+            "index.html",
+            "HELLO {{ page.url }}",
+            json(r#"{"layout": "does-not-exist.html"}"#),
+        )
     })
     .unwrap_err();
     assert_eq!(
@@ -998,7 +1431,11 @@ fn error_messaging_when_trying_to_use_a_missing_layout_727() {
 fn shortcode_in_a_permalink_1419() {
     let results = virtual_json(|cfg| {
         cfg.add_shortcode("shortcode", |_, _| Ok("url-slug".into()));
-        cfg.add_template("index.njk", "", json(r#"{"permalink": "/{% shortcode %}/"}"#))
+        cfg.add_template(
+            "index.njk",
+            "",
+            json(r#"{"permalink": "/{% shortcode %}/"}"#),
+        )
     })
     .unwrap();
     assert_eq!(results.len(), 1);
@@ -1008,9 +1445,17 @@ fn shortcode_in_a_permalink_1419() {
 /// "#3373: Throw an error when explicit config path is not found."
 #[test]
 fn throw_an_error_when_explicit_config_path_is_not_found_3373() {
-    let options = Options { config_path: Some("this-file-is-not-found.js".into()), ..Default::default() };
-    let err = new(Some("./test/stubs-virtual/"), None, options).to_json().unwrap_err();
-    assert_eq!(err.to_string(), "A configuration file was specified but not found: this-file-is-not-found.js");
+    let options = Options {
+        config_path: Some("this-file-is-not-found.js".into()),
+        ..Default::default()
+    };
+    let err = new(Some("./test/stubs-virtual/"), None, options)
+        .to_json()
+        .unwrap_err();
+    assert_eq!(
+        err.to_string(),
+        "A configuration file was specified but not found: this-file-is-not-found.js"
+    );
 }
 
 // "Twelvety loader can force ESM mode" / "… CommonJS mode": JavaScript module loading (skipped).
@@ -1020,7 +1465,11 @@ fn throw_an_error_when_explicit_config_path_is_not_found_3373() {
 #[test]
 fn truthy_output_path_without_a_file_extension_can_be_ignored_3399() {
     let results = virtual_json(|cfg| {
-        cfg.add_template("index.html", "", json(r#"{"permalink": "foo", "twelvetyAllowMissingExtension": true}"#))
+        cfg.add_template(
+            "index.html",
+            "",
+            json(r#"{"permalink": "foo", "twelvetyAllowMissingExtension": true}"#),
+        )
     })
     .unwrap();
     assert_eq!(results.len(), 1);
@@ -1030,7 +1479,14 @@ fn truthy_output_path_without_a_file_extension_can_be_ignored_3399() {
 /// "Allow list for some file types without a file extension, issue #3399"
 #[test]
 fn allow_list_for_some_file_types_without_a_file_extension_3399() {
-    let results = virtual_json(|cfg| cfg.add_template("index.html", "", json(r#"{"permalink": "/test/_redirects"}"#))).unwrap();
+    let results = virtual_json(|cfg| {
+        cfg.add_template(
+            "index.html",
+            "",
+            json(r#"{"permalink": "/test/_redirects"}"#),
+        )
+    })
+    .unwrap();
     assert_eq!(results.len(), 1);
     assert_eq!(results[0].url, Value::str("/test/_redirects"));
 }
@@ -1048,7 +1504,8 @@ fn truthy_output_path_without_a_file_extension_error_message_is_disabled_3399() 
 
 /// "Truthy outputPath without a file extension error message is disabled via missingExtensions: \"allow\""
 #[test]
-fn truthy_output_path_without_a_file_extension_error_message_is_disabled_via_missing_extensions_allow() {
+fn truthy_output_path_without_a_file_extension_error_message_is_disabled_via_missing_extensions_allow()
+ {
     let results = virtual_json(|cfg| {
         cfg.configure_error_reporting("missingExtensions", "allow");
         cfg.add_template("index.html", "", json(r#"{"permalink": "foo"}"#))
@@ -1060,7 +1517,9 @@ fn truthy_output_path_without_a_file_extension_error_message_is_disabled_via_mis
 /// "permalink: false outputPath new error message won’t throw an error, issue #3399"
 #[test]
 fn permalink_false_output_path_wont_throw_an_error_3399() {
-    let results = virtual_json(|cfg| cfg.add_template("index.html", "", json(r#"{"permalink": false}"#))).unwrap();
+    let results =
+        virtual_json(|cfg| cfg.add_template("index.html", "", json(r#"{"permalink": false}"#)))
+            .unwrap();
     assert_eq!(results.len(), 1);
 }
 
@@ -1070,9 +1529,11 @@ fn permalink_false_output_path_wont_throw_an_error_3399() {
 /// "Template data throws error when tags is not an Array or String #1791"
 #[test]
 fn template_data_throws_error_when_tags_is_not_an_array_or_string_1791() {
-    let err = new(Some("./test/noop/"), Some("./test/noop/_site"), opts(|cfg| {
-        cfg.add_template("index.html", "", json(r#"{"tags": {"one": 1, "two": 2}}"#))
-    }))
+    let err = new(
+        Some("./test/noop/"),
+        Some("./test/noop/_site"),
+        opts(|cfg| cfg.add_template("index.html", "", json(r#"{"tags": {"one": 1, "two": 2}}"#))),
+    )
     .to_json()
     .unwrap_err();
     assert_eq!(
@@ -1092,13 +1553,17 @@ fn use_a_date_object_for_date_3022() {
     })
     .unwrap();
     assert_eq!(results.len(), 1);
-    assert!(matches!(results[0].data.as_ref().unwrap().get("page").get("date"), Value::Date(_)));
+    assert!(matches!(
+        results[0].data.as_ref().unwrap().get("page").get("date"),
+        Value::Date(_)
+    ));
 }
 
 /// "Cleaner constructor args #3880"
 #[test]
 fn cleaner_constructor_args_3880() {
-    let results = virtual_json(|cfg| cfg.add_template("index.md", "# Title", Value::object())).unwrap();
+    let results =
+        virtual_json(|cfg| cfg.add_template("index.md", "# Title", Value::object())).unwrap();
     assert_eq!(results.len(), 1);
     assert_eq!(results[0].content.trim(), "<h1>Title</h1>");
 }
@@ -1113,7 +1578,9 @@ fn pathprefix_is_available_in_the_config_callback_3439() {
         Ok(())
     });
     options.path_prefix = Some("/hi/".into());
-    new(Some("./test/stubs-virtual/"), None, options).initialize_config().unwrap();
+    new(Some("./test/stubs-virtual/"), None, options)
+        .initialize_config()
+        .unwrap();
     assert_eq!(seen.lock().unwrap().as_deref(), Some("/hi/"));
 }
 
@@ -1122,13 +1589,20 @@ fn pathprefix_is_available_in_the_config_callback_3439() {
 fn formats_is_available_in_the_config_callback_3440() {
     let seen = Arc::new(Mutex::new(None));
     let s = seen.clone();
-    let mut elev = new(Some("./test/stubs-virtual/"), None, opts(move |cfg| {
-        *s.lock().unwrap() = cfg.template_formats.clone();
-        Ok(())
-    }));
+    let mut elev = new(
+        Some("./test/stubs-virtual/"),
+        None,
+        opts(move |cfg| {
+            *s.lock().unwrap() = cfg.template_formats.clone();
+            Ok(())
+        }),
+    );
     elev.set_formats("md,njk");
     elev.initialize_config().unwrap();
-    assert_eq!(seen.lock().unwrap().clone(), Some(vec!["md".to_string(), "njk".to_string()]));
+    assert_eq!(
+        seen.lock().unwrap().clone(),
+        Some(vec!["md".to_string(), "njk".to_string()])
+    );
 }
 
 // "--formats=* still includes default formats #3440": JavaScript templates; "… in a config file"
@@ -1139,9 +1613,20 @@ fn formats_is_available_in_the_config_callback_3440() {
 #[test]
 fn global_data_objects_are_shared_across_templates_and_copied_on_write() {
     let mut results = virtual_json(|cfg| {
-        cfg.add_global_data("site", json(r#"{"meta": {"title": "Global"}, "nav": {"home": "/"}}"#));
-        cfg.add_template("a.njk", "{{ site.meta.title }} {{ site.meta.lang }}", json(r#"{"site": {"meta": {"lang": "en"}}}"#))?;
-        cfg.add_template("b.njk", "{{ site.meta.title }} {{ site.meta.lang }}", Value::object())
+        cfg.add_global_data(
+            "site",
+            json(r#"{"meta": {"title": "Global"}, "nav": {"home": "/"}}"#),
+        );
+        cfg.add_template(
+            "a.njk",
+            "{{ site.meta.title }} {{ site.meta.lang }}",
+            json(r#"{"site": {"meta": {"lang": "en"}}}"#),
+        )?;
+        cfg.add_template(
+            "b.njk",
+            "{{ site.meta.title }} {{ site.meta.lang }}",
+            Value::object(),
+        )
     })
     .unwrap();
     results.sort_by(|a, b| a.input_path.cmp(&b.input_path));

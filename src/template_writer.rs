@@ -36,7 +36,8 @@ impl std::fmt::Display for TemplateFileError {
 
 /// The input path of the template an error came from, if any
 pub fn error_file_path(e: &anyhow::Error) -> Option<String> {
-    e.downcast_ref::<TemplateFileError>().map(|t| t.file_path.clone())
+    e.downcast_ref::<TemplateFileError>()
+        .map(|t| t.file_path.clone())
 }
 
 /// Record the file an error came from (unless a more specific one is already known).
@@ -80,7 +81,11 @@ pub struct TemplateWriter {
 }
 
 impl TemplateWriter {
-    pub fn new(ctx: Arc<BuildContext>, files: Files, passthrough_manager: Arc<TemplatePassthroughManager>) -> Self {
+    pub fn new(
+        ctx: Arc<BuildContext>,
+        files: Files,
+        passthrough_manager: Arc<TemplatePassthroughManager>,
+    ) -> Self {
         TemplateWriter {
             ctx,
             files,
@@ -120,7 +125,9 @@ impl TemplateWriter {
                 );
             }
             if paths.contains(&full) {
-                bail!("A virtual template had the same path as a file on the file system: \"{full}\"");
+                bail!(
+                    "A virtual template had the same path as a file on the file system: \"{full}\""
+                );
             }
             paths.push(full);
         }
@@ -129,7 +136,9 @@ impl TemplateWriter {
 
     /// Globs for files copied by file extension (formats without a template engine)
     pub fn get_passthrough_globs(&self) -> Vec<String> {
-        self.ctx.extension_map.get_passthrough_copy_globs(&self.ctx.dirs.input())
+        self.ctx
+            .extension_map
+            .get_passthrough_copy_globs(&self.ctx.dirs.input())
     }
 
     pub fn get_all_paths(&self) -> Result<Vec<String>> {
@@ -170,14 +179,14 @@ impl TemplateWriter {
                         continue;
                     }
                 }
-                let content = if tmpl.is_renderable() {
-                    Some(
-                        tmpl.render_page_entry(page)
-                            .with_context(|| writing_error(&page.output_path(), &entry.input_path))?,
-                    )
-                } else {
-                    None
-                };
+                let content =
+                    if tmpl.is_renderable() {
+                        Some(tmpl.render_page_entry(page).with_context(|| {
+                            writing_error(&page.output_path(), &entry.input_path)
+                        })?)
+                    } else {
+                        None
+                    };
                 if to_json {
                     let mut data = page.data();
                     // Collections are resolved lazily at render time; `dataFilterSelectors` can select them
@@ -199,13 +208,12 @@ impl TemplateWriter {
                     });
                     continue;
                 }
-                if let Some(content) = content {
-                    if let Some(r) = tmpl
+                if let Some(content) = content
+                    && let Some(r) = tmpl
                         .write(page, content)
                         .with_context(|| writing_error(&page.output_path(), &entry.input_path))?
-                    {
-                        results.push(r);
-                    }
+                {
+                    results.push(r);
                 }
             }
         }
@@ -231,8 +239,12 @@ impl TemplateWriter {
         let mut passthrough = self.write_passthrough_copy(&paths)?;
         let templates = self.generate_templates(&paths, false)?;
         passthrough.extend(self.passthrough_manager.copy_html_relative()?);
-        self.passthrough_manager.emit_passthrough_event(&passthrough)?;
-        self.ctx.config.events.emit("buildawesome#render", &Value::Undefined)?;
+        self.passthrough_manager
+            .emit_passthrough_event(&passthrough)?;
+        self.ctx
+            .config
+            .events
+            .emit("buildawesome#render", &Value::Undefined)?;
         Ok(WriteResults {
             passthrough_copy: passthrough,
             templates,

@@ -21,7 +21,11 @@ fn strings(v: &[&str]) -> Vec<String> {
 }
 
 fn dirs(input: &str, output: &str) -> ConfigDirs {
-    ConfigDirs { input: s(input), output: s(output), ..Default::default() }
+    ConfigDirs {
+        input: s(input),
+        output: s(output),
+        ..Default::default()
+    }
 }
 
 fn get_template_config(dirs: ConfigDirs, callback: impl Fn(&mut UserConfig)) -> TemplateConfig {
@@ -39,7 +43,12 @@ fn get_files(formats: &[&str], tc: &TemplateConfig) -> Files {
     let config = tc.get_config();
     let mut map = ExtensionMap::new(&config.extension_map);
     map.set_formats(&strings(formats));
-    Files::new(config, tc.directories.clone(), Arc::new(map), Arc::new(FileSystemSearch::new()))
+    Files::new(
+        config,
+        tc.directories.clone(),
+        Arc::new(map),
+        Arc::new(FileSystemSearch::new()),
+    )
 }
 
 /// `evf._setLocalPathRoot(root)` then `getIgnores()`/`getIgnoreGlobs()`
@@ -76,7 +85,10 @@ fn get_ignores_no_twelvetyignore_no_gitignore() {
         dirs("test/stubs/ignore1", "test/stubs/ignore1/_site"),
         true,
         "./test/stubs/ignorelocalroot",
-        &["./test/stubs/ignorelocalroot/test.md", "./test/stubs/ignore1/_site/**"],
+        &[
+            "./test/stubs/ignorelocalroot/test.md",
+            "./test/stubs/ignore1/_site/**",
+        ],
     );
 }
 
@@ -93,7 +105,10 @@ fn get_ignores_no_twelvetyignore() {
             "./test/stubs/ignore2/_site/**",
         ],
     );
-    assert_eq!(evf.git_ignores, strings(&["./test/stubs/ignorelocalrootgitignore/thisshouldnotexist12345"]));
+    assert_eq!(
+        evf.git_ignores,
+        strings(&["./test/stubs/ignorelocalrootgitignore/thisshouldnotexist12345"])
+    );
 }
 
 /// "Get ignores (no .twelvetyignore, using setUseGitIgnore(false))"
@@ -103,7 +118,10 @@ fn get_ignores_no_twelvetyignore_using_set_use_git_ignore_false() {
         dirs("test/stubs/ignore2", "test/stubs/ignore2/_site"),
         false,
         "./test/stubs/ignorelocalroot",
-        &["./test/stubs/ignorelocalroot/test.md", "./test/stubs/ignore2/_site/**"],
+        &[
+            "./test/stubs/ignorelocalroot/test.md",
+            "./test/stubs/ignore2/_site/**",
+        ],
     );
 }
 
@@ -163,7 +181,10 @@ fn get_ignores_no_twelvetyignore_gitignore_exists_but_empty() {
         dirs("test/stubs/ignore5", "test/stubs/ignore5/_site"),
         true,
         "./test/stubs/ignorelocalroot",
-        &["./test/stubs/ignorelocalroot/test.md", "./test/stubs/ignore5/_site/**"],
+        &[
+            "./test/stubs/ignorelocalroot/test.md",
+            "./test/stubs/ignore5/_site/**",
+        ],
     );
 }
 
@@ -202,9 +223,15 @@ fn stubs_403_files() -> Files {
 #[test]
 fn input_to_src_and_empty_includes_dir_issue_403_full_paths_in_twelvetyignore() {
     let mut evf = stubs_403_files();
-    evf.twelvety_ignore_content = Some(format!("{}/**", template_path::absolute_path(&["test/stubs-403/_includes"])));
+    evf.twelvety_ignore_content = Some(format!(
+        "{}/**",
+        template_path::absolute_path(&["test/stubs-403/_includes"])
+    ));
     evf.init();
-    assert_eq!(evf.get_files().unwrap(), strings(&["./test/stubs-403/template.liquid"]));
+    assert_eq!(
+        evf.get_files().unwrap(),
+        strings(&["./test/stubs-403/template.liquid"])
+    );
 }
 
 /// "Workaround for Bad expected output, this indicates a bug upstream in a dependency. Input to
@@ -214,7 +241,10 @@ fn workaround_input_to_src_and_empty_includes_dir_issue_403() {
     let mut evf = stubs_403_files();
     evf.twelvety_ignore_content = s("./test/stubs-403/_includes/**");
     evf.init();
-    assert_eq!(evf.get_files().unwrap(), strings(&["./test/stubs-403/template.liquid"]));
+    assert_eq!(
+        evf.get_files().unwrap(),
+        strings(&["./test/stubs-403/template.liquid"])
+    );
 }
 
 /// "Issue #403: all .twelvetyignores should be relative paths not absolute paths"
@@ -237,7 +267,12 @@ fn same_input_and_output_directories_issues_186_and_1129() {
 #[test]
 fn single_input_file_is_in_the_output_directory_issues_186() {
     let tc = get_template_config(
-        ConfigDirs { input: s("test/stubs"), output: s(""), includes: s(""), ..Default::default() },
+        ConfigDirs {
+            input: s("test/stubs"),
+            output: s(""),
+            includes: s(""),
+            ..Default::default()
+        },
         |cfg| cfg.set_use_git_ignore(false),
     );
     let mut evf = get_files(&["njk"], &tc);
@@ -251,11 +286,17 @@ fn deduplicated_ignores() {
         dirs("test/stubs/ignore-dedupe", "test/stubs/ignore-dedupe/_site"),
         true,
         "./test/stubs/ignore-dedupe",
-        &["./test/stubs/ignore-dedupe/ignoredFolder", "./test/stubs/ignore-dedupe/_site/**"],
+        &[
+            "./test/stubs/ignore-dedupe/ignoredFolder",
+            "./test/stubs/ignore-dedupe/_site/**",
+        ],
     );
     assert_eq!(
         evf.get_glob_watcher_files(),
-        strings(&["./test/stubs/ignore-dedupe/_includes/**", "./test/stubs/ignore-dedupe/_data/**"])
+        strings(&[
+            "./test/stubs/ignore-dedupe/_includes/**",
+            "./test/stubs/ignore-dedupe/_data/**"
+        ])
     );
 }
 
@@ -280,7 +321,13 @@ fn negated_twelvetyignore_patterns_reinclude_files() {
     evf.init();
     let mut files = evf.get_files().unwrap();
     files.sort();
-    assert_eq!(files, strings(&["./test/stubs-4439/index.md", "./test/stubs-4439/site/events/2018/b.md"]));
+    assert_eq!(
+        files,
+        strings(&[
+            "./test/stubs-4439/index.md",
+            "./test/stubs-4439/site/events/2018/b.md"
+        ])
+    );
 
     // `toWatcherIgnores`: negated project ignores become one ordered matcher
     let matcher = IgnoreMatcher::new(&evf.get_glob_watcher_project_ignores(), &evf.git_ignores);

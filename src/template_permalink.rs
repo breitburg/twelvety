@@ -27,7 +27,9 @@ impl TemplatePermalink {
         match &link {
             Value::Bool(false) => p.write_to_file_system = false,
             Value::Bool(true) => {
-                bail!("`permalink: true` is not a supported feature. Did you mean `permalink: false`?")
+                bail!(
+                    "`permalink: true` is not a supported feature. Did you mean `permalink: false`?"
+                )
             }
             Value::String(s) => {
                 if !s.is_empty() {
@@ -97,7 +99,11 @@ impl TemplatePermalink {
         let transformed = self.to_output_path()?;
         let mut original = format!(
             "{}{}",
-            if transformed.starts_with('/') { "" } else { "/" },
+            if transformed.starts_with('/') {
+                ""
+            } else {
+                "/"
+            },
             transformed
         );
         let normalized = Self::normalize_path_to_url(&original);
@@ -111,14 +117,16 @@ impl TemplatePermalink {
 
     pub fn to_path(&self, output_dir: &str) -> Option<String> {
         let uri = self.to_output_path()?;
-        Some(template_path::add_leading_dot_slash(&template_path::normalize(
-            &format!("{output_dir}/{uri}"),
-        )))
+        Some(template_path::add_leading_dot_slash(
+            &template_path::normalize(&format!("{output_dir}/{uri}")),
+        ))
     }
 
     pub fn to_path_from_root(&self) -> Option<String> {
         let uri = self.to_output_path()?;
-        Some(template_path::add_leading_dot_slash(&template_path::normalize(&uri)))
+        Some(template_path::add_leading_dot_slash(
+            &template_path::normalize(&uri),
+        ))
     }
 
     /// `_hasDuplicateFolder`
@@ -138,10 +146,15 @@ impl TemplatePermalink {
         collapse_matching_folder: bool,
     ) -> Result<Self> {
         let path = if file_extension == "html" {
-            let has_dupe = collapse_matching_folder && Self::has_duplicate_folder(dir, filename_no_ext);
+            let has_dupe =
+                collapse_matching_folder && Self::has_duplicate_folder(dir, filename_no_ext);
             format!(
                 "{}{}index.html",
-                if dir.is_empty() { String::new() } else { format!("{dir}/") },
+                if dir.is_empty() {
+                    String::new()
+                } else {
+                    format!("{dir}/")
+                },
                 if filename_no_ext != "index" && !has_dupe {
                     format!("{filename_no_ext}/")
                 } else {
@@ -151,7 +164,11 @@ impl TemplatePermalink {
         } else {
             format!(
                 "{}{filename_no_ext}.{file_extension}",
-                if dir.is_empty() { String::new() } else { format!("{dir}/") }
+                if dir.is_empty() {
+                    String::new()
+                } else {
+                    format!("{dir}/")
+                }
             )
         };
         Self::new(&Value::str(path), extra_subdir)
@@ -163,14 +180,26 @@ mod tests {
     use super::*;
 
     fn href(link: &str, subdir: &str) -> String {
-        TemplatePermalink::new(&Value::str(link), subdir).unwrap().to_href().unwrap()
+        TemplatePermalink::new(&Value::str(link), subdir)
+            .unwrap()
+            .to_href()
+            .unwrap()
     }
 
     #[test]
     fn hrefs() {
-        assert_eq!(href("permalinksubfolder/test.html", ""), "/permalinksubfolder/test.html");
-        assert_eq!(href("./permalinksubfolder/test.html", ""), "/permalinksubfolder/test.html");
-        assert_eq!(href("permalinksubfolder/index.html", ""), "/permalinksubfolder/");
+        assert_eq!(
+            href("permalinksubfolder/test.html", ""),
+            "/permalinksubfolder/test.html"
+        );
+        assert_eq!(
+            href("./permalinksubfolder/test.html", ""),
+            "/permalinksubfolder/test.html"
+        );
+        assert_eq!(
+            href("permalinksubfolder/index.html", ""),
+            "/permalinksubfolder/"
+        );
         assert_eq!(href("permalinksubfolder/", ""), "/permalinksubfolder/");
         assert_eq!(href("permalinksubfolder/", "1"), "/permalinksubfolder/1/");
         assert_eq!(href("/", ""), "/");
@@ -179,7 +208,10 @@ mod tests {
     #[test]
     fn paths() {
         let p = TemplatePermalink::new(&Value::str("permalinksubfolder/"), "").unwrap();
-        assert_eq!(p.to_path("_site").unwrap(), "./_site/permalinksubfolder/index.html");
+        assert_eq!(
+            p.to_path("_site").unwrap(),
+            "./_site/permalinksubfolder/index.html"
+        );
         let g = TemplatePermalink::generate("", "test", "", "html", false).unwrap();
         assert_eq!(g.to_href().unwrap(), "/test/");
         let g = TemplatePermalink::generate("posts", "index", "", "html", false).unwrap();

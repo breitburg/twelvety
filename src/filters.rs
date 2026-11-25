@@ -10,11 +10,15 @@ fn is_valid_url(url: &str) -> bool {
     };
     let scheme = &url[..colon];
     !scheme.is_empty()
-        && scheme.chars().next().map(|c| c.is_ascii_alphabetic()).unwrap_or(false)
+        && scheme
+            .chars()
+            .next()
+            .map(|c| c.is_ascii_alphabetic())
+            .unwrap_or(false)
         && scheme
             .chars()
             .all(|c| c.is_ascii_alphanumeric() || c == '+' || c == '-' || c == '.')
-        && colon + 1 <= url.len()
+        && colon < url.len()
 }
 
 /// `Filters/Url.js`
@@ -68,15 +72,21 @@ pub fn get_parent_directory(input: &Value) -> Value {
     let Some(s) = input.as_str() else {
         return Value::Undefined;
     };
-    if let Some(rest) = s.strip_prefix("http://").or_else(|| s.strip_prefix("https://")) {
-        let scheme = if s.starts_with("https") { "https://" } else { "http://" };
+    if let Some(rest) = s
+        .strip_prefix("http://")
+        .or_else(|| s.strip_prefix("https://"))
+    {
+        let scheme = if s.starts_with("https") {
+            "https://"
+        } else {
+            "http://"
+        };
         let (host, path) = match rest.find('/') {
             Some(i) => (&rest[..i], &rest[i..]),
             None => (rest, "/"),
         };
         let path = path.split(['?', '#']).next().unwrap_or("/");
-        let parent = if path.ends_with('/') {
-            let trimmed = &path[..path.len() - 1];
+        let parent = if let Some(trimmed) = path.strip_suffix('/') {
             match trimmed.rfind('/') {
                 Some(i) => &trimmed[..=i],
                 None => "/",
@@ -111,15 +121,24 @@ mod tests {
         assert_eq!(url_filter("/test/", "/rootdir/"), "/rootdir/test/");
         assert_eq!(url_filter("/", "/rootdir/"), "/rootdir/");
         assert_eq!(url_filter("test/", "/rootdir/"), "test/");
-        assert_eq!(url_filter("https://example.com/", "/rootdir/"), "https://example.com/");
+        assert_eq!(
+            url_filter("https://example.com/", "/rootdir/"),
+            "https://example.com/"
+        );
         assert_eq!(url_filter("//example.com/", "/rootdir/"), "//example.com/");
         assert_eq!(url_filter("", "/rootdir/"), ".");
     }
 
     #[test]
     fn parent_dir() {
-        assert_eq!(get_parent_directory(&Value::str("/a/b/")), Value::str("/a/"));
-        assert_eq!(get_parent_directory(&Value::str("/a/b.html")), Value::str("/a/"));
+        assert_eq!(
+            get_parent_directory(&Value::str("/a/b/")),
+            Value::str("/a/")
+        );
+        assert_eq!(
+            get_parent_directory(&Value::str("/a/b.html")),
+            Value::str("/a/")
+        );
         assert_eq!(
             get_parent_directory(&Value::str("https://example.com/a/b/")),
             Value::str("https://example.com/a/")

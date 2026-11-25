@@ -74,7 +74,13 @@ impl DepGraph {
         self.incoming.get(node).cloned().unwrap_or_default()
     }
 
-    fn dfs(&self, edges: &HashMap<String, Vec<String>>, start: &str, visited: &mut HashSet<String>, result: &mut Vec<String>) {
+    fn dfs(
+        &self,
+        edges: &HashMap<String, Vec<String>>,
+        start: &str,
+        visited: &mut HashSet<String>,
+        result: &mut Vec<String>,
+    ) {
         if visited.contains(start) {
             return;
         }
@@ -206,7 +212,10 @@ impl TemplateDepGraph {
         if s.contains("[userconfig]") {
             return names.to_vec();
         }
-        if names.iter().any(|n| self.config_collection_names.contains(n)) {
+        if names
+            .iter()
+            .any(|n| self.config_collection_names.contains(n))
+        {
             s.insert("[userconfig]".into());
         }
         s.into_iter().collect()
@@ -218,7 +227,8 @@ impl TemplateDepGraph {
         }
         let consumes = self.cleanup_collection_names(consumes);
         if !consumes.is_empty() {
-            self.tag_consumers.insert(file_path.to_string(), consumes.clone());
+            self.tag_consumers
+                .insert(file_path.to_string(), consumes.clone());
         } else {
             self.tag_consumers.shift_remove(file_path);
         }
@@ -240,12 +250,11 @@ impl TemplateDepGraph {
         }
         for name in &consumes {
             self.uses(file_path, &ckey(name));
-            if let Some(idx) = STAGES.iter().position(|s| s == name) {
-                if idx > 0 {
-                    if let Some(next) = STAGES.get(idx + 1) {
-                        self.uses(&ckey(next), file_path);
-                    }
-                }
+            if let Some(idx) = STAGES.iter().position(|s| s == name)
+                && idx > 0
+                && let Some(next) = STAGES.get(idx + 1)
+            {
+                self.uses(&ckey(next), file_path);
             }
         }
     }
@@ -386,10 +395,19 @@ impl GlobalDependencyMap {
         }
     }
 
-    pub fn add_new_node_relationships(&mut self, from: &str, consumes: &[String], publishes: &[String]) {
+    pub fn add_new_node_relationships(
+        &mut self,
+        from: &str,
+        consumes: &[String],
+        publishes: &[String],
+    ) {
         let from = Self::normalize_node(from);
         let consumes: Vec<String> = consumes.iter().filter(|s| !s.is_empty()).cloned().collect();
-        let publishes: Vec<String> = publishes.iter().filter(|s| !s.is_empty()).cloned().collect();
+        let publishes: Vec<String> = publishes
+            .iter()
+            .filter(|s| !s.is_empty())
+            .cloned()
+            .collect();
         self.map.add_template(&from, &consumes, &publishes);
     }
 
@@ -432,7 +450,12 @@ impl GlobalDependencyMap {
         if input == cmp {
             return true;
         }
-        if self.data_files.get(&input).map(|s| s.contains(&cmp)).unwrap_or(false) {
+        if self
+            .data_files
+            .get(&input)
+            .map(|s| s.contains(&cmp))
+            .unwrap_or(false)
+        {
             return true;
         }
         if !self.map.graph.has_node(&input) {

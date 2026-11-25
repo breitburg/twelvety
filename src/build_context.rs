@@ -42,7 +42,10 @@ impl BuildContext {
         logger: Arc<ConsoleLogger>,
         run_mode: &str,
         env: crate::value::Value,
-    ) -> anyhow::Result<(Arc<BuildContext>, Arc<crate::file_system_search::FileSystemSearch>)> {
+    ) -> anyhow::Result<(
+        Arc<BuildContext>,
+        Arc<crate::file_system_search::FileSystemSearch>,
+    )> {
         use crate::value::{Map, Value};
         let config = tc.get_config();
         let dirs = tc.directories.clone();
@@ -55,9 +58,14 @@ impl BuildContext {
             arg.insert(
                 "removeTemplateExtension".into(),
                 Value::function(move |args| {
-                    Ok(Value::str(em.remove_template_extension(
-                        &args.first().map(|a| a.to_output_string()).unwrap_or_default(),
-                    )))
+                    Ok(Value::str(
+                        em.remove_template_extension(
+                            &args
+                                .first()
+                                .map(|a| a.to_output_string())
+                                .unwrap_or_default(),
+                        ),
+                    ))
                 }),
             );
             config

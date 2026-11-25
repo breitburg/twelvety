@@ -7,10 +7,10 @@ use anyhow::{Result, bail};
 use indexmap::IndexSet;
 use walkdir::WalkDir;
 
+use crate::util::exists_cache::ExistsCache;
 use crate::util::glob_matcher::{
     IgnoreMatcher, build_glob_set, glob_base, has_negated_pattern, is_glob_match, strip_negation,
 };
-use crate::util::exists_cache::ExistsCache;
 use crate::util::template_path;
 
 /// A cached search: its globs, options, negated-ignore matcher and (insertion ordered) results
@@ -66,11 +66,19 @@ impl FileSystemSearch {
     fn cache_key(key: &str, globs: &[String], options: &SearchOptions) -> String {
         let mut sorted = globs.to_vec();
         sorted.sort();
-        format!("{key}{sorted:?}{:?}{:?}", options.ignore, options.git_ignore)
+        format!(
+            "{key}{sorted:?}{:?}{:?}",
+            options.ignore, options.git_ignore
+        )
     }
 
     /// Search the file system for files matching `globs`
-    pub fn search(&self, key: &str, globs: &[String], options: SearchOptions) -> Result<Vec<String>> {
+    pub fn search(
+        &self,
+        key: &str,
+        globs: &[String],
+        options: SearchOptions,
+    ) -> Result<Vec<String>> {
         let globs: Vec<String> = globs
             .iter()
             .map(|g| template_path::strip_leading_dot_slash(g))
@@ -137,7 +145,11 @@ impl FileSystemSearch {
             .collect();
 
         for base in bases {
-            let root = if base.is_empty() { ".".to_string() } else { base.clone() };
+            let root = if base.is_empty() {
+                ".".to_string()
+            } else {
+                base.clone()
+            };
             if !std::path::Path::new(&root).is_dir() {
                 continue;
             }
@@ -180,10 +192,10 @@ impl FileSystemSearch {
                 if ignore_set.is_match(&rel) {
                     continue;
                 }
-                if let Some(m) = &ignore_matcher {
-                    if m.is_ignored(&rel, false) {
-                        continue;
-                    }
+                if let Some(m) = &ignore_matcher
+                    && m.is_ignored(&rel, false)
+                {
+                    continue;
                 }
                 results.insert(template_path::standardize_file_path(&rel));
             }
@@ -197,7 +209,10 @@ impl FileSystemSearch {
 
         let results: IndexSet<String> = results.into_iter().collect();
         let allow_case_collisions = self.allow_case_collisions
-            || self.exists_cache.as_ref().is_some_and(|c| c.allow_case_collisions);
+            || self
+                .exists_cache
+                .as_ref()
+                .is_some_and(|c| c.allow_case_collisions);
         if !allow_case_collisions {
             check_case_collisions(&results)?;
         }
@@ -255,7 +270,10 @@ fn relative_to_project_root(glob: &str) -> String {
         Some(rest) => ("!", rest),
         None => ("", glob),
     };
-    let cwd = format!("{}/", template_path::get_working_dir().trim_end_matches('/'));
+    let cwd = format!(
+        "{}/",
+        template_path::get_working_dir().trim_end_matches('/')
+    );
     match path.strip_prefix(&cwd) {
         Some(rest) if path.starts_with('/') => format!("{negation}{rest}"),
         _ => glob.to_string(),

@@ -105,7 +105,12 @@ impl TemplateRender {
             return self.set_preceding_steps(vec![]);
         };
         self.init(last)?;
-        self.set_preceding_steps(preceding.iter().map(|s| PipelineStep::from(s.as_str())).collect())
+        self.set_preceding_steps(
+            preceding
+                .iter()
+                .map(|s| PipelineStep::from(s.as_str()))
+                .collect(),
+        )
     }
 
     /// Replaces the template engine step: an engine name, an engine instance, or `None` to skip it
@@ -153,7 +158,9 @@ impl TemplateRender {
         if entry.is_simple_alias {
             engine_name = entry.key.clone();
         }
-        let engine = ctx.engine_manager.get_engine(&engine_name, &ctx.extension_map)?;
+        let engine = ctx
+            .engine_manager
+            .get_engine(&engine_name, &ctx.extension_map)?;
         Ok((engine_name, engine))
     }
 
@@ -165,7 +172,11 @@ impl TemplateRender {
         if let Some(pre) = pipeline::get_preprocessor(chain, &self.ctx.config)? {
             steps.push(PipelineStep::Name(pre));
         }
-        steps.extend(chain[..chain.len() - 1].iter().map(|s| PipelineStep::from(*s)));
+        steps.extend(
+            chain[..chain.len() - 1]
+                .iter()
+                .map(|s| PipelineStep::from(*s)),
+        );
         Ok(steps)
     }
 
@@ -270,7 +281,10 @@ impl TemplateRender {
             .iter()
             .map(|s| (s.name(), s.clone()))
             .collect();
-        steps.push((resolved.engine_name.clone(), PipelineStep::Engine(resolved.engine.clone())));
+        steps.push((
+            resolved.engine_name.clone(),
+            PipelineStep::Engine(resolved.engine.clone()),
+        ));
         steps
     }
 
@@ -300,7 +314,10 @@ impl TemplateRender {
         }
     }
 
-    pub fn get_template_only_engine(&self, engine_override: Option<&str>) -> Result<Option<Arc<dyn TemplateEngine>>> {
+    pub fn get_template_only_engine(
+        &self,
+        engine_override: Option<&str>,
+    ) -> Result<Option<Arc<dyn TemplateEngine>>> {
         let resolved = self.resolve(engine_override)?;
         match self.template_only_steps(&resolved)?.first() {
             Some(step) => Ok(Some(self.get_step_engine(step)?)),
@@ -319,7 +336,10 @@ impl TemplateRender {
         let steps: Vec<PipelineStep> = if template_only {
             self.template_only_steps(&resolved)?
         } else {
-            Self::all_steps(&resolved).into_iter().map(|(_, step)| step).collect()
+            Self::all_steps(&resolved)
+                .into_iter()
+                .map(|(_, step)| step)
+                .collect()
         };
         if steps.is_empty() {
             let s = src.to_string();

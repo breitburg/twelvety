@@ -88,11 +88,11 @@ pub fn parse_date_input(v: &Value) -> Option<DateTime<Utc>> {
 }
 
 pub fn to_display_tz(d: &DateTime<Utc>, options: &LiquidOptions) -> DateTime<FixedOffset> {
-    if let Some(tz) = &options.timezone {
-        if let Ok(tz) = tz.parse::<chrono_tz::Tz>() {
-            let local = d.with_timezone(&tz);
-            return local.fixed_offset();
-        }
+    if let Some(tz) = &options.timezone
+        && let Ok(tz) = tz.parse::<chrono_tz::Tz>()
+    {
+        let local = d.with_timezone(&tz);
+        return local.fixed_offset();
     }
     let offset = FixedOffset::east_opt(options.timezone_offset * 60)
         .unwrap_or_else(|| FixedOffset::east_opt(0).unwrap());
@@ -103,8 +103,18 @@ fn url_encode(s: &str) -> String {
     let mut out = String::new();
     for b in s.bytes() {
         match b {
-            b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' | b'-' | b'_' | b'.' | b'~' | b'!' | b'*'
-            | b'\'' | b'(' | b')' => out.push(b as char),
+            b'A'..=b'Z'
+            | b'a'..=b'z'
+            | b'0'..=b'9'
+            | b'-'
+            | b'_'
+            | b'.'
+            | b'~'
+            | b'!'
+            | b'*'
+            | b'\''
+            | b'('
+            | b')' => out.push(b as char),
             b' ' => out.push('+'),
             _ => out.push_str(&format!("%{b:02X}")),
         }
@@ -157,7 +167,9 @@ pub fn apply_builtin(
             let s = to_str(input);
             let mut c = s.chars();
             match c.next() {
-                Some(f) => Value::str(f.to_uppercase().collect::<String>() + &c.as_str().to_lowercase()),
+                Some(f) => {
+                    Value::str(f.to_uppercase().collect::<String>() + &c.as_str().to_lowercase())
+                }
                 None => Value::str(""),
             }
         }
@@ -220,11 +232,17 @@ pub fn apply_builtin(
             }
         }
         "date_to_xmlschema" => match parse_date_input(input) {
-            Some(d) => Value::str(strftime(&to_display_tz(&d, options), "%Y-%m-%dT%H:%M:%S%:z")),
+            Some(d) => Value::str(strftime(
+                &to_display_tz(&d, options),
+                "%Y-%m-%dT%H:%M:%S%:z",
+            )),
             None => input.clone(),
         },
         "date_to_rfc822" => match parse_date_input(input) {
-            Some(d) => Value::str(strftime(&to_display_tz(&d, options), "%a, %d %b %Y %H:%M:%S %z")),
+            Some(d) => Value::str(strftime(
+                &to_display_tz(&d, options),
+                "%a, %d %b %Y %H:%M:%S %z",
+            )),
             None => input.clone(),
         },
         "date_to_string" => match parse_date_input(input) {
@@ -238,7 +256,9 @@ pub fn apply_builtin(
         "default" => {
             let allow_false = args.iter().any(|a| {
                 a.as_array()
-                    .map(|kv| kv.len() == 2 && kv[0].as_str() == Some("allow_false") && kv[1].is_truthy())
+                    .map(|kv| {
+                        kv.len() == 2 && kv[0].as_str() == Some("allow_false") && kv[1].is_truthy()
+                    })
                     .unwrap_or(false)
             });
             let is_empty = match input {
@@ -249,22 +269,34 @@ pub fn apply_builtin(
                 Value::Object(o) => o.is_empty(),
                 _ => false,
             };
-            if is_empty { arg(args, 0) } else { input.clone() }
+            if is_empty {
+                arg(args, 0)
+            } else {
+                input.clone()
+            }
         }
         "downcase" => Value::str(to_str(input).to_lowercase()),
         "upcase" => Value::str(to_str(input).to_uppercase()),
         "escape" | "xml_escape" => Value::str(escape_html(&to_str(input))),
         "escape_once" => Value::str(escape_html(&unescape_html(&to_str(input)))),
         "first" => match input {
-            Value::String(s) => Value::str(s.chars().next().map(|c| c.to_string()).unwrap_or_default()),
+            Value::String(s) => {
+                Value::str(s.chars().next().map(|c| c.to_string()).unwrap_or_default())
+            }
             _ => to_array(input).first().cloned().unwrap_or_default(),
         },
         "last" => match input {
-            Value::String(s) => Value::str(s.chars().last().map(|c| c.to_string()).unwrap_or_default()),
+            Value::String(s) => {
+                Value::str(s.chars().last().map(|c| c.to_string()).unwrap_or_default())
+            }
             _ => to_array(input).last().cloned().unwrap_or_default(),
         },
         "join" => {
-            let sep = if args.is_empty() { " ".to_string() } else { to_str(&arg(args, 0)) };
+            let sep = if args.is_empty() {
+                " ".to_string()
+            } else {
+                to_str(&arg(args, 0))
+            };
             Value::str(
                 to_array(input)
                     .iter()
@@ -286,10 +318,17 @@ pub fn apply_builtin(
         "rstrip" => Value::str(to_str(input).trim_end()),
         "strip" => Value::str(to_str(input).trim()),
         "strip_newlines" => Value::str(to_str(input).replace(['\r', '\n'], "")),
-        "newline_to_br" => Value::str(to_str(input).replace("\r\n", "\n").replace('\n', "<br />\n")),
-        "normalize_whitespace" => {
-            Value::str(to_str(input).split_whitespace().collect::<Vec<_>>().join(" "))
-        }
+        "newline_to_br" => Value::str(
+            to_str(input)
+                .replace("\r\n", "\n")
+                .replace('\n', "<br />\n"),
+        ),
+        "normalize_whitespace" => Value::str(
+            to_str(input)
+                .split_whitespace()
+                .collect::<Vec<_>>()
+                .join(" "),
+        ),
         "number_of_words" => Value::Number(to_str(input).split_whitespace().count() as f64),
         "map" => {
             let key = to_str(&arg(args, 0));
@@ -326,7 +365,9 @@ pub fn apply_builtin(
                 _ => Value::str(s),
             }
         }
-        "replace" => Value::str(to_str(input).replace(&to_str(&arg(args, 0)), &to_str(&arg(args, 1)))),
+        "replace" => {
+            Value::str(to_str(input).replace(&to_str(&arg(args, 0)), &to_str(&arg(args, 1))))
+        }
         "replace_first" => {
             Value::str(to_str(input).replacen(&to_str(&arg(args, 0)), &to_str(&arg(args, 1)), 1))
         }
@@ -354,19 +395,35 @@ pub fn apply_builtin(
         }),
         "slice" => {
             let start = num(&arg(args, 0)) as i64;
-            let length = if args.len() > 1 { num(&arg(args, 1)) as i64 } else { 1 };
+            let length = if args.len() > 1 {
+                num(&arg(args, 1)) as i64
+            } else {
+                1
+            };
             match input {
                 Value::String(s) => {
                     let chars: Vec<char> = s.chars().collect();
                     let len = chars.len() as i64;
-                    let begin = if start < 0 { (len + start).max(0) } else { start.min(len) };
+                    let begin = if start < 0 {
+                        (len + start).max(0)
+                    } else {
+                        start.min(len)
+                    };
                     let end = (begin + length).min(len).max(begin);
-                    Value::str(chars[begin as usize..end as usize].iter().collect::<String>())
+                    Value::str(
+                        chars[begin as usize..end as usize]
+                            .iter()
+                            .collect::<String>(),
+                    )
                 }
                 _ => {
                     let a = to_array(input);
                     let len = a.len() as i64;
-                    let begin = if start < 0 { (len + start).max(0) } else { start.min(len) };
+                    let begin = if start < 0 {
+                        (len + start).max(0)
+                    } else {
+                        start.min(len)
+                    };
                     let end = (begin + length).min(len).max(begin);
                     Value::array(a[begin as usize..end as usize].to_vec())
                 }
@@ -404,7 +461,11 @@ pub fn apply_builtin(
                 s.split(sep.as_str()).map(Value::str).collect()
             };
             // Like Ruby/liquidjs: trailing empty strings are removed
-            while parts.last().map(|p| p.as_str() == Some("")).unwrap_or(false) {
+            while parts
+                .last()
+                .map(|p| p.as_str() == Some(""))
+                .unwrap_or(false)
+            {
                 parts.pop();
             }
             Value::array(parts)
@@ -412,8 +473,16 @@ pub fn apply_builtin(
         "strip_html" => Value::str(strip_html(&to_str(input))),
         "truncate" => {
             let s = to_str(input);
-            let length = if args.is_empty() { 50 } else { num(&arg(args, 0)) as usize };
-            let ellipsis = if args.len() > 1 { to_str(&arg(args, 1)) } else { "...".into() };
+            let length = if args.is_empty() {
+                50
+            } else {
+                num(&arg(args, 0)) as usize
+            };
+            let ellipsis = if args.len() > 1 {
+                to_str(&arg(args, 1))
+            } else {
+                "...".into()
+            };
             let chars: Vec<char> = s.chars().collect();
             if chars.len() <= length {
                 Value::str(s)
@@ -424,8 +493,16 @@ pub fn apply_builtin(
         }
         "truncatewords" => {
             let s = to_str(input);
-            let words = if args.is_empty() { 15 } else { (num(&arg(args, 0)) as usize).max(1) };
-            let ellipsis = if args.len() > 1 { to_str(&arg(args, 1)) } else { "...".into() };
+            let words = if args.is_empty() {
+                15
+            } else {
+                (num(&arg(args, 0)) as usize).max(1)
+            };
+            let ellipsis = if args.len() > 1 {
+                to_str(&arg(args, 1))
+            } else {
+                "...".into()
+            };
             let parts: Vec<&str> = s.split_whitespace().collect();
             if parts.len() <= words {
                 Value::str(s)
@@ -444,11 +521,7 @@ pub fn apply_builtin(
         }
         "url_encode" | "cgi_escape" => Value::str(url_encode(&to_str(input))),
         "uri_escape" => Value::str(
-            percent_encoding::utf8_percent_encode(
-                &to_str(input),
-                &URI_ESCAPE_SET,
-            )
-            .to_string(),
+            percent_encoding::utf8_percent_encode(&to_str(input), &URI_ESCAPE_SET).to_string(),
         ),
         "url_decode" => Value::str(url_decode(&to_str(input))),
         "where" => {
@@ -535,7 +608,11 @@ pub fn apply_builtin(
         }
         "array_to_sentence_string" => {
             let a: Vec<String> = to_array(input).iter().map(to_str).collect();
-            let connector = if args.is_empty() { "and".to_string() } else { to_str(&arg(args, 0)) };
+            let connector = if args.is_empty() {
+                "and".to_string()
+            } else {
+                to_str(&arg(args, 0))
+            };
             Value::str(match a.len() {
                 0 => String::new(),
                 1 => a[0].clone(),
@@ -545,7 +622,7 @@ pub fn apply_builtin(
         }
         "to_integer" => Value::Number(num(input).trunc()),
         "base64_encode" => Value::str(base64_encode(to_str(input).as_bytes())),
-        "base64_decode" => Value::str(String::from_utf8_lossy(&base64_decode(&to_str(input))).to_string()),
+        "base64_decode" => Value::str(String::from_utf8_lossy(&base64_decode(&to_str(input)))),
         "raw" => input.clone(),
         _ => return Ok(None),
     };
@@ -584,12 +661,24 @@ const B64: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz012
 pub fn base64_encode(input: &[u8]) -> String {
     let mut out = String::new();
     for chunk in input.chunks(3) {
-        let b = [chunk[0], *chunk.get(1).unwrap_or(&0), *chunk.get(2).unwrap_or(&0)];
+        let b = [
+            chunk[0],
+            *chunk.get(1).unwrap_or(&0),
+            *chunk.get(2).unwrap_or(&0),
+        ];
         let n = ((b[0] as u32) << 16) | ((b[1] as u32) << 8) | b[2] as u32;
         out.push(B64[(n >> 18) as usize & 63] as char);
         out.push(B64[(n >> 12) as usize & 63] as char);
-        out.push(if chunk.len() > 1 { B64[(n >> 6) as usize & 63] as char } else { '=' });
-        out.push(if chunk.len() > 2 { B64[n as usize & 63] as char } else { '=' });
+        out.push(if chunk.len() > 1 {
+            B64[(n >> 6) as usize & 63] as char
+        } else {
+            '='
+        });
+        out.push(if chunk.len() > 2 {
+            B64[n as usize & 63] as char
+        } else {
+            '='
+        });
     }
     out
 }

@@ -110,10 +110,16 @@ impl ComputedDataBuilder {
     /// `Template#_addComputedEntry`: flattens nested objects into dotted keys
     pub fn add_computed_entry(&mut self, obj: &Value, parent_key: &str, deps: &[String]) {
         match obj {
-            Value::Function(f) => self.add(parent_key, ComputedValue::Function(f.clone()), deps.to_vec()),
-            Value::Array(_) | Value::String(_) => {
-                self.add(parent_key, ComputedValue::Template(obj.clone()), deps.to_vec())
-            }
+            Value::Function(f) => self.add(
+                parent_key,
+                ComputedValue::Function(f.clone()),
+                deps.to_vec(),
+            ),
+            Value::Array(_) | Value::String(_) => self.add(
+                parent_key,
+                ComputedValue::Template(obj.clone()),
+                deps.to_vec(),
+            ),
             Value::Object(map) => {
                 for (k, v) in map.iter() {
                     let child = if parent_key.is_empty() {
@@ -124,12 +130,20 @@ impl ComputedDataBuilder {
                     self.add_computed_entry(v, &child, deps);
                 }
             }
-            other => self.add(parent_key, ComputedValue::Static(other.clone()), deps.to_vec()),
+            other => self.add(
+                parent_key,
+                ComputedValue::Static(other.clone()),
+                deps.to_vec(),
+            ),
         }
     }
 
     pub fn build(self) -> ComputedData {
-        let signals = self.entries.keys().map(|k| (k.clone(), Signal::new())).collect();
+        let signals = self
+            .entries
+            .keys()
+            .map(|k| (k.clone(), Signal::new()))
+            .collect();
         ComputedData {
             entries: Arc::new(self.entries),
             signals,
@@ -158,7 +172,9 @@ impl ComputedData {
     }
 
     fn has_unavailable_child(&self, path: &str) -> bool {
-        self.unavailable.iter().any(|e| e.starts_with(&format!("{path}.")))
+        self.unavailable
+            .iter()
+            .any(|e| e.starts_with(&format!("{path}.")))
     }
 
     /// A fresh copy for a paginated page that inherits finished entries
@@ -197,7 +213,11 @@ impl ComputedData {
         Ok(())
     }
 
-    pub fn process_remaining_data(&mut self, data: &mut Value, evaluator: &dyn ComputedEvaluator) -> Result<()> {
+    pub fn process_remaining_data(
+        &mut self,
+        data: &mut Value,
+        evaluator: &dyn ComputedEvaluator,
+    ) -> Result<()> {
         self.setup_data(data, &[], None, evaluator)
     }
 
@@ -241,13 +261,14 @@ impl ComputedData {
         stack.push(key.to_string());
         let entry = self.entries[key].clone();
         if let ComputedValue::Function(f) = &entry.value {
-            let result = self.run_function(key, f, &entry.declared_dependencies, data, stack, evaluator)?;
+            let result =
+                self.run_function(key, f, &entry.declared_dependencies, data, stack, evaluator)?;
             stack.pop();
-            if let Some(result) = result {
-                if self.signals[key].state != State::Deferred {
-                    data.set_path(key, result);
-                    self.signals.get_mut(key).unwrap().state = State::Done;
-                }
+            if let Some(result) = result
+                && self.signals[key].state != State::Deferred
+            {
+                data.set_path(key, result);
+                self.signals.get_mut(key).unwrap().state = State::Done;
             }
             return Ok(());
         }
@@ -284,7 +305,11 @@ impl ComputedData {
         stack: &mut Vec<String>,
         evaluator: &dyn ComputedEvaluator,
     ) -> Result<bool> {
-        self.signals.get_mut(key).unwrap().deps.insert(dep.to_string());
+        self.signals
+            .get_mut(key)
+            .unwrap()
+            .deps
+            .insert(dep.to_string());
         self.pull(dep, data, stack, evaluator)?;
         if self.signals[dep].state == State::Deferred {
             let reason = self.signals[dep].reason.clone().unwrap_or_default();
@@ -438,14 +463,18 @@ struct TrackingProxy {
 
 impl TrackingProxy {
     fn wrap(target: Value, path: String, context: Arc<TrackingContext>) -> Value {
-        Value::Dynamic(Arc::new(TrackingProxy { target, path, context }))
+        Value::Dynamic(Arc::new(TrackingProxy {
+            target,
+            path,
+            context,
+        }))
     }
 
     fn unwrap(value: Value) -> Value {
-        if let Value::Dynamic(d) = &value {
-            if let Some(proxy) = d.as_any().and_then(|a| a.downcast_ref::<TrackingProxy>()) {
-                return proxy.target.clone();
-            }
+        if let Value::Dynamic(d) = &value
+            && let Some(proxy) = d.as_any().and_then(|a| a.downcast_ref::<TrackingProxy>())
+        {
+            return proxy.target.clone();
         }
         value
     }
@@ -473,7 +502,10 @@ impl DynObject for TrackingProxy {
         }
         let value = self.target.get(prop);
         // `value && typeof value === "object"`
-        let is_object = matches!(value, Value::Object(_) | Value::Array(_) | Value::Dynamic(_));
+        let is_object = matches!(
+            value,
+            Value::Object(_) | Value::Array(_) | Value::Dynamic(_)
+        );
         if ctx.has_pending_child(&path) {
             // e.g. reading `page` before `page.url` is set
             let target = if is_object { value } else { Value::object() };
@@ -519,12 +551,11 @@ mod tests {
                 ComputedValue::Template(Value::String(s)) => {
                     // "{{ a }}-x" style: replace {{ name }} with data
                     let re = regex::Regex::new(r"\{\{\s*([\w.]+)\s*\}\}").unwrap();
-                    Ok(Value::str(
-                        re.replace_all(s, |c: &regex::Captures| data.get_path(&c[1]).to_output_string())
-                            .to_string(),
-                    ))
+                    Ok(Value::str(re.replace_all(s, |c: &regex::Captures| {
+                        data.get_path(&c[1]).to_output_string()
+                    })))
                 }
-                ComputedValue::Function(f) => f(&[data.clone()]),
+                ComputedValue::Function(f) => f(std::slice::from_ref(data)),
                 _ => Ok(Value::Undefined),
             }
         }
@@ -561,7 +592,8 @@ mod tests {
         );
         let mut cd = b.build();
         let mut data = Value::object();
-        cd.setup_data(&mut data, &["collections".into()], None, &Eval).unwrap();
+        cd.setup_data(&mut data, &["collections".into()], None, &Eval)
+            .unwrap();
         assert!(data.get("n").is_undefined());
         assert!(cd.get_deferred("n").is_some());
         cd.process_remaining_data(&mut data, &Eval).unwrap();

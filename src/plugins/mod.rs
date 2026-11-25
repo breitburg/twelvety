@@ -28,9 +28,13 @@ pub fn preserve_closing_tags(_config: &mut UserConfig, options: &Value) -> Resul
 /// only the first `addPlugin` of a unique plugin runs
 pub fn unique_plugin_name(name: &str) -> Option<&'static str> {
     Some(match name {
-        "html-base" | "HtmlBasePlugin" | "@12ty/twelvety/html-base-plugin" => "@12ty/twelvety/html-base-plugin",
+        "html-base" | "HtmlBasePlugin" | "@12ty/twelvety/html-base-plugin" => {
+            "@12ty/twelvety/html-base-plugin"
+        }
         "i18n" | "I18nPlugin" | "@12ty/twelvety/i18n-plugin" => "@12ty/twelvety/i18n-plugin",
-        "input-path-to-url" | "InputPathToUrlTransformPlugin" => "@12ty/twelvety/inputpath-to-url-plugin",
+        "input-path-to-url" | "InputPathToUrlTransformPlugin" => {
+            "@12ty/twelvety/inputpath-to-url-plugin"
+        }
         "render" | "RenderPlugin" | "TwelvetyRenderPlugin" => "@12ty/twelvety/render-plugin",
         _ => return None,
     })
@@ -39,7 +43,9 @@ pub fn unique_plugin_name(name: &str) -> Option<&'static str> {
 /// Resolve a built-in plugin by name (used by declarative configuration files)
 pub fn resolve_builtin(name: &str) -> Option<PluginFn> {
     let f: PluginFn = match name {
-        "html-base" | "HtmlBasePlugin" | "@12ty/twelvety/html-base-plugin" => Arc::new(html_base::plugin),
+        "html-base" | "HtmlBasePlugin" | "@12ty/twelvety/html-base-plugin" => {
+            Arc::new(html_base::plugin)
+        }
         "id-attribute" | "IdAttributePlugin" => Arc::new(id_attribute::plugin),
         "i18n" | "I18nPlugin" | "@12ty/twelvety/i18n-plugin" => Arc::new(i18n::plugin),
         "input-path-to-url" | "InputPathToUrlTransformPlugin" => {

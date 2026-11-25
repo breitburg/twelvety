@@ -34,3 +34,6 @@ html-escape = "0.2"
 percent-encoding = "2"
 lol_html = "2"
 url = "2"
+
+[lints.clippy]
+type_complexity = "allow"

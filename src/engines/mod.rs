@@ -91,25 +91,86 @@ pub trait TemplateEngine: Send + Sync {
 /// Extract variable references from `{{ … }}` and `{% … %}` blocks with a regex
 /// (shared approximation of `parseForSymbols`).
 pub fn find_symbols(src: &str) -> Vec<String> {
-    static RE_BLOCK: std::sync::LazyLock<regex::Regex> = std::sync::LazyLock::new(|| {
-        regex::Regex::new(r"(?s)\{\{(.*?)\}\}|\{%(.*?)%\}").unwrap()
-    });
+    static RE_BLOCK: std::sync::LazyLock<regex::Regex> =
+        std::sync::LazyLock::new(|| regex::Regex::new(r"(?s)\{\{(.*?)\}\}|\{%(.*?)%\}").unwrap());
     static RE_IDENT: std::sync::LazyLock<regex::Regex> = std::sync::LazyLock::new(|| {
         regex::Regex::new(r#""[^"]*"|'[^']*'|([A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$-]*|\[(?:"[^"]*"|'[^']*'|\d+)\])*)"#).unwrap()
     });
     const KEYWORDS: &[&str] = &[
-        "if", "else", "elif", "elsif", "endif", "for", "endfor", "in", "and", "or", "not", "true",
-        "false", "null", "nil", "none", "None", "True", "False", "set", "endset", "assign",
-        "capture", "endcapture", "unless", "endunless", "case", "when", "endcase", "include",
-        "render", "with", "as", "limit", "offset", "reversed", "empty", "blank", "contains",
-        "is", "defined", "undefined", "macro", "endmacro", "block", "endblock", "extends",
-        "import", "from", "raw", "endraw", "comment", "endcomment", "echo", "liquid", "break",
-        "continue", "cycle", "increment", "decrement", "tablerow", "endtablerow", "filter",
-        "endfilter", "call", "endcall",
+        "if",
+        "else",
+        "elif",
+        "elsif",
+        "endif",
+        "for",
+        "endfor",
+        "in",
+        "and",
+        "or",
+        "not",
+        "true",
+        "false",
+        "null",
+        "nil",
+        "none",
+        "None",
+        "True",
+        "False",
+        "set",
+        "endset",
+        "assign",
+        "capture",
+        "endcapture",
+        "unless",
+        "endunless",
+        "case",
+        "when",
+        "endcase",
+        "include",
+        "render",
+        "with",
+        "as",
+        "limit",
+        "offset",
+        "reversed",
+        "empty",
+        "blank",
+        "contains",
+        "is",
+        "defined",
+        "undefined",
+        "macro",
+        "endmacro",
+        "block",
+        "endblock",
+        "extends",
+        "import",
+        "from",
+        "raw",
+        "endraw",
+        "comment",
+        "endcomment",
+        "echo",
+        "liquid",
+        "break",
+        "continue",
+        "cycle",
+        "increment",
+        "decrement",
+        "tablerow",
+        "endtablerow",
+        "filter",
+        "endfilter",
+        "call",
+        "endcall",
     ];
     let mut out: Vec<String> = vec![];
     for caps in RE_BLOCK.captures_iter(src) {
-        let inner = caps.get(1).or_else(|| caps.get(2)).map(|m| m.as_str()).unwrap_or("");
+        let inner = caps
+            .get(1)
+            .or_else(|| caps.get(2))
+            .map(|m| m.as_str())
+            .unwrap_or("");
         // Drop filter names: identifiers right after `|`
         let mut after_pipe = false;
         let mut last_end = 0;
@@ -159,7 +220,8 @@ mod tests {
 
     #[test]
     fn symbols() {
-        let s = find_symbols("{{ page.url | url }} {% if collections.posts %}{{ title }}{% endif %}");
+        let s =
+            find_symbols("{{ page.url | url }} {% if collections.posts %}{{ title }}{% endif %}");
         assert!(s.contains(&"page.url".to_string()));
         assert!(s.contains(&"collections.posts".to_string()));
         assert!(s.contains(&"title".to_string()));

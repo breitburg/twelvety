@@ -16,8 +16,8 @@ use crate::errors::{
 use crate::global_dependency_map::GlobalDependencyMap;
 use crate::page_entry::{DisabledCollections, PageEntry, SharedCollections};
 use crate::template::Template;
-use crate::template_writer::attach_file_path;
 use crate::template_collection::TemplateCollection;
+use crate::template_writer::attach_file_path;
 use crate::util::template_path;
 use crate::value::{Map, Value};
 
@@ -67,10 +67,8 @@ impl TemplateMap {
             return Ok(());
         }
         let input_path = template.input_path.clone();
-        self.input_path_index.insert(
-            template_path::absolute_path(&[&input_path]),
-            self.map.len(),
-        );
+        self.input_path_index
+            .insert(template_path::absolute_path(&[&input_path]), self.map.len());
         self.map.push(MapEntry {
             template,
             input_path,
@@ -151,7 +149,11 @@ impl TemplateMap {
         self.ctx.config.collections.keys().cloned().collect()
     }
 
-    fn is_deferred_user_config_collection_name(&self, name: &str, ignored: &IndexSet<String>) -> bool {
+    fn is_deferred_user_config_collection_name(
+        &self,
+        name: &str,
+        ignored: &IndexSet<String>,
+    ) -> bool {
         self.is_user_config_collection_name(name)
             && self.ctx.config.get_collection_options(name).defer
             && !ignored.contains(name)
@@ -160,16 +162,17 @@ impl TemplateMap {
     fn set_collection_by_tag_name(&mut self, tag_name: &str) -> Result<()> {
         let value = if self.is_user_config_collection_name(tag_name) {
             let callback = self.ctx.config.collections[tag_name].clone();
-            callback(&self.collection)
-                .with_context(|| format!("Error in the `{tag_name}` collection (via `addCollection`)"))?
+            callback(&self.collection).with_context(|| {
+                format!("Error in the `{tag_name}` collection (via `addCollection`)")
+            })?
         } else {
             self.get_tagged_collection(tag_name)
         };
         let mut value = value;
-        if let Some(pre) = self.ctx.config.precompiled_collections.get(tag_name) {
-            if tag_name == "all" || !value.is_array() || value.len() == 0 {
-                value = pre.clone();
-            }
+        if let Some(pre) = self.ctx.config.precompiled_collections.get(tag_name)
+            && (tag_name == "all" || !value.is_array() || value.is_empty())
+        {
+            value = pre.clone();
         }
         self.collections.set(tag_name, value);
         Ok(())
@@ -202,14 +205,14 @@ impl TemplateMap {
         // `defer: true` is ignored for collections that are paginated over
         let mut ignored_defer: IndexSet<String> = IndexSet::new();
         for entry in &self.map {
-            if let Some(name) = Self::get_pagination_tag_target(&entry.data) {
-                if self.is_deferred_user_config_collection_name(&name, &ignored_defer) {
-                    ignored_defer.insert(name.clone());
-                    self.ctx.logger.warn(&format!(
+            if let Some(name) = Self::get_pagination_tag_target(&entry.data)
+                && self.is_deferred_user_config_collection_name(&name, &ignored_defer)
+            {
+                ignored_defer.insert(name.clone());
+                self.ctx.logger.warn(&format!(
                         "Warning: `defer: true` was ignored for `collections.{name}` (via `addCollection`) because {} paginates over it.",
                         entry.input_path
                     ));
-                }
             }
         }
         for dep in order {
@@ -273,7 +276,10 @@ impl TemplateMap {
                         .iter()
                         .map(|i| i.get("inputPath").to_output_string())
                         .collect();
-                    format!("`{tag}` ({})", paths.into_iter().collect::<Vec<_>>().join(", "))
+                    format!(
+                        "`{tag}` ({})",
+                        paths.into_iter().collect::<Vec<_>>().join(", ")
+                    )
                 })
                 .collect();
             messages.push(format!(
@@ -314,8 +320,8 @@ impl TemplateMap {
             .is_truthy();
         for (counter, page) in pages.iter().enumerate() {
             if counter == 0 || add_all {
-                let excluded =
-                    rcd::get_value(&page.data(), EXCLUDE_FROM_COLLECTIONS_KEY).as_bool() == Some(true);
+                let excluded = rcd::get_value(&page.data(), EXCLUDE_FROM_COLLECTIONS_KEY).as_bool()
+                    == Some(true);
                 if !self.collections_disabled() && !excluded {
                     self.collection.add(page.clone());
                 }
@@ -360,7 +366,10 @@ impl TemplateMap {
         let events = self.ctx.config.events.clone();
         events.emit_lazy("buildawesome.contentmap", || {
             let mut m = Map::new();
-            m.insert("inputPathToUrl".into(), self.generate_input_url_content_map(&ordered));
+            m.insert(
+                "inputPathToUrl".into(),
+                self.generate_input_url_content_map(&ordered),
+            );
             m.insert("urlToInputPath".into(), self.generate_url_map(&ordered));
             Value::from_map(m)
         })?;
@@ -420,7 +429,7 @@ impl TemplateMap {
             for page in &entry.pages {
                 let data = page.data();
                 if let Value::Function(f) = rcd::get_value(&data, key) {
-                    f(&[data.clone()]).with_context(|| {
+                    f(std::slice::from_ref(&data)).with_context(|| {
                         format!(
                             "Error in the data schema for: {} (via `{}`)",
                             entry.input_path,
@@ -486,7 +495,9 @@ impl TemplateMap {
                 if !entry.template.templates_uses_layouts(&data) {
                     continue;
                 }
-                let layout = entry.template.get_layout(&data.get(key).to_output_string())?;
+                let layout = entry
+                    .template
+                    .get_layout(&data.get(key).to_output_string())?;
                 let chain = layout.get_layout_chain()?;
                 let mut priors: Vec<String> = vec![];
                 for filepath in chain {
@@ -507,10 +518,20 @@ impl TemplateMap {
     }
 
     fn check_for_duplicate_permalinks(&self) -> Result<()> {
-        let allow_case = self.ctx.config.check_error_reporting("caseCollisions", "allow");
-        let to_key = |p: &str| if allow_case { p.to_string() } else { p.to_lowercase() };
+        let allow_case = self
+            .ctx
+            .config
+            .check_error_reporting("caseCollisions", "allow");
+        let to_key = |p: &str| {
+            if allow_case {
+                p.to_string()
+            } else {
+                p.to_lowercase()
+            }
+        };
         let mut inputs: HashMap<String, bool> = HashMap::new();
-        let mut output_paths: IndexMap<String, Vec<(String, String, Option<usize>)>> = IndexMap::new();
+        let mut output_paths: IndexMap<String, Vec<(String, String, Option<usize>)>> =
+            IndexMap::new();
         let mut warnings: IndexMap<String, String> = IndexMap::new();
         for entry in &self.map {
             for page in &entry.pages {
@@ -550,8 +571,13 @@ impl TemplateMap {
                                 format!(
                                     "  {}. {ip}{}{}\n",
                                     i + 1,
-                                    pn.map(|n| format!(" (pagination.pageNumber: {n})")).unwrap_or_default(),
-                                    if differs { format!(" → {op}") } else { String::new() }
+                                    pn.map(|n| format!(" (pagination.pageNumber: {n})"))
+                                        .unwrap_or_default(),
+                                    if differs {
+                                        format!(" → {op}")
+                                    } else {
+                                        String::new()
+                                    }
                                 )
                             })
                             .collect();
@@ -578,7 +604,11 @@ impl TemplateMap {
     }
 
     fn check_for_missing_file_extensions(&self) -> Result<()> {
-        if self.ctx.config.check_error_reporting("missingExtensions", "allow") {
+        if self
+            .ctx
+            .config
+            .check_error_reporting("missingExtensions", "allow")
+        {
             return Ok(());
         }
         for entry in &self.map {
@@ -602,7 +632,10 @@ impl TemplateMap {
                         "The template at '{}' attempted to write to '{output}'{}, which is a target on the file system that does not include a file extension.\nYou *probably* want to add a file extension to your permalink so that hosts will know how to correctly serve this file to web browsers. Without a file extension, this file may not be reliably deployed without additional hosting configuration (it won’t have a mime type) and may also cause local development issues if you later attempt to write to a subdirectory of the same name.\nLearn more: https://v3.11ty.dev/docs/permalinks/#trailing-slashes\nThis is usually but not *always* an error so if you’d like to disable this error message, add `twelvetyAllowMissingExtension: true` somewhere in the data cascade for this template or use `$config.configureErrorReporting({{ missingExtensions: \"allow\" }});` to disable this feature globally.",
                         page.input_path,
                         if permalink.is_truthy() {
-                            format!(" (via `permalink` value: '{}')", permalink.to_output_string())
+                            format!(
+                                " (via `permalink` value: '{}')",
+                                permalink.to_output_string()
+                            )
                         } else {
                             String::new()
                         }
@@ -618,7 +651,9 @@ impl TemplateMap {
         if !self.cached {
             self.cache()?;
         }
-        Ok(Value::from_map(self.collections.snapshot().into_iter().collect()))
+        Ok(Value::from_map(
+            self.collections.snapshot().into_iter().collect(),
+        ))
     }
 
     /// `_testGetAllCollectionsData`: tagged collections (by the map’s `tags` data) and config collections

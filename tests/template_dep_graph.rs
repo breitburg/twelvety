@@ -11,10 +11,18 @@ fn using_new_template_dep_graph() {
     let mut graph = TemplateDepGraph::new();
 
     graph.add_template("template-paginated-over-all.njk", &strings(&["all"]), &[]);
-    graph.add_template("template-paginated-over-userconfig.njk", &strings(&["[userconfig]"]), &[]);
+    graph.add_template(
+        "template-paginated-over-userconfig.njk",
+        &strings(&["[userconfig]"]),
+        &[],
+    );
     graph.add_template("template-1.njk", &[], &strings(&["all", "posts"]));
     graph.add_template("template-2.njk", &[], &strings(&["all", "posts", "dog"]));
-    graph.add_template("template-paginated-collections.njk", &strings(&["[keys]"]), &[]);
+    graph.add_template(
+        "template-paginated-collections.njk",
+        &strings(&["[keys]"]),
+        &[],
+    );
     graph.add_config_collection_name("myCollection");
 
     assert_eq!(

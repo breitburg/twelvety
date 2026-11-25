@@ -7,7 +7,7 @@ use std::process::ExitCode;
 use std::sync::{Arc, Mutex};
 use std::time::{Instant, SystemTime, UNIX_EPOCH};
 
-use twelvety::core::{Twelvety, Options};
+use twelvety::core::{Options, Twelvety};
 use twelvety::errors::format_error_chain;
 use twelvety::user_config::UserConfig;
 use twelvety::util::template_path;
@@ -63,11 +63,25 @@ Arguments:
      --help";
 
 const STRING_ARGS: &[&str] = &[
-    "input", "output", "formats", "config", "pathprefix", "port", "to", "incremental", "loader",
+    "input",
+    "output",
+    "formats",
+    "config",
+    "pathprefix",
+    "port",
+    "to",
+    "incremental",
+    "loader",
     "events-file",
 ];
 const BOOLEAN_ARGS: &[&str] = &[
-    "quiet", "version", "watch", "dryrun", "help", "serve", "ignore-initial",
+    "quiet",
+    "version",
+    "watch",
+    "dryrun",
+    "help",
+    "serve",
+    "ignore-initial",
 ];
 
 struct Args {
@@ -93,12 +107,12 @@ fn parse_args(argv: &[String]) -> Result<Args, String> {
             Some((n, v)) => (n.to_string(), Some(v.to_string())),
             None => (rest.to_string(), None),
         };
-        if let Some(negated) = name.strip_prefix("no-") {
-            if BOOLEAN_ARGS.contains(&negated) {
-                booleans.insert(negated.to_string(), false);
-                i += 1;
-                continue;
-            }
+        if let Some(negated) = name.strip_prefix("no-")
+            && BOOLEAN_ARGS.contains(&negated)
+        {
+            booleans.insert(negated.to_string(), false);
+            i += 1;
+            continue;
         }
         if STRING_ARGS.contains(&name.as_str()) {
             let value = match value {
@@ -129,7 +143,11 @@ fn parse_args(argv: &[String]) -> Result<Args, String> {
         }
         i += 1;
     }
-    Ok(Args { strings, booleans, repeated })
+    Ok(Args {
+        strings,
+        booleans,
+        repeated,
+    })
 }
 
 /// Bump on a breaking change
@@ -152,7 +170,12 @@ struct NdjsonReporter {
 }
 
 fn now_ms() -> Value {
-    Value::Number(SystemTime::now().duration_since(UNIX_EPOCH).unwrap_or_default().as_millis() as f64)
+    Value::Number(
+        SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_millis() as f64,
+    )
 }
 
 fn event(kind: &str, id: Option<String>) -> Map {
@@ -219,7 +242,10 @@ impl NdjsonReporter {
         let escaped: String = relative
             .chars()
             .flat_map(|c| {
-                let escape = matches!(c, '\\' | '*' | '?' | '[' | ']' | '{' | '}' | '(' | ')' | '!' | '+' | '@' | '|');
+                let escape = matches!(
+                    c,
+                    '\\' | '*' | '?' | '[' | ']' | '{' | '}' | '(' | ')' | '!' | '+' | '@' | '|'
+                );
                 escape.then_some('\\').into_iter().chain(std::iter::once(c))
             })
             .collect();
@@ -238,7 +264,10 @@ impl NdjsonReporter {
             }
             let mut e = event("build.start", id);
             e.insert("runMode".into(), arg.get("runMode"));
-            e.insert("incremental".into(), Value::Bool(arg.get("incremental").is_truthy()));
+            e.insert(
+                "incremental".into(),
+                Value::Bool(arg.get("incremental").is_truthy()),
+            );
             reporter.emit(e);
 
             // Registered last so a throwing user `after` listener skips `build.end`
@@ -316,7 +345,11 @@ fn main() -> ExitCode {
         println!("{HELP}");
         return ExitCode::SUCCESS;
     }
-    let to = args.strings.get("to").cloned().unwrap_or_else(|| "fs".into());
+    let to = args
+        .strings
+        .get("to")
+        .cloned()
+        .unwrap_or_else(|| "fs".into());
     let is_serve = flag("serve");
     let is_watch = flag("watch");
     if to == "json" && (is_serve || is_watch) {
@@ -335,12 +368,21 @@ fn main() -> ExitCode {
         "build"
     };
     if args.repeated.iter().any(|a| a == "events-file")
-        || args.strings.get("events-file").is_some_and(|f| f.is_empty())
+        || args
+            .strings
+            .get("events-file")
+            .is_some_and(|f| f.is_empty())
     {
-        eprintln!("[12ty] --events-file requires a single file path, e.g. --events-file=.events.ndjson.");
+        eprintln!(
+            "[12ty] --events-file requires a single file path, e.g. --events-file=.events.ndjson."
+        );
         return ExitCode::from(1);
     }
-    let reporter = match args.strings.get("events-file").map(|f| NdjsonReporter::new(f)) {
+    let reporter = match args
+        .strings
+        .get("events-file")
+        .map(|f| NdjsonReporter::new(f))
+    {
         Some(Ok(r)) => Some(r),
         Some(Err(e)) => {
             eprintln!("[12ty] Could not open --events-file: {e}");
@@ -388,7 +430,10 @@ fn main() -> ExitCode {
         if let Some(reporter) = &reporter {
             reporter.error(&twelvety::core::error_to_value(e));
         }
-        eprintln!("[12ty] Problem writing Twelvety templates:\n[12ty] {}", format_error_chain(e));
+        eprintln!(
+            "[12ty] Problem writing Twelvety templates:\n[12ty] {}",
+            format_error_chain(e)
+        );
         if !is_serve && !is_watch {
             return ExitCode::from(1);
         }
@@ -408,7 +453,11 @@ fn main() -> ExitCode {
                         .map(|p| p as u16)
                 })
                 .unwrap_or(8080);
-            let prefix = args.strings.get("pathprefix").cloned().unwrap_or_else(|| "/".into());
+            let prefix = args
+                .strings
+                .get("pathprefix")
+                .cloned()
+                .unwrap_or_else(|| "/".into());
             let server = twelvety::serve::DevServer::new(port, &twelvety.output_dir, &prefix);
             if let Err(e) = server.start() {
                 eprintln!("[12ty] {e}");

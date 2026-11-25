@@ -6,13 +6,19 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use twelvety::Value;
 use twelvety::template_render::TemplateRender;
 use twelvety::testing::{TestOptions, get_context, json};
-use twelvety::user_config::{CompiledFn, CustomCompileFn, CustomCompileWithDefaultFn, ExtensionOptions, UserConfig};
+use twelvety::user_config::{
+    CompiledFn, CustomCompileFn, CustomCompileWithDefaultFn, ExtensionOptions, UserConfig,
+};
 
 fn get_new_template_render<F>(name: &str, config: F) -> TemplateRender
 where
     F: Fn(&mut UserConfig) -> anyhow::Result<()> + Send + Sync + 'static,
 {
-    TemplateRender::new(get_context(TestOptions::default().with_config(config)).unwrap(), name).unwrap()
+    TemplateRender::new(
+        get_context(TestOptions::default().with_config(config)).unwrap(),
+        name,
+    )
+    .unwrap()
 }
 
 fn render(tr: &TemplateRender, src: &str, data: &Value) -> String {
@@ -23,7 +29,9 @@ fn compile<F>(f: F) -> Option<CustomCompileFn>
 where
     F: Fn(&str, &str) -> CompiledFn + Send + Sync + 'static,
 {
-    Some(Arc::new(move |content: &str, input_path: &str| Ok(f(content, input_path))))
+    Some(Arc::new(move |content: &str, input_path: &str| {
+        Ok(f(content, input_path))
+    }))
 }
 
 /// `compile` that wraps `this.defaultRenderer(data)`
@@ -31,11 +39,13 @@ fn compile_wrapping_default<F>(wrap: F) -> Option<CustomCompileWithDefaultFn>
 where
     F: Fn(&str) -> String + Send + Sync + Clone + 'static,
 {
-    Some(Arc::new(move |_: &str, _: &str, default_renderer: Option<CompiledFn>| {
-        let default_renderer = default_renderer.expect("missing defaultRenderer");
-        let wrap = wrap.clone();
-        Ok(Arc::new(move |data: &Value| Ok(wrap(&default_renderer(data)?))) as CompiledFn)
-    }))
+    Some(Arc::new(
+        move |_: &str, _: &str, default_renderer: Option<CompiledFn>| {
+            let default_renderer = default_renderer.expect("missing defaultRenderer");
+            let wrap = wrap.clone();
+            Ok(Arc::new(move |data: &Value| Ok(wrap(&default_renderer(data)?))) as CompiledFn)
+        },
+    ))
 }
 
 fn counter() -> Arc<AtomicUsize> {
@@ -60,8 +70,14 @@ fn custom_plaintext_render() {
             },
         )
     });
-    assert_eq!(render(&tr, "<p>Paragraph</p>", &Value::Undefined), "<p>Paragraph</p>");
-    assert_eq!(render(&tr, "<p>Paragraph</p>", &Value::object()), "<p>Paragraph</p>");
+    assert_eq!(
+        render(&tr, "<p>Paragraph</p>", &Value::Undefined),
+        "<p>Paragraph</p>"
+    );
+    assert_eq!(
+        render(&tr, "<p>Paragraph</p>", &Value::object()),
+        "<p>Paragraph</p>"
+    );
 }
 
 #[test]
@@ -79,9 +95,17 @@ fn custom_markdown_render_with_compile_override() {
         )
     });
 
-    let f = tr.get_compiled_template("# Markdown?", false, None).unwrap();
-    assert_eq!(f(&Value::Undefined).unwrap().trim(), "<not-markdown># Markdown?</not-markdown>");
-    assert_eq!(f(&Value::object()).unwrap().trim(), "<not-markdown># Markdown?</not-markdown>");
+    let f = tr
+        .get_compiled_template("# Markdown?", false, None)
+        .unwrap();
+    assert_eq!(
+        f(&Value::Undefined).unwrap().trim(),
+        "<not-markdown># Markdown?</not-markdown>"
+    );
+    assert_eq!(
+        f(&Value::object()).unwrap().trim(),
+        "<not-markdown># Markdown?</not-markdown>"
+    );
 }
 
 #[test]
@@ -122,8 +146,13 @@ fn custom_markdown_render_with_compile_override_and_call_to_default_compiler() {
         )
     });
 
-    let f = tr.get_compiled_template("Hey {{name}}", false, None).unwrap();
-    assert_eq!(f(&Value::Undefined).unwrap().trim(), "<custom-wrapper><p>Hey</p></custom-wrapper>");
+    let f = tr
+        .get_compiled_template("Hey {{name}}", false, None)
+        .unwrap();
+    assert_eq!(
+        f(&Value::Undefined).unwrap().trim(),
+        "<custom-wrapper><p>Hey</p></custom-wrapper>"
+    );
     assert_eq!(
         f(&json(r#"{"name": "Zach"}"#)).unwrap().trim(),
         "<custom-wrapper><p>Hey Zach</p></custom-wrapper>"
@@ -150,8 +179,14 @@ fn simple_alias_to_markdown_render() {
         )
     });
 
-    assert_eq!(render(&tr, "# Header", &Value::Undefined).trim(), "<h1>Header</h1>");
-    assert_eq!(render(&tr, "# Header", &Value::object()).trim(), "<h1>Header</h1>");
+    assert_eq!(
+        render(&tr, "# Header", &Value::Undefined).trim(),
+        "<h1>Header</h1>"
+    );
+    assert_eq!(
+        render(&tr, "# Header", &Value::object()).trim(),
+        "<h1>Header</h1>"
+    );
 }
 
 #[test]
@@ -187,7 +222,10 @@ fn double_override_one_simple_alias_to_custom_works_fine() {
         Ok(())
     });
 
-    assert_eq!(render(&tr, "Template content", &Value::object()), "Appended Template content");
+    assert_eq!(
+        render(&tr, "Template content", &Value::object()),
+        "Appended Template content"
+    );
     assert_eq!(count(&inits), 1);
     assert_eq!(count(&compiles), 1);
 }
@@ -213,7 +251,10 @@ fn double_override_two_simple_aliases() {
         Ok(())
     });
 
-    assert_eq!(render(&tr, "Template content", &Value::object()), "Template content");
+    assert_eq!(
+        render(&tr, "Template content", &Value::object()),
+        "Template content"
+    );
 }
 
 #[test]
@@ -230,7 +271,9 @@ fn double_override_two_complex_aliases_is_supported_as_of_3_0() {
                     ic1.fetch_add(1, Ordering::SeqCst);
                     Ok(())
                 })),
-                compile_with_default_renderer: compile_wrapping_default(|result| format!("possum|{result}")),
+                compile_with_default_renderer: compile_wrapping_default(|result| {
+                    format!("possum|{result}")
+                }),
                 ..Default::default()
             },
         )?;
@@ -242,7 +285,9 @@ fn double_override_two_complex_aliases_is_supported_as_of_3_0() {
                     ic2.fetch_add(1, Ordering::SeqCst);
                     Ok(())
                 })),
-                compile_with_default_renderer: compile_wrapping_default(|result| format!("12ty.custom|{result}")),
+                compile_with_default_renderer: compile_wrapping_default(|result| {
+                    format!("12ty.custom|{result}")
+                }),
                 ..Default::default()
             },
         )?;

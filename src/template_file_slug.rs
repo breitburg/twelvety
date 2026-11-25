@@ -7,7 +7,8 @@ use regex::Regex;
 use crate::extension_map::ExtensionMap;
 use crate::util::{node_path, template_path};
 
-static DATE_PREFIX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"\d{4}-\d{2}-\d{2}-(.*)").unwrap());
+static DATE_PREFIX: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"\d{4}-\d{2}-\d{2}-(.*)").unwrap());
 
 pub struct TemplateFileSlug {
     dirs: Vec<String>,
@@ -75,8 +76,17 @@ mod tests {
     #[test]
     fn slugs() {
         assert_eq!(slug("./test.md", "."), ("test".into(), "/test".into()));
-        assert_eq!(slug("./src/2018-01-01-test.md", "./src"), ("test".into(), "/test".into()));
-        assert_eq!(slug("./src/posts/index.njk", "./src"), ("posts".into(), "/posts/index".into()));
-        assert_eq!(slug("./src/index.njk", "./src"), ("".into(), "/index".into()));
+        assert_eq!(
+            slug("./src/2018-01-01-test.md", "./src"),
+            ("test".into(), "/test".into())
+        );
+        assert_eq!(
+            slug("./src/posts/index.njk", "./src"),
+            ("posts".into(), "/posts/index".into())
+        );
+        assert_eq!(
+            slug("./src/index.njk", "./src"),
+            ("".into(), "/index".into())
+        );
     }
 }

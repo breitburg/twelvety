@@ -41,12 +41,12 @@ pub fn iso_date_parse(s: &str) -> Result<DateTime<Utc>, String> {
         .or_else(|| DATETIME_REGEX.captures(s))
         .ok_or_else(|| format!("Unsupported date format: {s}"))?;
     for i in 4..6 {
-        if let Some(m) = caps.get(i) {
-            if IS_FRACTIONAL_REGEX.is_match(m.as_str()) {
-                return Err(format!(
-                    "Unsupported date format (fractional hours or minutes): {s}"
-                ));
-            }
+        if let Some(m) = caps.get(i)
+            && IS_FRACTIONAL_REGEX.is_match(m.as_str())
+        {
+            return Err(format!(
+                "Unsupported date format (fractional hours or minutes): {s}"
+            ));
         }
     }
     let get = |i: usize, default: &str| -> String {
@@ -54,7 +54,9 @@ pub fn iso_date_parse(s: &str) -> Result<DateTime<Utc>, String> {
             .map(|m| m.as_str().to_string())
             .unwrap_or_else(|| default.to_string())
     };
-    let year: i32 = get(1, "").parse().map_err(|_| format!("Unsupported date format: {s}"))?;
+    let year: i32 = get(1, "")
+        .parse()
+        .map_err(|_| format!("Unsupported date format: {s}"))?;
     let month: i64 = get(2, "1").parse::<i64>().unwrap_or(1) - 1;
     let day: i64 = get(3, "1").parse().unwrap_or(1);
     let (off_h, off_m) = get_timezone_offset(&get(8, "Z"));
@@ -71,11 +73,15 @@ pub fn iso_date_parse(s: &str) -> Result<DateTime<Utc>, String> {
     let base = NaiveDate::from_ymd_opt(year, (month + 1) as u32, 1)
         .ok_or_else(|| format!("Unsupported date format: {s}"))?;
     if day < 1 {
-        return Err(format!("Unsupported date format (invalid days for month): {s}"));
+        return Err(format!(
+            "Unsupported date format (invalid days for month): {s}"
+        ));
     }
     let date = base + Duration::days(day - 1);
     if date.month0() as i64 != month {
-        return Err(format!("Unsupported date format (invalid days for month): {s}"));
+        return Err(format!(
+            "Unsupported date format (invalid days for month): {s}"
+        ));
     }
     let naive = date.and_hms_opt(0, 0, 0).unwrap()
         + Duration::hours(hours)
@@ -119,12 +125,18 @@ pub fn parse_yaml_timestamp(s: &str) -> Option<DateTime<Utc>> {
         }
         ms = f.parse().unwrap_or(0);
     }
-    let naive = NaiveDate::from_ymd_opt(y, mo, d)?.and_hms_opt(h, mi, se)?
-        + Duration::milliseconds(ms);
+    let naive =
+        NaiveDate::from_ymd_opt(y, mo, d)?.and_hms_opt(h, mi, se)? + Duration::milliseconds(ms);
     let mut dt = Utc.from_utc_datetime(&naive);
     if let Some(sign) = c.get(9) {
-        let tz_h: i64 = c.get(10).map(|m| m.as_str().parse().unwrap_or(0)).unwrap_or(0);
-        let tz_m: i64 = c.get(11).map(|m| m.as_str().parse().unwrap_or(0)).unwrap_or(0);
+        let tz_h: i64 = c
+            .get(10)
+            .map(|m| m.as_str().parse().unwrap_or(0))
+            .unwrap_or(0);
+        let tz_m: i64 = c
+            .get(11)
+            .map(|m| m.as_str().parse().unwrap_or(0))
+            .unwrap_or(0);
         let mut delta = Duration::minutes(tz_h * 60 + tz_m);
         if sign.as_str() == "-" {
             delta = -delta;
@@ -178,10 +190,10 @@ pub fn from_iso_to_date_utc(
 ) -> anyhow::Result<DateTime<Utc>> {
     match iso_date_parse(date_value) {
         Ok(mut date) => {
-            if let Some(tz) = time_zone {
-                if !has_offset(date_value) {
-                    date = tz.to_date(date);
-                }
+            if let Some(tz) = time_zone
+                && !has_offset(date_value)
+            {
+                date = tz.to_date(date);
             }
             Ok(date)
         }

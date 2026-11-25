@@ -7,7 +7,9 @@ use anyhow::{Context, Result, anyhow, bail};
 use chrono::{DateTime, TimeZone, Utc};
 
 use crate::build_context::BuildContext;
-use crate::data::computed_data::{ComputedData, ComputedDataBuilder, ComputedEvaluator, ComputedValue};
+use crate::data::computed_data::{
+    ComputedData, ComputedDataBuilder, ComputedEvaluator, ComputedValue,
+};
 use crate::data::resolve_configuration_data::{self as rcd, EXCLUDE_FROM_COLLECTIONS_KEY};
 use crate::page_entry::PageEntry;
 use crate::plugins::pagination::Pagination;
@@ -88,12 +90,16 @@ impl ComputedEvaluator for Evaluator<'_> {
     fn evaluate(&self, _key: &str, value: &ComputedValue, data: &Value) -> Result<Value> {
         match value {
             ComputedValue::Template(v) => self.template.render_computed_unit(v, data),
-            ComputedValue::Function(f) => f(&[data.clone()]),
+            ComputedValue::Function(f) => f(std::slice::from_ref(data)),
             ComputedValue::Static(v) => Ok(v.clone()),
-            ComputedValue::PageUrl => Ok(self.template.get_output_locations(data, self.extra_subdir)?.href),
-            ComputedValue::PageOutputPath => {
-                Ok(self.template.get_output_locations(data, self.extra_subdir)?.path)
-            }
+            ComputedValue::PageUrl => Ok(self
+                .template
+                .get_output_locations(data, self.extra_subdir)?
+                .href),
+            ComputedValue::PageOutputPath => Ok(self
+                .template
+                .get_output_locations(data, self.extra_subdir)?
+                .path),
             ComputedValue::PageDate => {
                 let page = data.get("page");
                 Ok(self
@@ -166,7 +172,12 @@ impl Template {
 
     pub fn templates_uses_layouts(&self, data: &Value) -> bool {
         let key = &self.keys().layout;
-        data.get(key).is_truthy() && self.content.engine().map(|e| e.use_layouts()).unwrap_or(false)
+        data.get(key).is_truthy()
+            && self
+                .content
+                .engine()
+                .map(|e| e.use_layouts())
+                .unwrap_or(false)
     }
 
     pub fn get_layout(&self, layout_key: &str) -> Result<Arc<TemplateLayout>> {
@@ -179,7 +190,9 @@ impl Template {
     }
 
     pub fn base_file(&self) -> String {
-        self.ctx().extension_map.remove_template_extension(&self.parsed.base)
+        self.ctx()
+            .extension_map
+            .remove_template_extension(&self.parsed.base)
     }
 
     fn use_permalink_root(&self, data: &Value) -> bool {
@@ -196,7 +209,8 @@ impl Template {
         }
         let permalink = TemplatePermalink::resolve_build_alias(&permalink);
         let config = &self.ctx().config;
-        let dynamic = config.dynamic_permalinks && data.get("dynamicPermalink").as_bool() != Some(false);
+        let dynamic =
+            config.dynamic_permalinks && data.get("dynamicPermalink").as_bool() != Some(false);
         let mut value: Option<Value> = None;
         match &permalink {
             Value::Bool(_) => value = Some(permalink.clone()),
@@ -221,7 +235,8 @@ impl Template {
         let ext = self.content.engine()?.default_template_file_extension();
         let collapse = config.permalink_collapse_matching_folder;
         let generate = |c: bool| -> Result<TemplatePermalink> {
-            let mut p = TemplatePermalink::generate(&subfolder, &self.base_file(), extra_subdir, &ext, c)?;
+            let mut p =
+                TemplatePermalink::generate(&subfolder, &self.base_file(), extra_subdir, &ext, c)?;
             p.set_url_transforms(&config.url_transforms);
             Ok(p)
         };
@@ -244,7 +259,11 @@ impl Template {
         Ok(p)
     }
 
-    pub fn get_output_locations(&self, data: &Value, extra_subdir: &str) -> Result<OutputLocations> {
+    pub fn get_output_locations(
+        &self,
+        data: &Value,
+        extra_subdir: &str,
+    ) -> Result<OutputLocations> {
         let link = self.get_link(data, extra_subdir)?;
         let path = if self.use_permalink_root(data) {
             link.to_path_from_root()
@@ -332,7 +351,10 @@ impl Template {
         page.insert("filePathStem".into(), Value::str(&self.file_path_stem));
         page.insert(
             "relativeInputPath".into(),
-            Value::str(ctx.dirs.get_input_path_relative_to_input_directory(&self.input_path)),
+            Value::str(
+                ctx.dirs
+                    .get_input_path_relative_to_input_directory(&self.input_path),
+            ),
         );
         page.insert(
             "outputFileExtension".into(),
@@ -340,7 +362,10 @@ impl Template {
         );
         page.insert(
             "templateSyntax".into(),
-            Value::str(self.content.get_engine_names(self.content.get_engine_override(data).as_deref())),
+            Value::str(
+                self.content
+                    .get_engine_names(self.content.get_engine_override(data).as_deref()),
+            ),
         );
         let computed = rcd::get_value(data, &self.keys().computed);
         if !computed.is_plain_object() || !computed.has("date") {
@@ -355,7 +380,7 @@ impl Template {
     fn render_computed_unit(&self, entry: &Value, data: &Value) -> Result<Value> {
         Ok(match entry {
             Value::String(s) => Value::str(self.content.render_computed_data(s, data)?),
-            Value::Function(f) => f(&[data.clone()])?,
+            Value::Function(f) => f(std::slice::from_ref(data))?,
             Value::Array(a) => Value::array(
                 a.iter()
                     .map(|v| self.render_computed_unit(v, data))
@@ -382,9 +407,17 @@ impl Template {
         b.add(
             "page.url",
             ComputedValue::PageUrl,
-            vec!["permalink".into(), "dynamicPermalink".into(), keys.permalink_root.clone()],
+            vec![
+                "permalink".into(),
+                "dynamicPermalink".into(),
+                keys.permalink_root.clone(),
+            ],
         );
-        b.add("page.outputPath", ComputedValue::PageOutputPath, vec!["page.url".into()]);
+        b.add(
+            "page.outputPath",
+            ComputedValue::PageOutputPath,
+            vec!["page.url".into()],
+        );
         if computed.has("date") {
             b.add("page.date", ComputedValue::PageDate, vec!["date".into()]);
         }
@@ -398,7 +431,11 @@ impl Template {
     fn unavailable_before_pagination(data: &Value) -> Vec<String> {
         let mut out = vec!["collections".to_string()];
         if Pagination::has_pagination(data) {
-            out.extend(["pagination".into(), "page.url".into(), "page.outputPath".into()]);
+            out.extend([
+                "pagination".into(),
+                "page.url".into(),
+                "page.outputPath".into(),
+            ]);
             if let Some(alias) = data.get("pagination").get("alias").as_str() {
                 out.push(alias.to_string());
             }
@@ -445,10 +482,15 @@ impl Template {
             .filter(|k| k == "pagination" || k.starts_with("pagination."))
             .collect();
         if !pagination_keys.is_empty() {
-            let unavailable: Vec<String> = ["page.rawInput", "collections", "page.url", "page.outputPath"]
-                .iter()
-                .map(|s| s.to_string())
-                .collect();
+            let unavailable: Vec<String> = [
+                "page.rawInput",
+                "collections",
+                "page.url",
+                "page.outputPath",
+            ]
+            .iter()
+            .map(|s| s.to_string())
+            .collect();
             cd.setup_data(data, &unavailable, Some(&pagination_keys), &eval)?;
             for key in &pagination_keys {
                 if let Some((_, reason)) = cd.get_deferred(key) {
@@ -464,7 +506,12 @@ impl Template {
         // computed layout
         if cd.has_key(&self.keys().layout) && self.content.engine()?.use_layouts() {
             let layout_key = self.keys().layout.clone();
-            cd.setup_data(data, &unavailable, Some(&[layout_key.clone()]), &eval)?;
+            cd.setup_data(
+                data,
+                &unavailable,
+                Some(std::slice::from_ref(&layout_key)),
+                &eval,
+            )?;
             self.apply_computed_layout_data(data, &cd)?;
         }
         let early = self.early_computed_keys(&cd, data);
@@ -521,7 +568,10 @@ impl Template {
                     }
                 })
                 .collect();
-            if !filters.iter().any(|e| e == "*" || self.input_path.ends_with(e.as_str())) {
+            if !filters
+                .iter()
+                .any(|e| e == "*" || self.input_path.ends_with(e.as_str()))
+            {
                 continue;
             }
             let ctx = PreprocessorContext {
@@ -544,7 +594,12 @@ impl Template {
     }
 
     /// `addComputedData` (second round): resolves `page.url`/`page.outputPath`
-    fn add_computed_data(&self, data: &mut Value, parent: Option<&ComputedData>, extra_subdir: &str) -> Result<Option<ComputedData>> {
+    fn add_computed_data(
+        &self,
+        data: &mut Value,
+        parent: Option<&ComputedData>,
+        extra_subdir: &str,
+    ) -> Result<Option<ComputedData>> {
         let cd = match parent {
             Some(p) => Some(p.inherit()),
             None => self.computed.lock().unwrap().clone(),
@@ -601,15 +656,14 @@ impl Template {
         }
 
         // pagination
-        if let Some(key) = data.get("pagination").get("data").as_str() {
-            if let Some(cd) = self.computed.lock().unwrap().as_ref() {
-                if let Some((dkey, reason)) = cd.get_deferred(key) {
-                    bail!(
-                        "Pagination data `{key}` can’t use computed data `{dkey}` ({}) because it reads `{reason}`, which isn’t available until after pagination.",
-                        self.input_path
-                    );
-                }
-            }
+        if let Some(key) = data.get("pagination").get("data").as_str()
+            && let Some(cd) = self.computed.lock().unwrap().as_ref()
+            && let Some((dkey, reason)) = cd.get_deferred(key)
+        {
+            bail!(
+                "Pagination data `{key}` can’t use computed data `{dkey}` ({}) because it reads `{reason}`, which isn’t available until after pagination.",
+                self.input_path
+            );
         }
         {
             let mut guard = self.computed.lock().unwrap();
@@ -618,7 +672,12 @@ impl Template {
                     template: self,
                     extra_subdir: "",
                 };
-                cd.setup_data(data, &Self::unavailable_before_pagination(data), None, &eval)?;
+                cd.setup_data(
+                    data,
+                    &Self::unavailable_before_pagination(data),
+                    None,
+                    &eval,
+                )?;
             }
         }
         let paging = Pagination::new(self.clone(), data, &self.ctx().config)?;
@@ -626,7 +685,8 @@ impl Template {
         let mut entries = vec![];
         for page in paging.get_page_templates()? {
             let mut page_data = page.data;
-            let cd = self.add_computed_data(&mut page_data, parent_cd.as_ref(), &page.extra_subdir)?;
+            let cd =
+                self.add_computed_data(&mut page_data, parent_cd.as_ref(), &page.extra_subdir)?;
             entries.push(PageEntry::new(
                 self.clone(),
                 page.extra_subdir,
@@ -696,10 +756,12 @@ impl Template {
             return Ok(c.clone());
         }
         let data = entry.data();
-        let template_content = entry
-            .template_content()
-            .cloned()
-            .ok_or_else(|| anyhow!("Tried to use templateContent too early on {}", self.input_path))?;
+        let template_content = entry.template_content().cloned().ok_or_else(|| {
+            anyhow!(
+                "Tried to use templateContent too early on {}",
+                self.input_path
+            )
+        })?;
         let layout_key = data.get(&self.keys().layout);
         let mut content = if self.content.engine()?.use_layouts() && layout_key.is_truthy() {
             let layout = self.get_layout(&layout_key.to_output_string())?;
@@ -753,7 +815,11 @@ impl Template {
                 .and_then(|r| r.get_readable_engines_list_differing_from_file_extension());
             let suffix = format!(
                 "{}{}",
-                if self.is_virtual_template() { " (virtual)" } else { "" },
+                if self.is_virtual_template() {
+                    " (virtual)"
+                } else {
+                    ""
+                },
                 engines.map(|e| format!(" ({e})")).unwrap_or_default()
             );
             ctx.logger.log(&format!(
@@ -806,14 +872,18 @@ impl Template {
     }
 
     /// `getMappedDate`
-    pub fn get_mapped_date(&self, date_value: &Value, page: &Value) -> Result<Option<DateTime<Utc>>> {
+    pub fn get_mapped_date(
+        &self,
+        date_value: &Value,
+        page: &Value,
+    ) -> Result<Option<DateTime<Utc>>> {
         let config = &self.ctx().config;
         let mut date_value = date_value.clone();
         for f in &config.custom_date_parsing {
-            if let Some(v) = f(&date_value, page) {
-                if v.is_truthy() {
-                    date_value = v;
-                }
+            if let Some(v) = f(&date_value, page)
+                && v.is_truthy()
+            {
+                date_value = v;
             }
         }
         if date_value.is_truthy() {

@@ -5,7 +5,7 @@ mod template_support;
 use std::sync::Arc;
 
 use chrono::{DateTime, TimeZone, Utc};
-use template_support::{rendered_data, virtual_options, templates};
+use template_support::{rendered_data, templates, virtual_options};
 use twelvety::template::Template;
 use twelvety::testing::{TestOptions, get_new_template};
 
@@ -22,7 +22,12 @@ fn virtual_dates(path: &str) -> &'static str {
 fn virtual_template(path: &str) -> Arc<Template> {
     get_new_template(
         &format!("./test/stubs/{path}"),
-        virtual_options("./test/stubs/", "./dist", templates(&[(path, virtual_dates(path))]), |_| Ok(())),
+        virtual_options(
+            "./test/stubs/",
+            "./dist",
+            templates(&[(path, virtual_dates(path))]),
+            |_| Ok(()),
+        ),
     )
     .unwrap()
 }
@@ -33,7 +38,10 @@ fn file_template(path: &str) -> Arc<Template> {
 
 fn mapped_date(tmpl: &Arc<Template>) -> DateTime<Utc> {
     let data = rendered_data(tmpl, 0);
-    let date = tmpl.get_mapped_date(&data.get("date"), &data.get("page")).unwrap().unwrap();
+    let date = tmpl
+        .get_mapped_date(&data.get("date"), &data.get("page"))
+        .unwrap()
+        .unwrap();
     assert!(date.timestamp_millis() != 0);
     date
 }
@@ -49,12 +57,18 @@ fn get_mapped_date_empty_assume_created() {
 
 #[test]
 fn get_mapped_date_explicit_date_yaml_string() {
-    assert_eq!(mapped_date(&virtual_template("dates/file2.md")), utc(2016, 1, 1));
+    assert_eq!(
+        mapped_date(&virtual_template("dates/file2.md")),
+        utc(2016, 1, 1)
+    );
 }
 
 #[test]
 fn get_mapped_date_explicit_date_yaml_date() {
-    assert_eq!(mapped_date(&virtual_template("dates/file2b.md")), utc(2016, 1, 1));
+    assert_eq!(
+        mapped_date(&virtual_template("dates/file2b.md")),
+        utc(2016, 1, 1)
+    );
 }
 
 #[test]
@@ -77,13 +91,18 @@ fn get_mapped_date_created_date() {
 
 #[test]
 fn get_mapped_date_falls_back_to_filename_date() {
-    assert_eq!(mapped_date(&virtual_template("dates/2018-01-01-file5.md")), utc(2018, 1, 1));
+    assert_eq!(
+        mapped_date(&virtual_template("dates/2018-01-01-file5.md")),
+        utc(2018, 1, 1)
+    );
 }
 
 #[test]
 fn get_mapped_date_found_multiple_dates_picks_first() {
     assert_eq!(
-        mapped_date(&virtual_template("dates/2019-01-01-folder/2020-01-01-file.md")),
+        mapped_date(&virtual_template(
+            "dates/2019-01-01-folder/2020-01-01-file.md"
+        )),
         utc(2019, 1, 1)
     );
 }

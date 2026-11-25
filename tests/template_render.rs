@@ -48,12 +48,24 @@ fn parse_template_syntax_into_pipeline_steps_execution_order() {
     assert_eq!(pipeline::parse("html").unwrap(), Vec::<String>::new());
     assert_eq!(pipeline::parse("html,html").unwrap(), Vec::<String>::new());
     assert_eq!(pipeline::parse("html,md,md").unwrap(), strings(&["md"]));
-    assert_eq!(pipeline::parse("liquid,md").unwrap(), strings(&["liquid", "md"]));
-    assert_eq!(pipeline::parse("md,liquid").unwrap(), strings(&["liquid", "md"]));
+    assert_eq!(
+        pipeline::parse("liquid,md").unwrap(),
+        strings(&["liquid", "md"])
+    );
+    assert_eq!(
+        pipeline::parse("md,liquid").unwrap(),
+        strings(&["liquid", "md"])
+    );
     assert_eq!(pipeline::parse("liquid").unwrap(), strings(&["liquid"]));
     assert_eq!(pipeline::parse("njk").unwrap(), strings(&["njk"]));
-    assert_eq!(pipeline::parse("liquid,html").unwrap(), strings(&["liquid"]));
-    assert_eq!(pipeline::parse("liquid,md,html").unwrap(), strings(&["liquid", "md"]));
+    assert_eq!(
+        pipeline::parse("liquid,html").unwrap(),
+        strings(&["liquid"])
+    );
+    assert_eq!(
+        pipeline::parse("liquid,md,html").unwrap(),
+        strings(&["liquid", "md"])
+    );
     assert_eq!(pipeline::parse("njk,njk").unwrap(), strings(&["njk"]));
 
     assert!(pipeline::parse("njk,liquid").is_err());
@@ -80,7 +92,9 @@ fn preprocessing_a_format_with_another_format_throws() {
         Ok(())
     }))
     .unwrap();
-    let err = TemplateRender::new(ctx, "html").err().expect("init should fail");
+    let err = TemplateRender::new(ctx, "html")
+        .err()
+        .expect("init should fail");
     assert_eq!(
         err.to_string(),
         "The `htmlTemplateEngine` configuration property must be a template engine, received the output format: md"

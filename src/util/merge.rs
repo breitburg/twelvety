@@ -9,10 +9,10 @@ const OVERRIDE_PREFIX: &str = "override:";
 const UNSAFE_KEY: &str = "__proto__";
 
 fn clean_key<'a>(key: &'a str, prefix: Option<&str>) -> &'a str {
-    if let Some(prefix) = prefix {
-        if let Some(stripped) = key.strip_prefix(prefix) {
-            return stripped;
-        }
+    if let Some(prefix) = prefix
+        && let Some(stripped) = key.strip_prefix(prefix)
+    {
+        return stripped;
     }
     key
 }
@@ -65,20 +65,20 @@ pub fn deep_copy(target: Value, sources: &[&Value]) -> Value {
 /// `Merge(target, ...sources)`
 pub fn merge(target: Value, sources: &[&Value]) -> Value {
     let mut target = target;
-    if let Value::Object(map) = &target {
-        if map.keys().any(|k| k.starts_with(OVERRIDE_PREFIX)) {
-            let mut cleaned = Map::new();
-            for (key, value) in map.iter() {
-                if let Some(stripped) = key.strip_prefix(OVERRIDE_PREFIX) {
-                    if stripped != UNSAFE_KEY {
-                        cleaned.insert(stripped.to_string(), value.clone());
-                    }
-                } else {
-                    cleaned.insert(key.clone(), value.clone());
+    if let Value::Object(map) = &target
+        && map.keys().any(|k| k.starts_with(OVERRIDE_PREFIX))
+    {
+        let mut cleaned = Map::new();
+        for (key, value) in map.iter() {
+            if let Some(stripped) = key.strip_prefix(OVERRIDE_PREFIX) {
+                if stripped != UNSAFE_KEY {
+                    cleaned.insert(stripped.to_string(), value.clone());
                 }
+            } else {
+                cleaned.insert(key.clone(), value.clone());
             }
-            target = Value::from_map(cleaned);
         }
+        target = Value::from_map(cleaned);
     }
     for source in sources {
         if !source.is_truthy() {
@@ -101,7 +101,10 @@ mod tests {
     fn merges_deeply() {
         let merged = merge(
             Value::object(),
-            &[&json(r#"{"a":{"b":1},"tags":["x"]}"#), &json(r#"{"a":{"c":2},"tags":["y"]}"#)],
+            &[
+                &json(r#"{"a":{"b":1},"tags":["x"]}"#),
+                &json(r#"{"a":{"c":2},"tags":["y"]}"#),
+            ],
         );
         assert_eq!(merged, json(r#"{"a":{"b":1,"c":2},"tags":["x","y"]}"#));
     }
@@ -110,7 +113,10 @@ mod tests {
     fn override_prefix() {
         let merged = merge(
             Value::object(),
-            &[&json(r#"{"tags":["x"]}"#), &json(r#"{"override:tags":["y"]}"#)],
+            &[
+                &json(r#"{"tags":["x"]}"#),
+                &json(r#"{"override:tags":["y"]}"#),
+            ],
         );
         assert_eq!(merged, json(r#"{"tags":["y"]}"#));
     }

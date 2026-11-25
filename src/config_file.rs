@@ -46,7 +46,9 @@ pub fn builtin_data_parser(ext: &str) -> Option<crate::user_config::DataParserFn
         }),
         "toml" => Arc::new(|content, _| Ok(Value::from_toml(toml::from_str(content)?))),
         "json5" | "jsonc" => Arc::new(|content, _| {
-            Ok(Value::from_json(serde_json::from_str(&strip_json_comments(content))?))
+            Ok(Value::from_json(serde_json::from_str(
+                &strip_json_comments(content),
+            )?))
         }),
         "txt" => Arc::new(|content, _| Ok(Value::str(content))),
         _ => return None,

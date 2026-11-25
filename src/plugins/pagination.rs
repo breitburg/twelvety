@@ -95,7 +95,11 @@ impl Pagination {
         let alias = pagination.get("alias").as_str().map(String::from);
         let excluded = {
             let e = pagination.get("exclude");
-            let e = if e.is_nullish() { pagination.get("filter") } else { e };
+            let e = if e.is_nullish() {
+                pagination.get("filter")
+            } else {
+                e
+            };
             match e {
                 Value::Undefined | Value::Null => vec![],
                 Value::Array(a) => a.as_ref().clone(),
@@ -110,9 +114,7 @@ impl Pagination {
             other => {
                 let k = other.to_output_string();
                 if !data.has_path(&k) {
-                    bail!(
-                        "Could not find pagination data ({input_path}), went looking for: {k}"
-                    );
+                    bail!("Could not find pagination data ({input_path}), went looking for: {k}");
                 }
                 data.get_path(&k)
             }
@@ -156,11 +158,18 @@ impl Pagination {
 
         // lodash `chunk`: the size is truncated to an integer and a size below 1 yields no chunks
         let chunk_size = size.to_number();
-        let chunk_size = if chunk_size.is_nan() { 0.0 } else { chunk_size.trunc().max(0.0) };
+        let chunk_size = if chunk_size.is_nan() {
+            0.0
+        } else {
+            chunk_size.trunc().max(0.0)
+        };
         let mut chunked: Vec<Vec<Value>> = if chunk_size < 1.0 {
             vec![]
         } else {
-            items.chunks(chunk_size.min(usize::MAX as f64) as usize).map(|c| c.to_vec()).collect()
+            items
+                .chunks(chunk_size.min(usize::MAX as f64) as usize)
+                .map(|c| c.to_vec())
+                .collect()
         };
         if chunked.is_empty() && pagination.get("generatePageOnEmptyData").is_truthy() {
             chunked = vec![vec![]];
@@ -251,11 +260,17 @@ impl Pagination {
             );
             page.insert(
                 "first".into(),
-                items.first().map(|i| self.normalized(i)).unwrap_or(Value::Null),
+                items
+                    .first()
+                    .map(|i| self.normalized(i))
+                    .unwrap_or(Value::Null),
             );
             page.insert(
                 "last".into(),
-                items.last().map(|i| self.normalized(i)).unwrap_or(Value::Null),
+                items
+                    .last()
+                    .map(|i| self.normalized(i))
+                    .unwrap_or(Value::Null),
             );
             let mut pagination = Map::new();
             pagination.insert("items".into(), Value::array(items[page_number].clone()));
@@ -300,24 +315,37 @@ impl Pagination {
                 i.and_then(|i| list.get(i).cloned()).unwrap_or(Value::Null)
             };
             let prev = if index > 0 { Some(index - 1) } else { None };
-            let next = if index + 1 < count { Some(index + 1) } else { None };
+            let next = if index + 1 < count {
+                Some(index + 1)
+            } else {
+                None
+            };
             pagination.set("previousPageLink", get(&links, prev));
             pagination.set("previous", get(&links, prev));
             pagination.set("nextPageLink", get(&links, next));
             pagination.set("next", get(&links, next));
-            pagination.set("firstPageLink", links.first().cloned().unwrap_or(Value::Null));
+            pagination.set(
+                "firstPageLink",
+                links.first().cloned().unwrap_or(Value::Null),
+            );
             pagination.set("lastPageLink", links.last().cloned().unwrap_or(Value::Null));
             pagination.set("links", Value::array(links.clone()));
             pagination.set("pageLinks", Value::array(links.clone()));
             pagination.set("previousPageHref", get(&hrefs, prev));
             pagination.set("nextPageHref", get(&hrefs, next));
-            pagination.set("firstPageHref", hrefs.first().cloned().unwrap_or(Value::Null));
+            pagination.set(
+                "firstPageHref",
+                hrefs.first().cloned().unwrap_or(Value::Null),
+            );
             pagination.set("lastPageHref", hrefs.last().cloned().unwrap_or(Value::Null));
             pagination.set("hrefs", Value::array(hrefs.clone()));
             let mut href = Map::new();
             href.insert("previous".into(), get(&hrefs, prev));
             href.insert("next".into(), get(&hrefs, next));
-            href.insert("first".into(), hrefs.first().cloned().unwrap_or(Value::Null));
+            href.insert(
+                "first".into(),
+                hrefs.first().cloned().unwrap_or(Value::Null),
+            );
             href.insert("last".into(), hrefs.last().cloned().unwrap_or(Value::Null));
             pagination.set("href", Value::from_map(href));
             entry.data.set("pagination", pagination);

@@ -8,30 +8,79 @@ use crate::value::Value;
 pub type EventListener = Arc<dyn Fn(&Value) -> anyhow::Result<()> + Send + Sync>;
 
 const ALIASES: &[(&str, &[&str])] = &[
-    ("buildawesome.before", &["beforeBuild", "twelvety.before", "buildawesome.before"]),
+    (
+        "buildawesome.before",
+        &["beforeBuild", "twelvety.before", "buildawesome.before"],
+    ),
     (
         "buildawesome.beforewatch",
-        &["beforeWatch", "twelvety.beforeWatch", "buildawesome.beforewatch"],
+        &[
+            "beforeWatch",
+            "twelvety.beforeWatch",
+            "buildawesome.beforewatch",
+        ],
     ),
-    ("buildawesome.beforeconfig", &["twelvety.beforeConfig", "buildawesome.beforeconfig"]),
-    ("buildawesome.after", &["afterBuild", "twelvety.after", "buildawesome.after"]),
-    ("buildawesome.aftererror", &["twelvety.afterError", "buildawesome.aftererror"]),
-    ("buildawesome.engine.njk", &["twelvety.engine.njk", "buildawesome.engine.njk"]),
+    (
+        "buildawesome.beforeconfig",
+        &["twelvety.beforeConfig", "buildawesome.beforeconfig"],
+    ),
+    (
+        "buildawesome.after",
+        &["afterBuild", "twelvety.after", "buildawesome.after"],
+    ),
+    (
+        "buildawesome.aftererror",
+        &["twelvety.afterError", "buildawesome.aftererror"],
+    ),
+    (
+        "buildawesome.engine.njk",
+        &["twelvety.engine.njk", "buildawesome.engine.njk"],
+    ),
     (
         "buildawesome.globaldatafiles",
         &["twelvety.globalDataFiles", "buildawesome.globaldatafiles"],
     ),
-    ("buildawesome.contentmap", &["twelvety.contentMap", "buildawesome.contentmap"]),
-    ("buildawesome.layouts", &["twelvety.layouts", "buildawesome.layouts"]),
-    ("buildawesome.datafiles", &["twelvety.dataFiles", "buildawesome.datafiles"]),
-    ("buildawesome.passthrough", &["twelvety.passthrough", "buildawesome.passthrough"]),
-    ("buildawesome.config", &["twelvety.config", "buildawesome.config"]),
+    (
+        "buildawesome.contentmap",
+        &["twelvety.contentMap", "buildawesome.contentmap"],
+    ),
+    (
+        "buildawesome.layouts",
+        &["twelvety.layouts", "buildawesome.layouts"],
+    ),
+    (
+        "buildawesome.datafiles",
+        &["twelvety.dataFiles", "buildawesome.datafiles"],
+    ),
+    (
+        "buildawesome.passthrough",
+        &["twelvety.passthrough", "buildawesome.passthrough"],
+    ),
+    (
+        "buildawesome.config",
+        &["twelvety.config", "buildawesome.config"],
+    ),
     ("buildawesome.env", &["twelvety.env", "buildawesome.env"]),
-    ("buildawesome.extensionmap", &["twelvety.extensionmap", "buildawesome.extensionmap"]),
-    ("buildawesome.directories", &["twelvety.directories", "buildawesome.directories"]),
-    ("buildawesome.ignores", &["twelvety.ignores", "buildawesome.ignores"]),
-    ("buildawesome.reset", &["twelvety.reset", "buildawesome.reset"]),
-    ("buildawesome.afterwatch", &["twelvety.afterwatch", "buildawesome.afterwatch"]),
+    (
+        "buildawesome.extensionmap",
+        &["twelvety.extensionmap", "buildawesome.extensionmap"],
+    ),
+    (
+        "buildawesome.directories",
+        &["twelvety.directories", "buildawesome.directories"],
+    ),
+    (
+        "buildawesome.ignores",
+        &["twelvety.ignores", "buildawesome.ignores"],
+    ),
+    (
+        "buildawesome.reset",
+        &["twelvety.reset", "buildawesome.reset"],
+    ),
+    (
+        "buildawesome.afterwatch",
+        &["twelvety.afterwatch", "buildawesome.afterwatch"],
+    ),
     (
         "buildawesome.resourcemodified",
         &["twelvety.resourceModified", "buildawesome.resourcemodified"],
@@ -41,7 +90,7 @@ const ALIASES: &[(&str, &[&str])] = &[
 /// Normalize an event name to its canonical form
 pub fn normalize_event_name(name: &str) -> String {
     for (canonical, aliases) in ALIASES {
-        if aliases.iter().any(|a| *a == name) || *canonical == name {
+        if aliases.contains(&name) || *canonical == name {
             return canonical.to_string();
         }
     }

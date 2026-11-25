@@ -102,7 +102,9 @@ pub fn parse(input: &str, options: &FrontMatterOptions, file: &str) -> Result<Fr
         fm.content = content.to_string();
     }
     if input.ends_with(&fm.content) {
-        fm.body_line_offset = input[..input.len() - fm.content.len()].matches('\n').count();
+        fm.body_line_offset = input[..input.len() - fm.content.len()]
+            .matches('\n')
+            .count();
     }
     apply_excerpt(&mut fm, options);
     Ok(fm)
@@ -112,7 +114,10 @@ fn apply_excerpt(fm: &mut FrontMatter, options: &FrontMatterOptions) {
     if !options.excerpt {
         return;
     }
-    let sep = options.excerpt_separator.clone().unwrap_or_else(|| "---".into());
+    let sep = options
+        .excerpt_separator
+        .clone()
+        .unwrap_or_else(|| "---".into());
     if let Some(idx) = fm.content.find(&sep) {
         fm.excerpt = Some(fm.content[..idx].to_string());
     }
@@ -129,7 +134,10 @@ pub fn apply_twelvety_excerpt(fm: &mut FrontMatter, options: &FrontMatterOptions
     if excerpt.is_empty() {
         return;
     }
-    let sep = options.excerpt_separator.clone().unwrap_or_else(|| "---".into());
+    let sep = options
+        .excerpt_separator
+        .clone()
+        .unwrap_or_else(|| "---".into());
     let excerpt_string = format!("{excerpt}{sep}");
     if let Some(rest) = fm.content.strip_prefix(&format!("{excerpt_string}\n")) {
         fm.content = format!("{}\n{}", excerpt.trim(), rest);
@@ -149,7 +157,12 @@ mod tests {
 
     #[test]
     fn parses_yaml() {
-        let fm = parse("---\ntitle: Hi\ntags: [a, b]\n---\n# Body\n", &Default::default(), "x").unwrap();
+        let fm = parse(
+            "---\ntitle: Hi\ntags: [a, b]\n---\n# Body\n",
+            &Default::default(),
+            "x",
+        )
+        .unwrap();
         assert_eq!(fm.data.get("title"), Value::str("Hi"));
         assert_eq!(fm.content, "# Body\n");
         assert_eq!(fm.body_line_offset, 4);
@@ -181,9 +194,17 @@ mod tests {
             excerpt: true,
             ..Default::default()
         };
-        let mut fm = parse("---\na: 1\n---\nThis is an excerpt.\n---\nRest of the post", &opts, "x").unwrap();
+        let mut fm = parse(
+            "---\na: 1\n---\nThis is an excerpt.\n---\nRest of the post",
+            &opts,
+            "x",
+        )
+        .unwrap();
         apply_twelvety_excerpt(&mut fm, &opts);
-        assert_eq!(fm.data.get("page").get("excerpt"), Value::str("This is an excerpt.\n"));
+        assert_eq!(
+            fm.data.get("page").get("excerpt"),
+            Value::str("This is an excerpt.\n")
+        );
         assert_eq!(fm.content, "This is an excerpt.\nRest of the post");
     }
 }

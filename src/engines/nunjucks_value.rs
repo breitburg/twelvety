@@ -92,7 +92,10 @@ pub fn from_mj(v: &MjValue) -> Value {
             if let Ok(iter) = v.try_iter() {
                 for key in iter {
                     let item = v.get_item(&key).unwrap_or_default();
-                    let k = key.as_str().map(String::from).unwrap_or_else(|| key.to_string());
+                    let k = key
+                        .as_str()
+                        .map(String::from)
+                        .unwrap_or_else(|| key.to_string());
                     map.insert(k, from_mj(&item));
                 }
             }
@@ -164,7 +167,11 @@ impl Object for MjArray {
             return None;
         }
         let idx = i64::try_from(key.clone()).ok()?;
-        let idx = if idx < 0 { self.0.len() as i64 + idx } else { idx };
+        let idx = if idx < 0 {
+            self.0.len() as i64 + idx
+        } else {
+            idx
+        };
         self.0.get(idx as usize).map(to_mj)
     }
 

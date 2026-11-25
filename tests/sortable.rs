@@ -6,7 +6,7 @@ use twelvety::Value;
 use twelvety::template_collection::{SortFunction, Sortable};
 
 fn strs(items: &[&str]) -> Vec<Value> {
-    items.iter().map(|s| Value::str(s)).collect()
+    items.iter().map(Value::str).collect()
 }
 
 fn nums(items: &[i64]) -> Vec<Value> {
@@ -20,7 +20,11 @@ fn date(y: i32, m: u32, d: u32) -> Value {
 
 /// `new Date(y, m - 1, d).getTime()`
 fn time(y: i32, m: u32, d: u32) -> Value {
-    Value::from(Utc.with_ymd_and_hms(y, m, d, 0, 0, 0).unwrap().timestamp_millis())
+    Value::from(
+        Utc.with_ymd_and_hms(y, m, d, 0, 0, 0)
+            .unwrap()
+            .timestamp_millis(),
+    )
 }
 
 fn amz() -> Sortable {
@@ -33,7 +37,10 @@ fn amz() -> Sortable {
 
 #[test]
 fn get_sort_function() {
-    assert_eq!(Sortable::new().get_sort_function(), SortFunction::AlphabeticAscending);
+    assert_eq!(
+        Sortable::new().get_sort_function(),
+        SortFunction::AlphabeticAscending
+    );
 }
 
 #[test]
@@ -93,21 +100,48 @@ fn numeric_descending() {
 
 #[test]
 fn date_assumptions() {
-    assert_eq!(date(2007, 10, 10).to_number() - time(2007, 10, 10).to_number(), 0.0);
-    assert_eq!(date(2008, 10, 10).to_number() - time(2008, 10, 10).to_number(), 0.0);
-    assert_ne!(date(2008, 10, 10).to_number() - time(2007, 10, 10).to_number(), 0.0);
+    assert_eq!(
+        date(2007, 10, 10).to_number() - time(2007, 10, 10).to_number(),
+        0.0
+    );
+    assert_eq!(
+        date(2008, 10, 10).to_number() - time(2008, 10, 10).to_number(),
+        0.0
+    );
+    assert_ne!(
+        date(2008, 10, 10).to_number() - time(2007, 10, 10).to_number(),
+        0.0
+    );
 }
 
 #[test]
 fn date_and_sortable_assumptions() {
     use SortFunction::*;
-    assert_eq!(AlphabeticAscending.compare(&date(2007, 10, 10), &time(2007, 10, 10)), 0.0);
-    assert_eq!(AlphabeticDescending.compare(&date(2007, 10, 10), &time(2007, 10, 10)), 0.0);
-    assert_eq!(AlphabeticAscending.compare(&date(2008, 10, 10), &time(2007, 10, 10)), 1.0);
-    assert_eq!(AlphabeticDescending.compare(&date(2008, 10, 10), &time(2007, 10, 10)), -1.0);
+    assert_eq!(
+        AlphabeticAscending.compare(&date(2007, 10, 10), &time(2007, 10, 10)),
+        0.0
+    );
+    assert_eq!(
+        AlphabeticDescending.compare(&date(2007, 10, 10), &time(2007, 10, 10)),
+        0.0
+    );
+    assert_eq!(
+        AlphabeticAscending.compare(&date(2008, 10, 10), &time(2007, 10, 10)),
+        1.0
+    );
+    assert_eq!(
+        AlphabeticDescending.compare(&date(2008, 10, 10), &time(2007, 10, 10)),
+        -1.0
+    );
 
-    assert_eq!(NumericAscending.compare(&date(2008, 10, 10), &time(2008, 10, 10)), 0.0);
-    assert_eq!(NumericDescending.compare(&date(2008, 10, 10), &time(2008, 10, 10)), 0.0);
+    assert_eq!(
+        NumericAscending.compare(&date(2008, 10, 10), &time(2008, 10, 10)),
+        0.0
+    );
+    assert_eq!(
+        NumericDescending.compare(&date(2008, 10, 10), &time(2008, 10, 10)),
+        0.0
+    );
     assert!(NumericAscending.compare(&date(2008, 10, 10), &time(2007, 10, 10)) > 0.0);
     assert!(NumericDescending.compare(&date(2008, 10, 10), &time(2007, 10, 10)) < 0.0);
 }
@@ -118,7 +152,10 @@ fn date_ascending() {
     s.add(date(2009, 10, 10));
     s.add(date(2008, 10, 10));
     s.add(date(2007, 10, 10));
-    assert_eq!(s.sort(), vec![date(2007, 10, 10), date(2008, 10, 10), date(2009, 10, 10)]);
+    assert_eq!(
+        s.sort(),
+        vec![date(2007, 10, 10), date(2008, 10, 10), date(2009, 10, 10)]
+    );
 }
 
 #[test]
@@ -128,7 +165,10 @@ fn date_descending() {
     s.add(date(2008, 10, 10));
     s.add(date(2009, 10, 10));
     s.add(date(2007, 10, 10));
-    assert_eq!(s.sort(), vec![date(2009, 10, 10), date(2008, 10, 10), date(2007, 10, 10)]);
+    assert_eq!(
+        s.sort(),
+        vec![date(2009, 10, 10), date(2008, 10, 10), date(2007, 10, 10)]
+    );
 }
 
 #[test]

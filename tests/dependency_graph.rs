@@ -19,7 +19,10 @@ fn nodes_dont_require_dependencies() {
         assert!(order.iter().any(|n| n == node));
     }
     // in order of addNode
-    assert_eq!(graph.overall_order(), strings(&["all", "template-a", "template-b", "template-c"]));
+    assert_eq!(
+        graph.overall_order(),
+        strings(&["all", "template-a", "template-b", "template-c"])
+    );
 }
 
 #[test]
@@ -38,7 +41,13 @@ fn relationships() {
 
     assert_eq!(
         graph.overall_order(),
-        strings(&["template-a", "template-b", "template-c", "all", "userCollection"])
+        strings(&[
+            "template-a",
+            "template-b",
+            "template-c",
+            "all",
+            "userCollection"
+        ])
     );
 }
 
@@ -48,9 +57,15 @@ fn edges_are_removed_when_nodes_are_deleted() {
     graph.add_node("template-a");
     graph.add_node("template-b");
     graph.add_dependency("template-a", "template-b");
-    assert_eq!(graph.overall_order(), strings(&["template-b", "template-a"]));
+    assert_eq!(
+        graph.overall_order(),
+        strings(&["template-b", "template-a"])
+    );
 
-    assert_eq!(graph.dependencies_of("template-a"), strings(&["template-b"]));
+    assert_eq!(
+        graph.dependencies_of("template-a"),
+        strings(&["template-b"])
+    );
 
     graph.remove_node("template-b");
     assert!(graph.dependencies_of("template-a").is_empty());
@@ -58,5 +73,8 @@ fn edges_are_removed_when_nodes_are_deleted() {
     graph.add_node("template-b");
     assert!(graph.dependencies_of("template-a").is_empty());
 
-    assert_eq!(graph.overall_order(), strings(&["template-a", "template-b"]));
+    assert_eq!(
+        graph.overall_order(),
+        strings(&["template-a", "template-b"])
+    );
 }

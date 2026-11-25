@@ -16,7 +16,9 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
 use template_support::fixture_copy;
-use twelvety::data::template_data::{TemplateData, cleanup_data, get_included_collection_names, get_included_tag_names};
+use twelvety::data::template_data::{
+    TemplateData, cleanup_data, get_included_collection_names, get_included_tag_names,
+};
 use twelvety::testing::{TestOptions, get_context, json};
 use twelvety::util::merge::merge;
 use twelvety::{UserConfig, Value};
@@ -77,7 +79,10 @@ fn default_paths(dirs: &[(&str, &str)]) -> Vec<String> {
     out
 }
 
-const STUBS_COMPONENT: &[(&str, &str)] = &[("./test/stubs", "stubs"), ("./test/stubs/component", "component")];
+const STUBS_COMPONENT: &[(&str, &str)] = &[
+    ("./test/stubs", "stubs"),
+    ("./test/stubs/component", "component"),
+];
 
 #[test]
 fn create() {
@@ -90,9 +95,15 @@ fn create() {
 fn get_global_data() {
     with_data(input("test/stubs"), |td| {
         let data = td.get_global_data().unwrap();
-        assert_eq!(data.get_path("globalData.datakey1").as_str(), Some("datavalue1"));
+        assert_eq!(
+            data.get_path("globalData.datakey1").as_str(),
+            Some("datavalue1")
+        );
         // variables are not resolved (default processing)
-        assert_eq!(data.get_path("globalData.datakey2").as_str(), Some("{{pkg.name}}"));
+        assert_eq!(
+            data.get_path("globalData.datakey2").as_str(),
+            Some("{{pkg.name}}")
+        );
         assert!(data.has("pkg"));
     });
 }
@@ -113,12 +124,24 @@ fn data_dir_does_not_exist() {
 fn add_local_data() {
     with_data(input("test/stubs"), |td| {
         let data = td.get_global_data().unwrap();
-        assert_eq!(data.get_path("globalData.datakey1").as_str(), Some("datavalue1"));
-        assert_eq!(data.get_path("globalData.datakey2").as_str(), Some("{{pkg.name}}"));
+        assert_eq!(
+            data.get_path("globalData.datakey1").as_str(),
+            Some("datavalue1")
+        );
+        assert_eq!(
+            data.get_path("globalData.datakey2").as_str(),
+            Some("{{pkg.name}}")
+        );
 
         let local = local_data(td, "./test/stubs/component/component.njk");
-        assert_eq!(local.get_path("globalData.datakey1").as_str(), Some("datavalue1"));
-        assert_eq!(local.get_path("globalData.datakey2").as_str(), Some("{{pkg.name}}"));
+        assert_eq!(
+            local.get_path("globalData.datakey1").as_str(),
+            Some("datavalue1")
+        );
+        assert_eq!(
+            local.get_path("globalData.datakey2").as_str(),
+            Some("{{pkg.name}}")
+        );
         assert_eq!(local.get("localdatakey1").as_str(), Some("localdatavalue1"));
         assert_eq!(local.get("localdatakeyfromjs2").as_str(), Some("howdy2"));
     });
@@ -133,8 +156,14 @@ fn add_local_data_does_not_exist_but_does_not_fail() {
         with_data(input("test/stubs"), |td| {
             let before = td.get_global_data().unwrap().keys();
             let local = local_data(td, template);
-            assert_eq!(local.get_path("globalData.datakey1").as_str(), Some("datavalue1"));
-            assert_eq!(local.get_path("globalData.datakey2").as_str(), Some("{{pkg.name}}"));
+            assert_eq!(
+                local.get_path("globalData.datakey1").as_str(),
+                Some("datavalue1")
+            );
+            assert_eq!(
+                local.get_path("globalData.datakey2").as_str(),
+                Some("{{pkg.name}}")
+            );
             assert_eq!(local.keys(), before);
         });
     }
@@ -143,14 +172,20 @@ fn add_local_data_does_not_exist_but_does_not_fail() {
 #[test]
 fn global_dir_directory() {
     with_data(input("."), |td| {
-        assert_eq!(td.get_global_data_glob(), ["./_data/**/*.{json,mjs,cjs,js}"]);
+        assert_eq!(
+            td.get_global_data_glob(),
+            ["./_data/**/*.{json,mjs,cjs,js}"]
+        );
     });
 }
 
 #[test]
 fn global_dir_directory_with_constructor_path_arg() {
     with_data(input("test/stubs"), |td| {
-        assert_eq!(td.get_global_data_glob(), ["./test/stubs/_data/**/*.{json,mjs,cjs,js}"]);
+        assert_eq!(
+            td.get_global_data_glob(),
+            ["./test/stubs/_data/**/*.{json,mjs,cjs,js}"]
+        );
     });
 }
 
@@ -160,15 +195,22 @@ fn get_all_global_data_with_other_data_files() {
         let data = td.get_global_data().unwrap();
         let files = td.get_global_data_files().unwrap();
         assert!(!files.is_empty());
-        assert!(
-            files
-                .iter()
-                .any(|p| twelvety::util::template_path::add_leading_dot_slash(p)
-                    .starts_with("./test/stubs/_data/globalData.json"))
+        assert!(files.iter().any(|p| {
+            twelvety::util::template_path::add_leading_dot_slash(p)
+                .starts_with("./test/stubs/_data/globalData.json")
+        }));
+        assert_eq!(
+            data.get_path("globalData.datakey1").as_str(),
+            Some("datavalue1")
         );
-        assert_eq!(data.get_path("globalData.datakey1").as_str(), Some("datavalue1"));
-        assert_eq!(data.get("testData"), json(r#"{"testdatakey1": "testdatavalue1"}"#));
-        assert_eq!(data.get_path("subdir.testDataSubdir"), json(r#"{"subdirkey": "subdirvalue"}"#));
+        assert_eq!(
+            data.get("testData"),
+            json(r#"{"testdatakey1": "testdatavalue1"}"#)
+        );
+        assert_eq!(
+            data.get_path("subdir.testDataSubdir"),
+            json(r#"{"subdirkey": "subdirvalue"}"#)
+        );
     });
 }
 
@@ -192,7 +234,8 @@ fn get_all_global_data_with_config_global_data() {
 fn get_data_value_without_template_engine_preprocessing() {
     with_data(input("test/stubs"), |td| {
         assert_eq!(
-            td.get_data_value("./test/stubs/_data/testDataLiquid.json").unwrap(),
+            td.get_data_value("./test/stubs/_data/testDataLiquid.json")
+                .unwrap(),
             json(r#"{"datakey1": "datavalue1", "datakey2": "{{ pkg.name }}"}"#)
         );
     });
@@ -254,7 +297,10 @@ fn get_local_data_paths_with_set_data_file_suffixes_override_1699() {
     });
     assert_eq!(
         paths,
-        ["./test/stubs/stubs.howdy.json", "./test/stubs/component/component.howdy.json"]
+        [
+            "./test/stubs/stubs.howdy.json",
+            "./test/stubs/component/component.howdy.json"
+        ]
     );
 }
 
@@ -264,7 +310,13 @@ fn get_local_data_paths_with_set_data_file_suffixes_empty_string_override_1699()
         cfg.set_data_file_suffixes(&[""]);
         Ok(())
     });
-    assert_eq!(paths, ["./test/stubs/stubs.json", "./test/stubs/component/component.json"]);
+    assert_eq!(
+        paths,
+        [
+            "./test/stubs/stubs.json",
+            "./test/stubs/component/component.json"
+        ]
+    );
 }
 
 #[test]
@@ -344,7 +396,9 @@ fn get_template_data_file_glob() {
     with_data(input("test/stubs"), |td| {
         assert_eq!(
             td.get_template_data_file_glob(),
-            ["./test/stubs/**/*.{json,data.mjs,data.cjs,data.js,12tydata.mjs,12tydata.cjs,12tydata.js}"]
+            [
+                "./test/stubs/**/*.{json,data.mjs,data.cjs,data.js,12tydata.mjs,12tydata.cjs,12tydata.js}"
+            ]
         );
     });
 }
@@ -353,7 +407,10 @@ fn get_template_data_file_glob() {
 #[test]
 fn template_data_merge_is_now_merge() {
     assert_eq!(
-        merge(json(r#"{"tags": [1, 2, 3]}"#), &[&json(r#"{"tags": [4, 5, 6]}"#)]),
+        merge(
+            json(r#"{"tags": [1, 2, 3]}"#),
+            &[&json(r#"{"tags": [4, 5, 6]}"#)]
+        ),
         json(r#"{"tags": [1, 2, 3, 4, 5, 6]}"#)
     );
 }
@@ -365,15 +422,26 @@ fn template_data_cleanup_data() {
     assert_eq!(cleanup(r#"{"tags": null}"#), json(r#"{"tags": []}"#));
     assert_eq!(cleanup(r#"{"tags": ""}"#), json(r#"{"tags": []}"#));
     assert_eq!(cleanup(r#"{"tags": []}"#), json(r#"{"tags": []}"#));
-    assert_eq!(cleanup(r#"{"tags": "test"}"#), json(r#"{"tags": ["test"]}"#));
-    assert_eq!(cleanup(r#"{"tags": ["test1", "test2"]}"#), json(r#"{"tags": ["test1", "test2"]}"#));
+    assert_eq!(
+        cleanup(r#"{"tags": "test"}"#),
+        json(r#"{"tags": ["test"]}"#)
+    );
+    assert_eq!(
+        cleanup(r#"{"tags": ["test1", "test2"]}"#),
+        json(r#"{"tags": ["test1", "test2"]}"#)
+    );
 }
 
 #[test]
 fn parent_directory_for_data_issue_337() {
-    let options = input_with("./test/stubs-337/src/", |cfg| cfg.set_data_directory("../data/"));
+    let options = input_with("./test/stubs-337/src/", |cfg| {
+        cfg.set_data_directory("../data/")
+    });
     with_data(options, |td| {
-        assert_eq!(td.get_global_data().unwrap().get("xyz"), json(r#"{"hi": "bye"}"#));
+        assert_eq!(
+            td.get_global_data().unwrap().get("xyz"),
+            json(r#"{"hi": "bye"}"#)
+        );
     });
 }
 
@@ -390,8 +458,14 @@ fn dots_in_datafile_path_issue_1242() {
 #[test]
 fn add_global_data_values() {
     let options = input_with("./test/stubs-global-data-config-api/", |cfg| {
-        cfg.add_global_data("myFunction", Value::function(|_| Ok(Value::str("fn-value"))));
-        cfg.add_global_data("myPromise", Value::function(|_| Ok(Value::str("promise-value"))));
+        cfg.add_global_data(
+            "myFunction",
+            Value::function(|_| Ok(Value::str("fn-value"))),
+        );
+        cfg.add_global_data(
+            "myPromise",
+            Value::function(|_| Ok(Value::str("promise-value"))),
+        );
         Ok(())
     });
     with_data(options, |td| {
@@ -430,8 +504,14 @@ fn add_global_data_complex_key() {
         &[("_data/deep.json", r#"{"existing": true}"#)],
     );
     let options = input_with(&dir, |cfg| {
-        cfg.add_global_data("deep.nested.one", Value::function(|_| Ok(Value::str("first"))));
-        cfg.add_global_data("deep.nested.two", Value::function(|_| Ok(Value::str("second"))));
+        cfg.add_global_data(
+            "deep.nested.one",
+            Value::function(|_| Ok(Value::str("first"))),
+        );
+        cfg.add_global_data(
+            "deep.nested.two",
+            Value::function(|_| Ok(Value::str("second"))),
+        );
         Ok(())
     });
     with_data(options, |td| {
@@ -445,8 +525,14 @@ fn add_global_data_complex_key() {
 #[test]
 fn twelvety_version_and_generator_returned_from_data() {
     let options = input_with("./test/stubs-empty/", |cfg| {
-        cfg.add_global_data("deep.nested.one", Value::function(|_| Ok(Value::str("first"))));
-        cfg.add_global_data("deep.nested.two", Value::function(|_| Ok(Value::str("second"))));
+        cfg.add_global_data(
+            "deep.nested.one",
+            Value::function(|_| Ok(Value::str("first"))),
+        );
+        cfg.add_global_data(
+            "deep.nested.two",
+            Value::function(|_| Ok(Value::str("second"))),
+        );
         Ok(())
     });
     with_data(options, |td| {
@@ -481,13 +567,22 @@ fn tag_names(data: &str) -> Vec<String> {
 fn collection_names_from_data_empty_assigned() {
     assert_eq!(collection_names(r#"{"tags": []}"#), ["all"]);
     assert!(collection_names(r#"{"tags": [], "twelvetyExcludeFromCollections": true}"#).is_empty());
-    assert_eq!(collection_names(r#"{"tags": [], "twelvetyExcludeFromCollections": ["one"]}"#), ["all"]);
+    assert_eq!(
+        collection_names(r#"{"tags": [], "twelvetyExcludeFromCollections": ["one"]}"#),
+        ["all"]
+    );
 }
 
 #[test]
 fn collection_names_from_data_tags_assigned() {
-    assert_eq!(collection_names(r#"{"tags": ["one", "two"]}"#), ["all", "one", "two"]);
-    assert!(collection_names(r#"{"tags": ["one", "two"], "twelvetyExcludeFromCollections": true}"#).is_empty());
+    assert_eq!(
+        collection_names(r#"{"tags": ["one", "two"]}"#),
+        ["all", "one", "two"]
+    );
+    assert!(
+        collection_names(r#"{"tags": ["one", "two"], "twelvetyExcludeFromCollections": true}"#)
+            .is_empty()
+    );
     assert_eq!(
         collection_names(r#"{"tags": ["one", "two"], "twelvetyExcludeFromCollections": ["one"]}"#),
         ["all", "two"]
@@ -504,7 +599,9 @@ fn tag_names_from_data_empty_assigned() {
 #[test]
 fn tag_names_from_data_tags_assigned() {
     assert_eq!(tag_names(r#"{"tags": ["one", "two"]}"#), ["one", "two"]);
-    assert!(tag_names(r#"{"tags": ["one", "two"], "twelvetyExcludeFromCollections": true}"#).is_empty());
+    assert!(
+        tag_names(r#"{"tags": ["one", "two"], "twelvetyExcludeFromCollections": true}"#).is_empty()
+    );
     assert_eq!(
         tag_names(r#"{"tags": ["one", "two"], "twelvetyExcludeFromCollections": ["one"]}"#),
         ["two"]
@@ -513,6 +610,12 @@ fn tag_names_from_data_tags_assigned() {
 
 #[test]
 fn tags_are_trimmed_and_deduplicated_after_trimming_2462() {
-    assert_eq!(tag_names(r#"{"tags": "post, javascript ,post"}"#), ["post", "javascript"]);
-    assert_eq!(tag_names(r#"{"tags": [" one", "one ", 1, "1"]}"#), ["one", "1"]);
+    assert_eq!(
+        tag_names(r#"{"tags": "post, javascript ,post"}"#),
+        ["post", "javascript"]
+    );
+    assert_eq!(
+        tag_names(r#"{"tags": [" one", "one ", 1, "1"]}"#),
+        ["one", "1"]
+    );
 }

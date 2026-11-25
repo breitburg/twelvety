@@ -2,7 +2,11 @@
 
 use twelvety::testing::{TestOptions, get_new_template, render_template};
 
-fn virtual_options(input: &str, output: &str, templates: &[(&'static str, &'static str)]) -> TestOptions {
+fn virtual_options(
+    input: &str,
+    output: &str,
+    templates: &[(&'static str, &'static str)],
+) -> TestOptions {
     let templates: Vec<(&'static str, &'static str)> = templates.to_vec();
     TestOptions::new(input, output).with_config(move |cfg| {
         for (path, content) in &templates {
@@ -29,20 +33,31 @@ fn output_path_maps_to_an_html_file() {
 fn subfolder_outputs_to_double_subfolder() {
     let tmpl = get_new_template(
         "./test/stubs/subfolder/subfolder/subfolder.liquid",
-        virtual_options("./test/stubs/", "./dist", &[("subfolder/subfolder/subfolder.liquid", "")]),
+        virtual_options(
+            "./test/stubs/",
+            "./dist",
+            &[("subfolder/subfolder/subfolder.liquid", "")],
+        ),
     )
     .unwrap();
     let data = tmpl.get_data().unwrap();
     assert_eq!(tmpl.get_template_subfolder(), "subfolder/subfolder");
     let loc = tmpl.get_output_locations(&data, "").unwrap();
-    assert_eq!(loc.path.as_str(), Some("./dist/subfolder/subfolder/subfolder/index.html"));
+    assert_eq!(
+        loc.path.as_str(),
+        Some("./dist/subfolder/subfolder/subfolder/index.html")
+    );
 }
 
 #[test]
 fn html_index_in_same_dir() {
     let tmpl = get_new_template(
         "./test/stubs/index.html",
-        virtual_options("./test/stubs", "./test/stubs", &[("index.html", "<html></html>")]),
+        virtual_options(
+            "./test/stubs",
+            "./test/stubs",
+            &[("index.html", "<html></html>")],
+        ),
     )
     .unwrap();
     let data = tmpl.get_data().unwrap();
@@ -94,7 +109,11 @@ fn two_layouts() {
     assert_eq!(data.get("key1").as_str(), Some("value1"));
     assert_eq!(data.get("daysPosted").as_f64(), Some(152.0));
     let pages = render_template(&tmpl).unwrap();
-    let squashed: String = pages[0].content.split_whitespace().collect::<Vec<_>>().join(" ");
+    let squashed: String = pages[0]
+        .content
+        .split_whitespace()
+        .collect::<Vec<_>>()
+        .join(" ");
     assert_eq!(
         squashed,
         "<div id=\"layout-b\"> <div id=\"layout-a\"> <p>value2-a</p> </div> </div>"

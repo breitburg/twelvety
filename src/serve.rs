@@ -137,7 +137,8 @@ impl DevServer {
                         let response = tiny_http::Response::new(
                             tiny_http::StatusCode(200),
                             vec![
-                                tiny_http::Header::from_bytes("Content-Type", "text/event-stream").unwrap(),
+                                tiny_http::Header::from_bytes("Content-Type", "text/event-stream")
+                                    .unwrap(),
                                 tiny_http::Header::from_bytes("Cache-Control", "no-cache").unwrap(),
                             ],
                             reader,
@@ -173,8 +174,11 @@ impl DevServer {
                         let response = tiny_http::Response::from_data(body)
                             .with_status_code(404)
                             .with_header(
-                                tiny_http::Header::from_bytes("Content-Type", "text/html; charset=utf-8")
-                                    .unwrap(),
+                                tiny_http::Header::from_bytes(
+                                    "Content-Type",
+                                    "text/html; charset=utf-8",
+                                )
+                                .unwrap(),
                             );
                         let _ = request.respond(response);
                     }

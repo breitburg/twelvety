@@ -91,7 +91,7 @@ const URL_ATTRIBUTES: &[(&str, &[&str])] = &[
 
 fn sort_entries<T>(list: &mut [Entry<T>]) {
     // descending priority, stable
-    list.sort_by(|a, b| b.priority.cmp(&a.priority));
+    list.sort_by_key(|a| std::cmp::Reverse(a.priority));
 }
 
 impl HtmlTransformer {
@@ -169,10 +169,16 @@ impl HtmlTransformer {
     }
 
     pub fn is_transformable(&self, extension: &str, ctx: &TransformContext) -> bool {
-        !self.get_callbacks(extension, ctx).is_empty() || !self.get_plugins(extension, ctx).is_empty()
+        !self.get_callbacks(extension, ctx).is_empty()
+            || !self.get_plugins(extension, ctx).is_empty()
     }
 
-    pub fn transform_content(&self, output_path: &str, content: String, ctx: &TransformContext) -> Result<String> {
+    pub fn transform_content(
+        &self,
+        output_path: &str,
+        content: String,
+        ctx: &TransformContext,
+    ) -> Result<String> {
         let extension = template_path::get_extension(output_path);
         let callbacks = self.get_callbacks(&extension, ctx);
         let plugins = self.get_plugins(&extension, ctx);
@@ -329,7 +335,8 @@ mod tests {
 
     #[test]
     fn rewrites() {
-        let html = r#"<a href="/test/">x</a><img src="a.png" srcset="a.png 1x, b.png 2x"><p>/test/</p>"#;
+        let html =
+            r#"<a href="/test/">x</a><img src="a.png" srcset="a.png 1x, b.png 2x"><p>/test/</p>"#;
         let out = rewrite_urls(html, &|u, _| Ok(format!("/prefix{u}"))).unwrap();
         assert_eq!(
             out,
